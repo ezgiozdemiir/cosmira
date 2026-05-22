@@ -1,0 +1,130 @@
+name: cosmira
+description: Luxury AI-powered spiritual lifestyle platform.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.2.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  supabase_flutter: ^2.9.1
+
+  # State Management
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # Navigation
+  go_router: ^14.2.0
+
+  # Auth
+  google_sign_in: ^6.2.1
+  sign_in_with_apple: ^6.1.0
+
+  # Ads
+  google_mobile_ads: ^5.1.0
+
+  # AI
+  google_generative_ai: ^0.4.3
+  dart_openai: ^5.1.0
+
+  # Astrology
+  sweph:
+
+  # Spotify
+  spotify_sdk: ^3.0.0-dev.4
+
+  # UI & Design
+  flutter_animate: ^4.5.0
+  shimmer: ^3.0.0
+  glassmorphism: ^3.0.0
+  lottie: ^3.1.0
+  flutter_svg: ^2.0.10
+  cached_network_image: ^3.3.1
+  flutter_staggered_animations: ^1.1.1
+  rive: ^0.13.2
+
+  # Breathwork / Animations
+  simple_animations: ^5.0.2
+  flutter_sequence_animation: ^4.0.0
+
+  # Charts / Visuals
+  fl_chart: ^0.68.0
+
+  # Local Storage
+  hive_flutter: ^1.1.0
+  shared_preferences: ^2.2.3
+
+  # Networking
+  dio: ^5.4.3+1
+  connectivity_plus: ^6.0.3
+
+  # Utils
+  intl: ^0.20.2
+  uuid: ^4.4.0
+  equatable: ^2.0.5
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.9.0
+  path_provider: ^2.1.3
+
+  # Notifications
+  firebase_messaging: ^15.0.2
+  firebase_core: ^3.1.0
+  flutter_local_notifications: ^17.2.1
+
+  # Analytics
+  firebase_analytics: ^11.1.0
+  firebase_crashlytics: ^4.0.2
+
+  # Haptics
+  vibration: ^2.0.0
+
+  # Sharing
+  share_plus: ^9.0.0
+  screenshot: ^3.0.0
+
+  # PDF
+  pdf: ^3.11.0
+  printing: ^5.12.0
+
+  # Location / Geocoding
+  geocoding: ^3.0.0
+  geolocator: ^12.0.0
+
+  # Localization
+  easy_localization: ^3.0.7
+
+  # Fonts
+  google_fonts: ^6.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.9
+  freezed: ^2.5.2
+  json_serializable: ^6.8.0
+  riverpod_generator: ^2.4.0
+  custom_lint: ^0.6.4
+  riverpod_lint: ^2.3.10
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/animations/
+    - assets/icons/
+    - assets/sounds/
+    - assets/translations/
+  fonts:
+    - family: Satoshi
+      fonts:
+        - asset: assets/fonts/Satoshi-Regular.otf
+        - asset: assets/fonts/Satoshi-Medium.otf
+          weight: 500
+        - asset: assets/fonts/Satoshi-Bold.otf
+          weight: 700
+        - asset: assets/fonts/Satoshi-Light.otf
+          weight: 300
