@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -41,13 +42,7 @@ class LoginScreen extends ConsumerWidget {
                     ),
                   ).animate().fadeIn(delay: 400.ms, duration: 600.ms),
                   const Spacer(flex: 3),
-                  _SignInButton(
-                    label: 'Continue with Apple',
-                    icon: Icons.apple,
-                    onPressed: () =>
-                        ref.read(authControllerProvider.notifier).signInWithApple(),
-                    isPrimary: true,
-                  ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.3),
+                  _AppleSignInButton().animate().fadeIn(delay: 600.ms).slideY(begin: 0.3),
                   const SizedBox(height: 16),
                   _SignInButton(
                     label: 'Continue with Google',
@@ -72,6 +67,61 @@ class LoginScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// Apple Sign-In is only available on iOS natively; on web it requires a paid
+// Apple Developer account (Services ID + private key). Shown as disabled on web.
+class _AppleSignInButton extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    const isWebPlatform = kIsWeb;
+
+    return Stack(
+      alignment: Alignment.centerRight,
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: isWebPlatform
+                ? null
+                : () => ref.read(authControllerProvider.notifier).signInWithApple(),
+            icon: const Icon(Icons.apple, size: 24, color: isWebPlatform ? Colors.black38 : Colors.black),
+            label: const Text(
+              'Continue with Apple',
+              style: TextStyle(color: isWebPlatform ? Colors.black38 : Colors.black),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isWebPlatform ? Colors.white38 : Colors.white,
+              disabledBackgroundColor: Colors.white38,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          ),
+        ),
+        if (isWebPlatform)
+          Positioned(
+            right: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppColors.accentGlow.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.accentGlow.withValues(alpha: 0.4)),
+              ),
+              child: Text(
+                'Coming soon',
+                style: AppTextStyles.bodySmall.copyWith(
+                  fontSize: 10,
+                  color: AppColors.accentGlow,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

@@ -1,8 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../config/env.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/utils/result.dart';
+import '../../../../core/utils/web_utils_stub.dart'
+    if (dart.library.js_interop) '../../../../core/utils/web_utils_html.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../models/user_profile_model.dart';
@@ -12,10 +15,6 @@ class AuthRepositoryImpl implements AuthRepository {
 
   AuthRepositoryImpl(this._client);
 
-  // On web the browser cannot handle a custom-scheme URL, so we omit
-  // redirectTo and let Supabase use the current page origin.  On mobile
-  // we use the registered custom scheme so the OS routes the callback
-  // back into the app.
   static String? get _redirectTo =>
       kIsWeb ? null : 'io.cosmira.app://login-callback';
 
@@ -35,6 +34,20 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Result<void>> signInWithGoogle() async {
     try {
+      if (kIsWeb) {
+        // supabase_flutter opens OAuth via window.open() (new tab/popup),
+        // which Google blocks since 2021. Instead we construct the URL and
+        // force a same-tab redirect via window.location.href.
+        // Implicit flow is used on web (set in Supabase.initialize) so no
+        // PKCE code_challenge is needed — tokens come back in the URL fragment.
+        final oauthUrl = Uri.parse('${Env.supabaseUrl}/auth/v1/authorize')
+            .replace(queryParameters: {
+          'provider': 'google',
+          'redirect_to': '${Uri.base.origin}/',
+        }).toString();
+        webRedirect(oauthUrl);
+        return Result.success(null);
+      }
       await _client.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: _redirectTo,
@@ -59,7 +72,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Result<UserProfile>> getCurrentProfile() async {
     try {
       final userId = _client.auth.currentUser?.id;
-      if (userId == null) return Result.failure(AuthFailure('Not logged in'));
+      if (userId == null) return Result.failure(const AuthFailure('Not logged in'));
 
       final data = await _client
           .from('profiles')

@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c//**)",
+      "PowerShell(& \"C:\\\\flutter\\\\bin\\\\flutter.bat\" --version 2>&1)",
+      "Bash(mkdir -p \"c:\\\\Users\\\\ezgik\\\\Desktop\\\\cosmira-project\\\\cosmira\\\\.vscode\")",
+      "Bash(flutter pub *)",
+      "Bash(flutter run *)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :8080)",
+      "Bash(taskkill /PID 29556 /F)",
+      "PowerShell(Stop-Process -Id 29556 -Force)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\ezgik\\Desktop\\cosmira-project\\cosmira"
+    ]
+  }
+}
