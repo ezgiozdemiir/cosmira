@@ -1,6 +1,7 @@
 abstract final class Env {
   static const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
   static const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  static const googleClientId = String.fromEnvironment('GOOGLE_CLIENT_ID');
   static const geminiApiKey = String.fromEnvironment('GEMINI_API_KEY');
   static const openaiApiKey = String.fromEnvironment('OPENAI_API_KEY');
   static const revenueCatApiKey = String.fromEnvironment('REVENUECAT_API_KEY');

@@ -10,6 +10,7 @@
         "--web-port=8080",
         "--dart-define=SUPABASE_URL=https://bxuborwyihdhztngspko.supabase.co",
         "--dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4dWJvcnd5aWhkaHp0bmdzcGtvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NzA4MTksImV4cCI6MjA5NTA0NjgxOX0.HLxj1X7XSDwZxrz_vIIF9UhkPP3hccgS8LLZFXLgSJc",
+        "--dart-define=GOOGLE_CLIENT_ID=57879461029-cfoii437ahphtsrq5tkihgcr6ajab3f0.apps.googleusercontent.com",
         "--dart-define=GEMINI_API_KEY=YOUR_GEMINI_KEY",
         "--dart-define=OPENAI_API_KEY=YOUR_OPENAI_KEY"
       ]

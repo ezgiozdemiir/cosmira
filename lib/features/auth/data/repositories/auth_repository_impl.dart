@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../../config/env.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../core/utils/web_utils_stub.dart'
@@ -35,17 +34,18 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Result<void>> signInWithGoogle() async {
     try {
       if (kIsWeb) {
-        // supabase_flutter opens OAuth via window.open() (new tab/popup),
-        // which Google blocks since 2021. Instead we construct the URL and
-        // force a same-tab redirect via window.location.href.
-        // Implicit flow is used on web (set in Supabase.initialize) so no
-        // PKCE code_challenge is needed — tokens come back in the URL fragment.
-        final oauthUrl = Uri.parse('${Env.supabaseUrl}/auth/v1/authorize')
-            .replace(queryParameters: {
-          'provider': 'google',
-          'redirect_to': '${Uri.base.origin}/',
-        }).toString();
-        webRedirect(oauthUrl);
+        // Open the OAuth URL in a popup window instead of navigating the current
+        // tab. The full-page redirect causes Google's sign-in page to load with
+        // an autofocused field that won't accept keyboard input (permanent tab
+        // spinner). A popup opens a fresh browser context where Google's page
+        // works normally. After sign-in, the popup's Supabase init processes the
+        // code, stores the session in localStorage, then closes itself. The
+        // parent tab reloads and Supabase reads the session from localStorage.
+        final response = await _client.auth.getOAuthSignInUrl(
+          provider: OAuthProvider.google,
+          redirectTo: '${Uri.base.origin}/',
+        );
+        await openOAuthPopupAndWait(response.url);
         return Result.success(null);
       }
       await _client.auth.signInWithOAuth(
