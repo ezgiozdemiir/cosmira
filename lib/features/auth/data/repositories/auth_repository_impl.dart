@@ -92,6 +92,9 @@ class AuthRepositoryImpl implements AuthRepository {
       final model = UserProfileModel(
         id: profile.id,
         displayName: profile.displayName,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        gender: profile.gender,
         avatarUrl: profile.avatarUrl,
         birthDate: profile.birthDate,
         birthTime: profile.birthTime,
@@ -101,6 +104,7 @@ class AuthRepositoryImpl implements AuthRepository {
         sunSign: profile.sunSign,
         moonSign: profile.moonSign,
         risingSign: profile.risingSign,
+        mcSign: profile.mcSign,
         subscriptionTier: profile.subscriptionTier,
         onboardingComplete: profile.onboardingComplete,
         createdAt: profile.createdAt,
@@ -108,8 +112,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
       final data = await _client
           .from('profiles')
-          .update(model.toJson())
-          .eq('id', profile.id)
+          .upsert(model.toJson())
           .select()
           .single();
 

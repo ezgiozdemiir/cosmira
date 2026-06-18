@@ -8,6 +8,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/cosmic_card.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/extensions/string_extensions.dart';
+import '../../../auth/domain/entities/user_profile.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/home_provider.dart';
 import '../widgets/horoscope_card.dart';
@@ -20,7 +21,6 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(userProfileProvider).valueOrNull;
-    final horoscope = ref.watch(todayHoroscopeProvider);
 
     return SafeArea(
       child: CustomScrollView(
@@ -31,12 +31,10 @@ class HomeScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const StardustHeader()
-                      .animate()
-                      .fadeIn(duration: 400.ms),
+                  const StardustHeader().animate().fadeIn(duration: 400.ms),
                   const SizedBox(height: 24),
                   Text(
-                    'Hello, ${profile?.displayName ?? 'Stargazer'}',
+                    'Hello, ${profile?.firstName ?? profile?.displayName ?? 'Stargazer'}',
                     style: AppTextStyles.headlineLarge,
                   ).animate().fadeIn(delay: 200.ms),
                   if (profile?.sunSign != null) ...[
@@ -56,29 +54,7 @@ class HomeScreen extends ConsumerWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: horoscope.when(
-                data: (h) => h != null
-                    ? HoroscopeCard(horoscope: h)
-                        .animate()
-                        .fadeIn(delay: 300.ms)
-                        .slideY(begin: 0.1)
-                    : CosmicCard(
-                        child: Column(
-                          children: [
-                            const Icon(Icons.stars, color: AppColors.accentGlow, size: 40),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Complete your birth details\nto unlock your daily horoscope',
-                              textAlign: TextAlign.center,
-                              style: AppTextStyles.bodyMedium,
-                            ),
-                          ],
-                        ),
-                        onTap: () => context.push('/onboarding'),
-                      ),
-                loading: () => const ShimmerCardLoading(),
-                error: (_, __) => const SizedBox.shrink(),
-              ),
+              child: _buildHoroscopeSection(context, ref, profile),
             ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
@@ -91,6 +67,54 @@ class HomeScreen extends ConsumerWidget {
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
+    );
+  }
+
+  Widget _buildHoroscopeSection(
+    BuildContext context,
+    WidgetRef ref,
+    UserProfile? profile,
+  ) {
+    if (!(profile?.onboardingComplete ?? false)) {
+      return CosmicCard(
+        onTap: () => context.push('/onboarding'),
+        child: Column(
+          children: [
+            const Icon(Icons.stars, color: AppColors.accentGlow, size: 40),
+            const SizedBox(height: 12),
+            Text(
+              'Complete your birth details\nto unlock your daily horoscope',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodyMedium,
+            ),
+          ],
+        ),
+      );
+    }
+
+    final horoscope = ref.watch(todayHoroscopeProvider);
+    return horoscope.when(
+      data: (h) => h != null
+          ? HoroscopeCard(horoscope: h)
+              .animate()
+              .fadeIn(delay: 300.ms)
+              .slideY(begin: 0.1)
+          : CosmicCard(
+              child: Column(
+                children: [
+                  const Icon(Icons.auto_awesome,
+                      color: AppColors.accentGlow, size: 40),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Your horoscope for today\nis being prepared ✨',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+      loading: () => const ShimmerCardLoading(),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 }

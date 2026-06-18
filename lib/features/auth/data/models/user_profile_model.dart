@@ -4,6 +4,9 @@ class UserProfileModel extends UserProfile {
   const UserProfileModel({
     required super.id,
     super.displayName,
+    super.firstName,
+    super.lastName,
+    super.gender,
     super.avatarUrl,
     super.birthDate,
     super.birthTime,
@@ -13,6 +16,7 @@ class UserProfileModel extends UserProfile {
     super.sunSign,
     super.moonSign,
     super.risingSign,
+    super.mcSign,
     super.subscriptionTier,
     super.onboardingComplete,
     required super.createdAt,
@@ -22,6 +26,9 @@ class UserProfileModel extends UserProfile {
     return UserProfileModel(
       id: json['id'] as String,
       displayName: json['display_name'] as String?,
+      firstName: json['first_name'] as String?,
+      lastName: json['last_name'] as String?,
+      gender: json['gender'] as String?,
       avatarUrl: json['avatar_url'] as String?,
       birthDate: json['birth_date'] != null
           ? DateTime.parse(json['birth_date'] as String)
@@ -33,6 +40,7 @@ class UserProfileModel extends UserProfile {
       sunSign: json['sun_sign'] as String?,
       moonSign: json['moon_sign'] as String?,
       risingSign: json['rising_sign'] as String?,
+      mcSign: json['mc_sign'] as String?,
       subscriptionTier: json['subscription_tier'] as String? ?? 'free',
       onboardingComplete: json['onboarding_complete'] as bool? ?? false,
       createdAt: DateTime.parse(json['created_at'] as String),
@@ -42,6 +50,9 @@ class UserProfileModel extends UserProfile {
   Map<String, dynamic> toJson() => {
         'id': id,
         'display_name': displayName,
+        'first_name': firstName,
+        'last_name': lastName,
+        'gender': gender,
         'avatar_url': avatarUrl,
         'birth_date': birthDate?.toIso8601String().split('T').first,
         'birth_time': birthTime,
@@ -51,6 +62,7 @@ class UserProfileModel extends UserProfile {
         'sun_sign': sunSign,
         'moon_sign': moonSign,
         'rising_sign': risingSign,
+        'mc_sign': mcSign,
         'subscription_tier': subscriptionTier,
         'onboarding_complete': onboardingComplete,
       };

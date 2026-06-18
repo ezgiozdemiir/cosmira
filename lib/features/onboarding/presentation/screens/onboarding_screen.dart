@@ -3,11 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../config/di.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/cosmic_button.dart';
 import '../../../../core/widgets/gradient_scaffold.dart';
+import '../../../astrology/presentation/providers/astrology_provider.dart';
+import '../../../auth/data/models/user_profile_model.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../widgets/birth_data_form.dart';
+import '../widgets/personal_info_form.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -19,11 +24,158 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pageController = PageController();
   int _currentPage = 0;
+  bool _isSaving = false;
+
+  String _firstName = '';
+  String _lastName = '';
+  String? _gender;
+
+  DateTime? _birthDate;
+  TimeOfDay? _birthTime;
+  String _birthCity = '';
 
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  static String? _sunSignFromDate(DateTime date) {
+    final m = date.month;
+    final d = date.day;
+    if ((m == 3 && d >= 21) || (m == 4 && d <= 19)) return 'aries';
+    if ((m == 4 && d >= 20) || (m == 5 && d <= 20)) return 'taurus';
+    if ((m == 5 && d >= 21) || (m == 6 && d <= 20)) return 'gemini';
+    if ((m == 6 && d >= 21) || (m == 7 && d <= 22)) return 'cancer';
+    if ((m == 7 && d >= 23) || (m == 8 && d <= 22)) return 'leo';
+    if ((m == 8 && d >= 23) || (m == 9 && d <= 22)) return 'virgo';
+    if ((m == 9 && d >= 23) || (m == 10 && d <= 22)) return 'libra';
+    if ((m == 10 && d >= 23) || (m == 11 && d <= 21)) return 'scorpio';
+    if ((m == 11 && d >= 22) || (m == 12 && d <= 21)) return 'sagittarius';
+    if ((m == 12 && d >= 22) || (m == 1 && d <= 19)) return 'capricorn';
+    if ((m == 1 && d >= 20) || (m == 2 && d <= 18)) return 'aquarius';
+    return 'pisces';
+  }
+
+  Future<void> _saveAndContinue() async {
+    if (_firstName.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your first name to continue.')),
+      );
+      return;
+    }
+
+    if (_lastName.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your last name to continue.')),
+      );
+      return;
+    }
+
+    if (_gender == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select your gender to continue.')),
+      );
+      return;
+    }
+
+    if (_birthDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select your birth date to continue.')),
+      );
+      return;
+    }
+
+    if (_birthTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select your birth time to continue.')),
+      );
+      return;
+    }
+
+    if (_birthCity.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your birth city to continue.')),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    final profile = ref.read(userProfileProvider).valueOrNull;
+    final userId = ref.read(currentUserProvider)?.id;
+
+    if (userId == null) {
+      setState(() => _isSaving = false);
+      return;
+    }
+
+    final birthTimeStr =
+        '${_birthTime!.hour.toString().padLeft(2, '0')}:${_birthTime!.minute.toString().padLeft(2, '0')}';
+
+    var sunSign = _sunSignFromDate(_birthDate!);
+    var moonSign = profile?.moonSign;
+    var risingSign = profile?.risingSign;
+    var mcSign = profile?.mcSign;
+    var birthLat = profile?.birthLat;
+    var birthLng = profile?.birthLng;
+
+    final bigThree = await ref.read(astrologyRepositoryProvider).calculateBigThree(
+          birthDate: _birthDate!,
+          birthTime: birthTimeStr,
+          birthCity: _birthCity.trim(),
+        );
+    bigThree.when(
+      success: (r) {
+        sunSign = r.sunSign;
+        moonSign = r.moonSign;
+        risingSign = r.risingSign;
+        mcSign = r.mcSign;
+        birthLat = r.birthLat;
+        birthLng = r.birthLng;
+      },
+      // Network hiccup or unrecognized city: keep the date-based sun sign
+      // and leave moon/rising/mc as-is. User can retry from Edit Profile.
+      failure: (_) {},
+    );
+
+    final updated = UserProfileModel(
+      id: profile?.id ?? userId,
+      displayName: profile?.displayName,
+      firstName: _firstName.trim(),
+      lastName: _lastName.trim(),
+      gender: _gender,
+      avatarUrl: profile?.avatarUrl,
+      birthDate: _birthDate,
+      birthTime: birthTimeStr,
+      birthCity: _birthCity.trim(),
+      birthLat: birthLat,
+      birthLng: birthLng,
+      sunSign: sunSign,
+      moonSign: moonSign,
+      risingSign: risingSign,
+      mcSign: mcSign,
+      subscriptionTier: profile?.subscriptionTier ?? 'free',
+      onboardingComplete: true,
+      createdAt: profile?.createdAt ?? DateTime.now(),
+    );
+
+    final result = await ref.read(authRepositoryProvider).updateProfile(updated);
+
+    if (!mounted) return;
+    setState(() => _isSaving = false);
+
+    result.when(
+      success: (_) {
+        // Force the profile stream to re-query so the home screen sees the
+        // updated hasBirthData immediately, without depending on Realtime.
+        ref.invalidate(userProfileProvider);
+        context.go('/');
+      },
+      failure: (f) => ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not save: ${f.message}')),
+      ),
+    );
   }
 
   @override
@@ -39,7 +191,38 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 children: [
                   _WelcomePage(),
                   _CosmicProfilePage(),
-                  const BirthDataForm(),
+                  SingleChildScrollView(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 40),
+                        Text('Your Details', style: AppTextStyles.headlineLarge),
+                        const SizedBox(height: 8),
+                        Text(
+                          'This information is used to personalize your experience '
+                          'and calculate your unique natal chart.',
+                          style: AppTextStyles.bodyMedium,
+                        ),
+                        const SizedBox(height: 32),
+                        PersonalInfoForm(
+                          onDataChanged: (firstName, lastName, gender) {
+                            _firstName = firstName;
+                            _lastName = lastName;
+                            _gender = gender;
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                        BirthDataForm(
+                          onDataChanged: (date, time, city) {
+                            _birthDate = date;
+                            _birthTime = time;
+                            _birthCity = city;
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -67,6 +250,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   const Spacer(),
                   CosmicButton(
                     label: _currentPage == 2 ? 'Begin' : 'Next',
+                    isLoading: _isSaving,
                     onPressed: () {
                       if (_currentPage < 2) {
                         _pageController.nextPage(
@@ -74,7 +258,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           curve: Curves.easeInOut,
                         );
                       } else {
-                        context.go('/');
+                        _saveAndContinue();
                       }
                     },
                   ),

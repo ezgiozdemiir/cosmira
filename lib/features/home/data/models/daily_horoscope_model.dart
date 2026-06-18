@@ -4,6 +4,7 @@ class DailyHoroscopeModel extends DailyHoroscope {
   const DailyHoroscopeModel({
     required super.id,
     required super.sign,
+    super.point = 'sun',
     required super.date,
     required super.horoscopeText,
     required super.energyScore,
@@ -21,6 +22,7 @@ class DailyHoroscopeModel extends DailyHoroscope {
     return DailyHoroscopeModel(
       id: json['id'] as String,
       sign: json['sign'] as String,
+      point: json['point'] as String? ?? 'sun',
       date: DateTime.parse(json['date'] as String),
       horoscopeText: json['horoscope_text'] as String,
       energyScore: json['energy_score'] as int,

@@ -1,8 +1,29 @@
 import 'package:equatable/equatable.dart';
 
+/// Allowed values for [UserProfile.gender], matching the `gender_type` enum
+/// in the `profiles` table.
+abstract final class Gender {
+  static const female = 'female';
+  static const male = 'male';
+  static const nonBinary = 'non_binary';
+  static const preferNotToSay = 'prefer_not_to_say';
+
+  static const values = [female, male, nonBinary, preferNotToSay];
+
+  static String label(String value) => switch (value) {
+        female => 'Female',
+        male => 'Male',
+        nonBinary => 'Non-binary',
+        _ => 'Prefer not to say',
+      };
+}
+
 class UserProfile extends Equatable {
   final String id;
   final String? displayName;
+  final String? firstName;
+  final String? lastName;
+  final String? gender;
   final String? avatarUrl;
   final DateTime? birthDate;
   final String? birthTime;
@@ -12,6 +33,7 @@ class UserProfile extends Equatable {
   final String? sunSign;
   final String? moonSign;
   final String? risingSign;
+  final String? mcSign;
   final String subscriptionTier;
   final bool onboardingComplete;
   final DateTime createdAt;
@@ -19,6 +41,9 @@ class UserProfile extends Equatable {
   const UserProfile({
     required this.id,
     this.displayName,
+    this.firstName,
+    this.lastName,
+    this.gender,
     this.avatarUrl,
     this.birthDate,
     this.birthTime,
@@ -28,14 +53,16 @@ class UserProfile extends Equatable {
     this.sunSign,
     this.moonSign,
     this.risingSign,
+    this.mcSign,
     this.subscriptionTier = 'free',
     this.onboardingComplete = false,
     required this.createdAt,
   });
 
   bool get isPremium => subscriptionTier != 'free';
-  bool get hasBirthData => birthDate != null && birthCity != null;
+  bool get hasBirthData => birthDate != null && birthTime != null && birthCity != null;
+  String get fullName => [firstName, lastName].whereType<String>().join(' ').trim();
 
   @override
-  List<Object?> get props => [id, displayName, subscriptionTier, onboardingComplete];
+  List<Object?> get props => [id, firstName, lastName, subscriptionTier, onboardingComplete];
 }

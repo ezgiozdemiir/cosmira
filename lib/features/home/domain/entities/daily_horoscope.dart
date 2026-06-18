@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 class DailyHoroscope extends Equatable {
   final String id;
   final String sign;
+  final String point;
   final DateTime date;
   final String horoscopeText;
   final int energyScore;
@@ -18,6 +19,7 @@ class DailyHoroscope extends Equatable {
   const DailyHoroscope({
     required this.id,
     required this.sign,
+    this.point = 'sun',
     required this.date,
     required this.horoscopeText,
     required this.energyScore,
@@ -32,5 +34,5 @@ class DailyHoroscope extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, sign, date];
+  List<Object?> get props => [id, sign, point, date];
 }

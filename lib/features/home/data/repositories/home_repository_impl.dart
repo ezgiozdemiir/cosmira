@@ -12,13 +12,14 @@ class HomeRepositoryImpl implements HomeRepository {
   HomeRepositoryImpl(this._client);
 
   @override
-  Future<Result<DailyHoroscope>> getTodayHoroscope(String sign) async {
+  Future<Result<DailyHoroscope>> getTodayHoroscope(String sign, {String point = 'sun'}) async {
     try {
       final today = DateTime.now().toIso8601String().split('T').first;
       final data = await _client
           .from('daily_horoscopes')
           .select()
           .eq('sign', sign)
+          .eq('point', point)
           .eq('date', today)
           .single();
 

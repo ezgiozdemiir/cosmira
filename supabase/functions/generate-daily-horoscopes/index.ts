@@ -1,7 +1,7 @@
 // Supabase Edge Function: Generate Daily Horoscopes
 // Runs via cron at 00:00 UTC daily
-// Generates 12 horoscopes (one per sign) using Gemini API
-// Cost: ~12 Gemini calls/day ≈ $0.01/day
+// Generates 36 horoscopes (12 signs x 3 points: sun/moon/rising) using Gemini API
+// Cost: ~36 Gemini calls/day ≈ $0.03/day
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -11,12 +11,22 @@ const ZODIAC_SIGNS = [
   "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces",
 ];
 
+const POINTS = ["sun", "moon", "rising"] as const;
+type Point = typeof POINTS[number];
+
+const POINT_FOCUS: Record<Point, string> = {
+  sun: "their core identity, willpower, and the general energy of the day",
+  moon: "their emotional undercurrents, mood, and inner needs today",
+  rising: "how they come across to others today and their instinctive first reactions",
+};
+
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 interface HoroscopeData {
   sign: string;
+  point: Point;
   date: string;
   horoscope_text: string;
   energy_score: number;
@@ -30,8 +40,10 @@ interface HoroscopeData {
   spotify_artist: string | null;
 }
 
-async function generateHoroscope(sign: string, date: string): Promise<HoroscopeData> {
-  const prompt = `You are a luxury astrology AI for the app Cosmira. Generate a daily horoscope for ${sign} on ${date}.
+async function generateHoroscope(sign: string, point: Point, date: string): Promise<HoroscopeData> {
+  const prompt = `You are a luxury astrology AI for the app Cosmira. Generate a daily ${point.toUpperCase()} sign horoscope for someone with their ${point} in ${sign}, for ${date}.
+
+Focus specifically on ${POINT_FOCUS[point]}.
 
 Return a JSON object with exactly these fields:
 {
@@ -69,6 +81,7 @@ Return ONLY valid JSON, no markdown.`;
 
   return {
     sign,
+    point,
     date,
     horoscope_text: parsed.horoscope_text,
     energy_score: Math.min(100, Math.max(1, parsed.energy_score)),
@@ -88,16 +101,23 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     const today = new Date().toISOString().split("T")[0];
 
-    // Check if today's horoscopes already exist
+    // Check which (sign, point) combos already exist for today.
     const { data: existing } = await supabase
       .from("daily_horoscopes")
-      .select("sign")
+      .select("sign, point")
       .eq("date", today);
 
-    const existingSigns = new Set((existing || []).map((h: any) => h.sign));
-    const missingSigns = ZODIAC_SIGNS.filter((s) => !existingSigns.has(s));
+    const existingKeys = new Set((existing || []).map((h: any) => `${h.sign}:${h.point}`));
+    const missing: { sign: string; point: Point }[] = [];
+    for (const sign of ZODIAC_SIGNS) {
+      for (const point of POINTS) {
+        if (!existingKeys.has(`${sign}:${point}`)) {
+          missing.push({ sign, point });
+        }
+      }
+    }
 
-    if (missingSigns.length === 0) {
+    if (missing.length === 0) {
       return new Response(JSON.stringify({ message: "All horoscopes already generated" }), {
         headers: { "Content-Type": "application/json" },
       });
@@ -106,8 +126,8 @@ serve(async (req) => {
     const horoscopes: HoroscopeData[] = [];
 
     // Generate sequentially to respect rate limits
-    for (const sign of missingSigns) {
-      const horoscope = await generateHoroscope(sign, today);
+    for (const { sign, point } of missing) {
+      const horoscope = await generateHoroscope(sign, point, today);
       horoscopes.push(horoscope);
       // Small delay to avoid rate limiting
       await new Promise((r) => setTimeout(r, 500));
@@ -121,7 +141,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         message: `Generated ${horoscopes.length} horoscopes for ${today}`,
-        signs: horoscopes.map((h) => h.sign),
+        entries: horoscopes.map((h) => `${h.sign}:${h.point}`),
       }),
       { headers: { "Content-Type": "application/json" } }
     );

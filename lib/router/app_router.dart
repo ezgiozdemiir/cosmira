@@ -10,11 +10,13 @@ import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../features/home/presentation/screens/home_screen.dart';
 import '../features/astrology/presentation/screens/natal_chart_screen.dart';
+import '../features/astrology/presentation/screens/birth_map_screen.dart';
 import '../features/astrology/presentation/screens/daily_horoscope_screen.dart';
 import '../features/compatibility/presentation/screens/compatibility_screen.dart';
 import '../features/breathwork/presentation/screens/breathwork_screen.dart';
 import '../features/moon/presentation/screens/moon_calendar_screen.dart';
 import '../features/profile/presentation/screens/profile_screen.dart';
+import '../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../features/subscription/presentation/screens/paywall_screen.dart';
 import '../features/stardust/presentation/screens/stardust_store_screen.dart';
 import '../features/notifications/presentation/screens/notifications_screen.dart';
@@ -115,6 +117,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/notifications',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: '/profile/edit',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const EditProfileScreen(),
+      ),
+      GoRoute(
+        path: '/birth-map',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const BirthMapScreen(),
       ),
     ],
   );

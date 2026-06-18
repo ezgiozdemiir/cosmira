@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/cosmic_card.dart';
+import '../../../../core/widgets/premium_upsell_card.dart';
 import '../../../../core/extensions/string_extensions.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../home/presentation/providers/home_provider.dart';
@@ -38,7 +38,9 @@ class ProfileScreen extends ConsumerWidget {
                   ).animate().fadeIn().scale(begin: const Offset(0.8, 0.8)),
                   const SizedBox(height: 16),
                   Text(
-                    profile?.displayName ?? 'Stargazer',
+                    (profile?.fullName.isNotEmpty ?? false)
+                        ? profile!.fullName
+                        : profile?.displayName ?? 'Stargazer',
                     style: AppTextStyles.headlineMedium,
                   ).animate().fadeIn(delay: 200.ms),
                   if (profile?.sunSign != null)
@@ -76,39 +78,12 @@ class ProfileScreen extends ConsumerWidget {
                   ).animate().fadeIn(delay: 500.ms),
                   const SizedBox(height: 32),
                   if (profile?.isPremium != true)
-                    CosmicCard(
-                      gradient: AppColors.premiumGradient,
-                      onTap: () => context.push('/paywall'),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.stars, color: AppColors.auraAmber, size: 28),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Upgrade to Premium',
-                                  style: AppTextStyles.titleMedium
-                                      .copyWith(color: Colors.white),
-                                ),
-                                Text(
-                                  'Unlock all features & unlimited insights',
-                                  style: AppTextStyles.bodySmall
-                                      .copyWith(color: Colors.white70),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Icon(Icons.chevron_right, color: Colors.white54),
-                        ],
-                      ),
-                    ).animate().fadeIn(delay: 600.ms),
+                    const PremiumUpsellCard().animate().fadeIn(delay: 600.ms),
                   const SizedBox(height: 16),
                   _ProfileMenuItem(
                     icon: Icons.edit,
                     label: 'Edit Profile',
-                    onTap: () {},
+                    onTap: () => context.push('/profile/edit'),
                   ),
                   _ProfileMenuItem(
                     icon: Icons.auto_awesome,

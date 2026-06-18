@@ -9,10 +9,23 @@
       "Bash(netstat -ano)",
       "Bash(findstr :8080)",
       "Bash(taskkill /PID 29556 /F)",
-      "PowerShell(Stop-Process -Id 29556 -Force)"
+      "PowerShell(Stop-Process -Id 29556 -Force)",
+      "Bash(mkdir -p /tmp/mc-check)",
+      "Read(//tmp/**)",
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(node -e ' *)",
+      "Bash(rm -rf /tmp/mc-check)",
+      "Bash(flutter analyze *)",
+      "Bash(rm -f analyze_out.txt)",
+      "PowerShell(supabase --version)",
+      "PowerShell(supabase db query \"UPDATE profiles SET subscription_tier = 'premium' WHERE id = \\(SELECT id FROM auth.users WHERE email = 'ezgitheozdemir@outlook.com'\\);\" 2>&1)",
+      "PowerShell(supabase db query --linked \"UPDATE profiles SET subscription_tier = 'premium' WHERE id = \\(SELECT id FROM auth.users WHERE email = 'ezgitheozdemir@outlook.com'\\);\" 2>&1)",
+      "PowerShell(supabase db query --linked \"UPDATE profiles SET subscription_tier = 'premium' WHERE id = \\(SELECT id FROM auth.users WHERE email = 'ezgikaraagac96@gmail.com'\\);\" 2>&1)"
     ],
     "additionalDirectories": [
-      "c:\\Users\\ezgik\\Desktop\\cosmira-project\\cosmira"
+      "c:\\Users\\ezgik\\Desktop\\cosmira-project\\cosmira",
+      "\\tmp"
     ]
   }
 }
