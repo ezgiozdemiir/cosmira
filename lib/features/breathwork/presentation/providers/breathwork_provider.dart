@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/breathwork_session.dart';
@@ -11,6 +13,7 @@ class BreathworkState {
   final int totalCycles;
   final double progress;
   final bool isActive;
+  final int phaseSecondsRemaining;
 
   const BreathworkState({
     required this.pattern,
@@ -19,6 +22,7 @@ class BreathworkState {
     this.totalCycles = 10,
     this.progress = 0,
     this.isActive = false,
+    this.phaseSecondsRemaining = 0,
   });
 
   BreathworkState copyWith({
@@ -28,6 +32,7 @@ class BreathworkState {
     int? totalCycles,
     double? progress,
     bool? isActive,
+    int? phaseSecondsRemaining,
   }) {
     return BreathworkState(
       pattern: pattern ?? this.pattern,
@@ -36,6 +41,8 @@ class BreathworkState {
       totalCycles: totalCycles ?? this.totalCycles,
       progress: progress ?? this.progress,
       isActive: isActive ?? this.isActive,
+      phaseSecondsRemaining:
+          phaseSecondsRemaining ?? this.phaseSecondsRemaining,
     );
   }
 }
@@ -50,33 +57,92 @@ final breathworkStateProvider =
 });
 
 class BreathworkNotifier extends StateNotifier<BreathworkState> {
+  Timer? _timer;
+
   BreathworkNotifier(BreathworkPattern pattern)
       : super(BreathworkState(pattern: pattern));
 
-  void start() {
-    state = state.copyWith(isActive: true, phase: BreathPhase.inhale, currentCycle: 1);
-  }
+  void start() => _startPhase(BreathPhase.inhale, 1);
 
   void stop() {
-    state = state.copyWith(isActive: false, phase: BreathPhase.idle, currentCycle: 0);
+    _timer?.cancel();
+    _timer = null;
+    state = state.copyWith(
+      isActive: false,
+      phase: BreathPhase.idle,
+      currentCycle: 0,
+      phaseSecondsRemaining: 0,
+    );
   }
 
-  void updatePhase(BreathPhase phase) {
-    state = state.copyWith(phase: phase);
+  void _startPhase(BreathPhase phase, int cycle) {
+    _timer?.cancel();
+    final seconds = _phaseDuration(phase);
+
+    // Skip zero-duration phases immediately
+    if (seconds <= 0) {
+      _advanceFrom(phase, cycle);
+      return;
+    }
+
+    state = state.copyWith(
+      isActive: true,
+      phase: phase,
+      currentCycle: cycle,
+      phaseSecondsRemaining: seconds,
+    );
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      final remaining = state.phaseSecondsRemaining - 1;
+      if (remaining <= 0) {
+        t.cancel();
+        _advanceFrom(phase, cycle);
+      } else {
+        state = state.copyWith(phaseSecondsRemaining: remaining);
+      }
+    });
   }
 
-  void nextCycle() {
-    if (state.currentCycle >= state.totalCycles) {
-      state = state.copyWith(phase: BreathPhase.complete, isActive: false);
-    } else {
-      state = state.copyWith(
-        currentCycle: state.currentCycle + 1,
-        phase: BreathPhase.inhale,
-      );
+  void _advanceFrom(BreathPhase phase, int cycle) {
+    switch (phase) {
+      case BreathPhase.inhale:
+        _startPhase(BreathPhase.hold, cycle);
+      case BreathPhase.hold:
+        _startPhase(BreathPhase.exhale, cycle);
+      case BreathPhase.exhale:
+        _startPhase(BreathPhase.holdOut, cycle);
+      case BreathPhase.holdOut:
+        if (cycle >= state.totalCycles) {
+          _complete();
+        } else {
+          _startPhase(BreathPhase.inhale, cycle + 1);
+        }
+      default:
+        break;
     }
   }
 
-  void updateProgress(double progress) {
-    state = state.copyWith(progress: progress);
+  void _complete() {
+    _timer?.cancel();
+    _timer = null;
+    state = state.copyWith(
+      isActive: false,
+      phase: BreathPhase.complete,
+      phaseSecondsRemaining: 0,
+    );
+  }
+
+  int _phaseDuration(BreathPhase phase) => switch (phase) {
+        BreathPhase.inhale => state.pattern.inhaleSeconds,
+        BreathPhase.hold => state.pattern.holdSeconds,
+        BreathPhase.exhale => state.pattern.exhaleSeconds,
+        BreathPhase.holdOut => state.pattern.holdOutSeconds,
+        _ => 0,
+      };
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 }

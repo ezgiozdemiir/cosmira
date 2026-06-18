@@ -23,108 +23,169 @@ class BreathworkScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (!bState.isActive) ...[
-              Text('Breathwork', style: AppTextStyles.headlineLarge)
-                  .animate()
-                  .fadeIn(),
-              const SizedBox(height: 8),
-              Text(
-                'Find your inner peace',
-                style: AppTextStyles.bodyMedium,
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                height: 120,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: BreathworkPattern.all.length,
-                  itemBuilder: (context, index) {
-                    final pattern = BreathworkPattern.all[index];
-                    final isSelected = pattern.id == selectedPattern.id;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: GestureDetector(
-                        onTap: () => ref
-                            .read(selectedPatternProvider.notifier)
-                            .state = pattern,
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: 140,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            gradient: isSelected
-                                ? AppColors.accentGradient
-                                : null,
-                            color: isSelected ? null : AppColors.surface,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: isSelected
-                                  ? AppColors.accentGlow
-                                  : AppColors.cardBorder,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                pattern.name,
-                                style: AppTextStyles.labelLarge.copyWith(
-                                  color: Colors.white,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const Spacer(),
-                              Text(
-                                '${pattern.inhaleSeconds}-${pattern.holdSeconds}-${pattern.exhaleSeconds}',
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  color: Colors.white70,
-                                ),
-                              ),
-                              if (pattern.isPremium)
-                                Text(
-                                  'Premium',
-                                  style: AppTextStyles.labelSmall.copyWith(
-                                    color: AppColors.auraAmber,
+            // Wrap header in AnimatedSize so it collapses to zero height
+            // when inactive — this keeps BreathingCircle at a stable position
+            // in the Column's children list, preventing widget recreation on
+            // every isActive toggle.
+            AnimatedSize(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOut,
+              alignment: Alignment.topCenter,
+              child: (!bState.isActive && bState.phase != BreathPhase.complete)
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Breathwork', style: AppTextStyles.headlineLarge)
+                            .animate()
+                            .fadeIn(),
+                        const SizedBox(height: 8),
+                        const Text('Find your inner peace',
+                            style: AppTextStyles.bodyMedium),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          height: 120,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: BreathworkPattern.all.length,
+                            itemBuilder: (context, index) {
+                              final pattern = BreathworkPattern.all[index];
+                              final isSelected =
+                                  pattern.id == selectedPattern.id;
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 12),
+                                child: GestureDetector(
+                                  onTap: () => ref
+                                      .read(selectedPatternProvider.notifier)
+                                      .state = pattern,
+                                  child: AnimatedContainer(
+                                    duration:
+                                        const Duration(milliseconds: 200),
+                                    width: 140,
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      gradient: isSelected
+                                          ? AppColors.accentGradient
+                                          : null,
+                                      color: isSelected
+                                          ? null
+                                          : AppColors.surface,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? AppColors.accentGlow
+                                            : AppColors.cardBorder,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          pattern.name,
+                                          style:
+                                              AppTextStyles.labelLarge.copyWith(
+                                            color: Colors.white,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const Spacer(),
+                                        Text(
+                                          '${pattern.inhaleSeconds}-${pattern.holdSeconds}-${pattern.exhaleSeconds}',
+                                          style: AppTextStyles.bodySmall
+                                              .copyWith(
+                                            color: Colors.white70,
+                                          ),
+                                        ),
+                                        if (pattern.isPremium)
+                                          Text(
+                                            'Premium',
+                                            style: AppTextStyles.labelSmall
+                                                .copyWith(
+                                              color: AppColors.auraAmber,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                            ],
+                              );
+                            },
                           ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
+                        const SizedBox(height: 8),
+                      ],
+                    )
+                  : const SizedBox.shrink(),
+            ),
             const Spacer(),
             Center(
               child: BreathingCircle(
                 phase: bState.phase,
                 isActive: bState.isActive,
+                phaseSeconds: bState.phaseSecondsRemaining,
               ),
             ),
+            const SizedBox(height: 8),
+            // Phase label + countdown
             if (bState.isActive) ...[
-              const SizedBox(height: 16),
               Center(
                 child: Text(
-                  _phaseLabel(bState.phase),
-                  style: AppTextStyles.headlineMedium.copyWith(
-                    color: AppColors.accentGlow,
+                  _phaseLabel(bState.phase).toUpperCase(),
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: AppColors.textSecondary,
+                    letterSpacing: 3,
                   ),
                 ),
               ),
+              if (bState.phaseSecondsRemaining > 0) ...[
+                const SizedBox(height: 4),
+                Center(
+                  child: Text(
+                    '${bState.phaseSecondsRemaining}',
+                    style: const TextStyle(
+                      fontSize: 52,
+                      fontWeight: FontWeight.w200,
+                      color: AppColors.accentGlow,
+                      height: 1.1,
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 8),
               Center(
                 child: Text(
                   'Cycle ${bState.currentCycle} of ${bState.totalCycles}',
                   style: AppTextStyles.bodySmall,
                 ),
               ),
+            ] else if (bState.phase == BreathPhase.complete) ...[
+              Center(
+                child: Text(
+                  'Session Complete',
+                  style: AppTextStyles.headlineMedium.copyWith(
+                    color: AppColors.accentGlow,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Center(
+                child: Text(
+                  'Well done — ${bState.totalCycles} cycles finished',
+                  style: AppTextStyles.bodySmall,
+                ),
+              ),
+            ] else ...[
+              const SizedBox(height: 64),
             ],
             const Spacer(),
             Center(
               child: CosmicButton(
-                label: bState.isActive ? 'Stop' : 'Begin Session',
+                label: bState.isActive
+                    ? 'Stop'
+                    : bState.phase == BreathPhase.complete
+                        ? 'Start Again'
+                        : 'Begin Session',
                 isPrimary: !bState.isActive,
                 onPressed: () {
                   final notifier = ref.read(breathworkStateProvider.notifier);
@@ -136,27 +197,19 @@ class BreathworkScreen extends ConsumerWidget {
                 },
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 8),
           ],
         ),
       ),
     );
   }
 
-  String _phaseLabel(BreathPhase phase) {
-    switch (phase) {
-      case BreathPhase.inhale:
-        return 'Inhale';
-      case BreathPhase.hold:
-        return 'Hold';
-      case BreathPhase.exhale:
-        return 'Exhale';
-      case BreathPhase.holdOut:
-        return 'Hold';
-      case BreathPhase.complete:
-        return 'Complete';
-      case BreathPhase.idle:
-        return '';
-    }
-  }
+  String _phaseLabel(BreathPhase phase) => switch (phase) {
+        BreathPhase.inhale => 'Inhale',
+        BreathPhase.hold => 'Hold',
+        BreathPhase.exhale => 'Exhale',
+        BreathPhase.holdOut => 'Hold',
+        BreathPhase.complete => 'Complete',
+        BreathPhase.idle => '',
+      };
 }
