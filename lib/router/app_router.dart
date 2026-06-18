@@ -21,6 +21,7 @@ import '../features/profile/presentation/screens/profile_screen.dart';
 import '../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../features/subscription/presentation/screens/paywall_screen.dart';
 import '../features/stardust/presentation/screens/stardust_store_screen.dart';
+import '../features/astrocartography/presentation/screens/astrocartography_screen.dart';
 import '../features/notifications/presentation/screens/notifications_screen.dart';
 import '../core/widgets/shell_scaffold.dart';
 
@@ -129,6 +130,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/birth-map',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const BirthMapScreen(),
+      ),
+      GoRoute(
+        path: '/astrocartography',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AstrocartographyScreen(),
       ),
       GoRoute(
         path: '/compatibility/partner',

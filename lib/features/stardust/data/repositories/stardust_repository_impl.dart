@@ -79,12 +79,13 @@ class StardustRepositoryImpl implements StardustRepository {
         'p_description': description,
       });
 
-      if (result == null) {
+      // The SQL function returns BOOLEAN: FALSE = insufficient balance, TRUE = success.
+      if (result == false) {
         return Result.failure(
           InsufficientStardustFailure(required: amount, available: 0),
         );
       }
-      return Result.success(result as int);
+      return Result.success(amount);
     } catch (e) {
       return Result.failure(ServerFailure(e.toString()));
     }
