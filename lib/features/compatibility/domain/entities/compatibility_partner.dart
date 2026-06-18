@@ -41,14 +41,16 @@ class CompatibilityReport extends Equatable {
   final String id;
   final String userId;
   final String partnerId;
-  final int overallScore;
-  final int emotionalScore;
-  final int intellectualScore;
-  final int physicalScore;
-  final int spiritualScore;
-  final String summary;
-  final Map<String, dynamic>? deepAnalysis;
-  final bool isPremium;
+  final double overallScore;
+  final double emotionalAlignment;
+  final double communicationScore;
+  final double karmicBond;
+  final double intimacyEnergy;
+  final double soulmateProbability;
+  final double longTermScore;
+  final double energeticBalance;
+  final Map<String, dynamic> aiAnalysis;
+  final bool isDeepScan;
   final DateTime createdAt;
 
   const CompatibilityReport({
@@ -56,15 +58,29 @@ class CompatibilityReport extends Equatable {
     required this.userId,
     required this.partnerId,
     required this.overallScore,
-    required this.emotionalScore,
-    required this.intellectualScore,
-    required this.physicalScore,
-    required this.spiritualScore,
-    required this.summary,
-    this.deepAnalysis,
-    this.isPremium = false,
+    required this.emotionalAlignment,
+    required this.communicationScore,
+    required this.karmicBond,
+    required this.intimacyEnergy,
+    required this.soulmateProbability,
+    required this.longTermScore,
+    required this.energeticBalance,
+    required this.aiAnalysis,
+    this.isDeepScan = false,
     required this.createdAt,
   });
+
+  String? get summary => aiAnalysis['summary'] as String?;
+  String? get emotionalInsight => aiAnalysis['emotional'] as String?;
+  String? get communicationInsight => aiAnalysis['communication'] as String?;
+  String? get karmicInsight => aiAnalysis['karmic'] as String?;
+  String? get intimacyInsight => aiAnalysis['intimacy'] as String?;
+  String? get longTermInsight => aiAnalysis['long_term'] as String?;
+  String? get cosmicAdvice => aiAnalysis['advice'] as String?;
+  List<String> get conflicts =>
+      (aiAnalysis['conflicts'] as List?)?.cast<String>() ?? [];
+  List<String> get strengths =>
+      (aiAnalysis['strengths'] as List?)?.cast<String>() ?? [];
 
   @override
   List<Object?> get props => [id, userId, partnerId];

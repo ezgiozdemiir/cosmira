@@ -11,6 +11,8 @@ import '../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../features/home/presentation/screens/home_screen.dart';
 import '../features/astrology/presentation/screens/natal_chart_screen.dart';
 import '../features/astrology/presentation/screens/birth_map_screen.dart';
+import '../features/compatibility/domain/entities/compatibility_partner.dart';
+import '../features/compatibility/presentation/screens/compatibility_detail_screen.dart';
 import '../features/astrology/presentation/screens/daily_horoscope_screen.dart';
 import '../features/compatibility/presentation/screens/compatibility_screen.dart';
 import '../features/breathwork/presentation/screens/breathwork_screen.dart';
@@ -127,6 +129,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/birth-map',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const BirthMapScreen(),
+      ),
+      GoRoute(
+        path: '/compatibility/partner',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final partner = state.extra as CompatibilityPartner?;
+          if (partner == null) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          return CompatibilityDetailScreen(partner: partner);
+        },
       ),
     ],
   );

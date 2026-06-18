@@ -60,7 +60,7 @@ class CompatibilityRepositoryImpl implements CompatibilityRepository {
   }
 
   @override
-  Future<Result<CompatibilityReport>> getReport(
+  Future<Result<CompatibilityReport?>> getReport(
     String userId,
     String partnerId,
   ) async {
@@ -72,8 +72,9 @@ class CompatibilityRepositoryImpl implements CompatibilityRepository {
           .eq('partner_id', partnerId)
           .order('created_at', ascending: false)
           .limit(1)
-          .single();
+          .maybeSingle();
 
+      if (data == null) return Result.success(null);
       return Result.success(CompatibilityReportModel.fromJson(data));
     } catch (e) {
       return Result.failure(ServerFailure(e.toString()));
@@ -81,22 +82,15 @@ class CompatibilityRepositoryImpl implements CompatibilityRepository {
   }
 
   @override
-  Future<Result<CompatibilityReport>> generateDeepReport(
-    String userId,
-    String partnerId,
-  ) async {
+  Future<Result<CompatibilityReport>> generateReport(String partnerId) async {
     try {
       final response = await _client.functions.invoke(
-        'generate-premium-report',
-        body: {
-          'user_id': userId,
-          'report_type': 'compatibility_deep',
-          'input_data': {'partner_id': partnerId},
-        },
+        'generate-compatibility-report',
+        body: {'partner_id': partnerId},
       );
-
-      final reportData = (response.data as Map<String, dynamic>)['report'];
-      return Result.success(CompatibilityReportModel.fromJson(reportData));
+      final data = (response.data as Map<String, dynamic>)['report']
+          as Map<String, dynamic>;
+      return Result.success(CompatibilityReportModel.fromJson(data));
     } catch (e) {
       return Result.failure(ServerFailure(e.toString()));
     }
