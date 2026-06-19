@@ -23,7 +23,7 @@ class QuickActionGrid extends StatelessWidget {
           crossAxisCount: 2,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
-          childAspectRatio: 0.95,
+          childAspectRatio: 1.15,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           children: [
@@ -121,16 +121,18 @@ class _ExploreTile extends StatelessWidget {
               style: AppTextStyles.titleMedium.copyWith(color: Colors.white),
             ),
             const SizedBox(height: 6),
-            Text(
-              description,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
-                height: 1.45,
+            Expanded(
+              child: Text(
+                description,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary,
+                  height: 1.45,
+                ),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
