@@ -114,7 +114,7 @@ class _ExploreTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _icon(),
+            SizedBox(height: 32, child: _icon()),
             const SizedBox(height: 8),
             Text(
               label,
