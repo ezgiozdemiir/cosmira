@@ -5,6 +5,9 @@ abstract class CompatibilityRepository {
   Future<Result<List<CompatibilityPartner>>> getPartners(String userId);
   Future<Result<CompatibilityPartner>> addPartner(CompatibilityPartner partner);
   Future<Result<void>> removePartner(String partnerId);
-  Future<Result<CompatibilityReport?>> getReport(String userId, String partnerId);
-  Future<Result<CompatibilityReport>> generateReport(String partnerId);
+  Future<Result<CompatibilityReport?>> getReport(String userId, String partnerId, {String language = 'en'});
+  Future<Result<CompatibilityReport>> generateReport(
+    String partnerId, {
+    String language = 'en',
+  });
 }

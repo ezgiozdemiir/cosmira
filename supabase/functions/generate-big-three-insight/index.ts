@@ -100,7 +100,8 @@ async function generateContent(
   sunSign: string,
   moonSign: string,
   risingSign: string,
-  key: string
+  key: string,
+  language: string
 ): Promise<Record<string, unknown>> {
   const { system, schema } = promptFor(tier, period, sunSign, moonSign, risingSign, key);
   const prompt = `${system}
@@ -109,7 +110,7 @@ Return a JSON object with exactly these fields:
 ${schema}
 
 Tone: premium, calming, feminine, emotionally resonant. Never childish or generic.
-Return ONLY valid JSON, no markdown.`;
+Return ONLY valid JSON, no markdown.${language === "tr" ? "\n\nIMPORTANT: Respond entirely in Turkish. All text values in the JSON must be in Turkish." : ""}`;
 
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
@@ -142,7 +143,9 @@ serve(async (req) => {
   }
 
   try {
-    const { sun_sign, moon_sign, rising_sign, tier, period } = await req.json();
+    const body = await req.json();
+    const { sun_sign, moon_sign, rising_sign, tier, period } = body;
+    const language: string = body.language ?? "en";
 
     if (!sun_sign || !moon_sign || !rising_sign) {
       return new Response(
@@ -175,6 +178,7 @@ serve(async (req) => {
       .eq("tier", tier)
       .eq("period", period)
       .eq("period_key", key)
+      .eq("language", language)
       .maybeSingle();
 
     if (cached) {
@@ -183,23 +187,37 @@ serve(async (req) => {
       });
     }
 
-    const content = await generateContent(tier, period, sun_sign, moon_sign, rising_sign, key);
+    const otherLang = language === "en" ? "tr" : "en";
+    const { data: otherCached } = await supabase
+      .from("big_three_insights")
+      .select("id")
+      .eq("sun_sign", sun_sign).eq("moon_sign", moon_sign).eq("rising_sign", rising_sign)
+      .eq("tier", tier).eq("period", period).eq("period_key", key).eq("language", otherLang)
+      .maybeSingle();
+
+    // Generate both languages in parallel
+    const [primaryResult, otherResult] = await Promise.allSettled([
+      generateContent(tier, period, sun_sign, moon_sign, rising_sign, key, language),
+      otherCached ? Promise.resolve(null) : generateContent(tier, period, sun_sign, moon_sign, rising_sign, key, otherLang),
+    ]);
+
+    if (primaryResult.status === "rejected") throw primaryResult.reason;
+    const content = primaryResult.value!;
 
     const { data: inserted, error } = await supabase
       .from("big_three_insights")
-      .insert({
-        sun_sign,
-        moon_sign,
-        rising_sign,
-        tier,
-        period,
-        period_key: key,
-        content,
-      })
+      .insert({ sun_sign, moon_sign, rising_sign, tier, period, period_key: key, content, language })
       .select()
       .single();
 
     if (error) throw error;
+
+    // Insert other language (best-effort)
+    if (otherResult.status === "fulfilled" && otherResult.value !== null) {
+      await supabase.from("big_three_insights")
+        .insert({ sun_sign, moon_sign, rising_sign, tier, period, period_key: key, content: otherResult.value, language: otherLang })
+        .catch((e: unknown) => console.error("Other-lang big-three insert failed:", e));
+    }
 
     return new Response(JSON.stringify({ cached: false, insight: inserted }), {
       headers: { ...CORS_HEADERS, "Content-Type": "application/json" },

@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -24,7 +25,7 @@ class CompatibilityDetailScreen extends ConsumerWidget {
     final isPremium = profile?.isPremium ?? false;
 
     final score = _compatibilityScore(userSunSign, partner.sunSign);
-    final description = _compatibilityDescription(userSunSign, partner.sunSign);
+    final description = _compatibilityDescriptionKey(userSunSign, partner.sunSign).tr();
 
     return Scaffold(
       backgroundColor: AppColors.midnight,
@@ -50,29 +51,29 @@ class CompatibilityDetailScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Birth Details',
+                        Text('compat_birth_details'.tr(),
                             style: AppTextStyles.titleMedium),
                         const SizedBox(height: 16),
                         _DetailRow(
                           icon: Icons.cake_outlined,
-                          label: 'Birthday',
+                          label: 'compat_birthday'.tr(),
                           value:
-                              '${partner.birthDate.day} ${_monthName(partner.birthDate.month)} ${partner.birthDate.year}',
+                              '${partner.birthDate.day} ${'month_${partner.birthDate.month}'.tr()} ${partner.birthDate.year}',
                         ),
                         if (partner.birthCity != null &&
                             partner.birthCity!.isNotEmpty) ...[
                           const SizedBox(height: 12),
                           _DetailRow(
                             icon: Icons.location_on_outlined,
-                            label: 'Birth City',
+                            label: 'compat_birth_city'.tr(),
                             value: partner.birthCity!,
                           ),
                         ],
                         const SizedBox(height: 12),
                         _DetailRow(
                           icon: Icons.auto_awesome,
-                          label: 'Sun Sign',
-                          value: partner.sunSign.capitalize,
+                          label: 'compat_sun_sign'.tr(),
+                          value: partner.sunSign.zodiacName,
                         ),
                       ],
                     ),
@@ -103,8 +104,8 @@ class CompatibilityDetailScreen extends ConsumerWidget {
                     onPressed: () => _confirmDelete(context, ref),
                     icon: const Icon(Icons.delete_outline,
                         color: AppColors.error, size: 18),
-                    label: const Text('Remove Partner',
-                        style: TextStyle(color: AppColors.error)),
+                    label: Text('compat_remove_partner'.tr(),
+                        style: const TextStyle(color: AppColors.error)),
                   ),
 
                   const SizedBox(height: 40),
@@ -122,7 +123,7 @@ class CompatibilityDetailScreen extends ConsumerWidget {
       backgroundColor: AppColors.midnight,
       foregroundColor: AppColors.textPrimary,
       floating: true,
-      title: const Text('Detailed Compatibility Report',
+      title: Text('compat_detail_title'.tr(),
           style: AppTextStyles.titleMedium),
       centerTitle: true,
     );
@@ -133,21 +134,21 @@ class CompatibilityDetailScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.card,
-        title: const Text('Remove Partner', style: AppTextStyles.titleMedium),
+        title: Text('compat_remove_partner'.tr(), style: AppTextStyles.titleMedium),
         content: Text(
-          'Remove ${partner.name} from your cosmic connections?',
+          'compat_remove_confirm'.tr(namedArgs: {'name': partner.name}),
           style: AppTextStyles.bodyMedium,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel',
-                style: TextStyle(color: AppColors.textSecondary)),
+            child: Text('compat_cancel'.tr(),
+                style: const TextStyle(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Remove',
-                style: TextStyle(color: AppColors.error)),
+            child: Text('compat_remove'.tr(),
+                style: const TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -181,12 +182,12 @@ class CompatibilityDetailScreen extends ConsumerWidget {
     return 50;
   }
 
-  static String _compatibilityDescription(String signA, String signB) {
+  static String _compatibilityDescriptionKey(String signA, String signB) {
     final score = _compatibilityScore(signA, signB);
-    if (score >= 90) return 'Kindred Spirits — you share the same elemental energy, creating a natural and effortless flow between you.';
-    if (score >= 80) return 'Cosmic Complements — your elements balance each other beautifully, sparking growth and mutual understanding.';
-    if (score >= 62) return 'Interesting Tension — different rhythms can create both friction and fascination. The universe is nudging you both to expand.';
-    return 'Sacred Challenge — opposing elements, but every great story needs contrast. This connection calls for patience and deep curiosity.';
+    if (score >= 90) return 'compat_desc_kindred';
+    if (score >= 80) return 'compat_desc_complements';
+    if (score >= 62) return 'compat_desc_tension';
+    return 'compat_desc_challenge';
   }
 
   static String _element(String sign) {
@@ -200,10 +201,6 @@ class CompatibilityDetailScreen extends ConsumerWidget {
     return 'water';
   }
 
-  static String _monthName(int month) => const [
-        '', 'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
-      ][month];
 }
 
 // ---------------------------------------------------------------------------
@@ -241,7 +238,7 @@ class _PartnerHeader extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(partner.sunSign.capitalize,
+            Text(partner.sunSign.zodiacName,
                 style: AppTextStyles.bodyMedium
                     .copyWith(color: AppColors.auraRose)),
             const Text(' · ', style: AppTextStyles.bodyMedium),
@@ -252,7 +249,7 @@ class _PartnerHeader extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                partner.relationship.capitalize,
+                'compat_${partner.relationship}'.tr(),
                 style: AppTextStyles.bodySmall
                     .copyWith(color: AppColors.auraRose),
               ),
@@ -285,11 +282,11 @@ class _CompatibilityCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.favorite, color: AppColors.auraRose, size: 18),
-              SizedBox(width: 8),
-              Text('Cosmic Compatibility',
+              const Icon(Icons.favorite, color: AppColors.auraRose, size: 18),
+              const SizedBox(width: 8),
+              Text('compat_cosmic_compat'.tr(),
                   style: AppTextStyles.titleMedium),
             ],
           ),
@@ -299,7 +296,7 @@ class _CompatibilityCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _SignBubble(sign: userSunSign, label: 'You'),
+              _SignBubble(sign: userSunSign, label: 'compat_you'.tr()),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
@@ -309,11 +306,11 @@ class _CompatibilityCard extends StatelessWidget {
                       style: AppTextStyles.headlineLarge
                           .copyWith(color: AppColors.auraRose),
                     ),
-                    const Text('match', style: AppTextStyles.bodySmall),
+                    Text('compat_match'.tr(), style: AppTextStyles.bodySmall),
                   ],
                 ),
               ),
-              _SignBubble(sign: partnerSunSign, label: 'Them'),
+              _SignBubble(sign: partnerSunSign, label: 'compat_them'.tr()),
             ],
           ),
 
@@ -361,7 +358,7 @@ class _SignBubble extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
-        Text(sign.capitalize, style: AppTextStyles.bodySmall),
+        Text(sign.zodiacName, style: AppTextStyles.bodySmall),
         Text(label,
             style: AppTextStyles.bodySmall
                 .copyWith(color: AppColors.textTertiary)),
@@ -408,17 +405,17 @@ class _DeepReportSection extends ConsumerWidget {
                 const Icon(Icons.auto_awesome,
                     color: AppColors.auraViolet, size: 32),
                 const SizedBox(height: 12),
-                const Text('Deep Compatibility Report',
+                Text('compat_deep_report'.tr(),
                     style: AppTextStyles.titleMedium),
                 const SizedBox(height: 8),
-                const Text(
-                  'Get a full AI-powered analysis of your cosmic connection — emotional alignment, karmic bonds, communication patterns, and more.',
+                Text(
+                  'compat_deep_report_sub'.tr(),
                   style: AppTextStyles.bodySmall,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 20),
                 CosmicButton(
-                  label: isGenerating ? 'Generating…' : 'Generate Report',
+                  label: isGenerating ? 'compat_generating'.tr() : 'compat_generate'.tr(),
                   icon: Icons.auto_awesome,
                   onPressed: isGenerating
                       ? null
@@ -460,16 +457,16 @@ class _LockedReportCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Deep Compatibility Report',
+              Text('compat_deep_report'.tr(),
                   style: AppTextStyles.titleMedium),
               const SizedBox(height: 16),
-              const _ScoreBarRow(label: 'Emotional Alignment', value: 0.72),
+              _ScoreBarRow(label: 'compat_emotional'.tr(), value: 0.72),
               const SizedBox(height: 10),
-              const _ScoreBarRow(label: 'Communication', value: 0.85),
+              _ScoreBarRow(label: 'compat_communication'.tr(), value: 0.85),
               const SizedBox(height: 10),
-              const _ScoreBarRow(label: 'Karmic Bond', value: 0.61),
+              _ScoreBarRow(label: 'compat_karmic'.tr(), value: 0.61),
               const SizedBox(height: 10),
-              const _ScoreBarRow(label: 'Intimacy Energy', value: 0.78),
+              _ScoreBarRow(label: 'compat_intimacy'.tr(), value: 0.78),
               const SizedBox(height: 16),
               Container(
                 height: 60,
@@ -503,11 +500,11 @@ class _LockedReportCard extends StatelessWidget {
                       color: AppColors.auraViolet, size: 28),
                 ),
                 const SizedBox(height: 14),
-                const Text('Pro Feature',
+                Text('compat_pro_feature'.tr(),
                     style: AppTextStyles.titleMedium),
                 const SizedBox(height: 6),
-                const Text(
-                  'Upgrade to unlock your full\ndeep compatibility report',
+                Text(
+                  'compat_pro_sub'.tr(),
                   style: AppTextStyles.bodySmall,
                   textAlign: TextAlign.center,
                 ),
@@ -536,34 +533,34 @@ class _ReportContent extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Deep Compatibility Report',
+              Text('compat_deep_report'.tr(),
                   style: AppTextStyles.titleMedium),
               const SizedBox(height: 4),
-              Text('AI-powered cosmic analysis',
+              Text('compat_ai_analysis'.tr(),
                   style: AppTextStyles.bodySmall
                       .copyWith(color: AppColors.auraViolet)),
               const SizedBox(height: 20),
               _ScoreBarRow(
-                  label: 'Emotional Alignment',
+                  label: 'compat_emotional'.tr(),
                   value: report.emotionalAlignment / 100),
               const SizedBox(height: 10),
               _ScoreBarRow(
-                  label: 'Communication',
+                  label: 'compat_communication'.tr(),
                   value: report.communicationScore / 100),
               const SizedBox(height: 10),
               _ScoreBarRow(
-                  label: 'Karmic Bond', value: report.karmicBond / 100),
+                  label: 'compat_karmic'.tr(), value: report.karmicBond / 100),
               const SizedBox(height: 10),
               _ScoreBarRow(
-                  label: 'Intimacy Energy',
+                  label: 'compat_intimacy'.tr(),
                   value: report.intimacyEnergy / 100),
               const SizedBox(height: 10),
               _ScoreBarRow(
-                  label: 'Long-term Potential',
+                  label: 'compat_long_term'.tr(),
                   value: report.longTermScore / 100),
               const SizedBox(height: 10),
               _ScoreBarRow(
-                  label: 'Soulmate Probability',
+                  label: 'compat_soulmate'.tr(),
                   value: report.soulmateProbability / 100,
                   color: AppColors.auraRose),
             ],
@@ -575,7 +572,7 @@ class _ReportContent extends StatelessWidget {
           _InsightCard(
             icon: Icons.auto_awesome,
             color: AppColors.auraViolet,
-            title: 'Cosmic Summary',
+            title: 'compat_summary'.tr(),
             text: report.summary!,
           ),
         ],
@@ -584,7 +581,7 @@ class _ReportContent extends StatelessWidget {
           _InsightCard(
             icon: Icons.favorite_outline,
             color: AppColors.auraRose,
-            title: 'Emotional Alignment',
+            title: 'compat_emotional'.tr(),
             text: report.emotionalInsight!,
           ),
         ],
@@ -593,7 +590,7 @@ class _ReportContent extends StatelessWidget {
           _InsightCard(
             icon: Icons.chat_bubble_outline,
             color: AppColors.auraIndigo,
-            title: 'Communication',
+            title: 'compat_communication'.tr(),
             text: report.communicationInsight!,
           ),
         ],
@@ -602,7 +599,7 @@ class _ReportContent extends StatelessWidget {
           _InsightCard(
             icon: Icons.loop,
             color: AppColors.auraTeal,
-            title: 'Karmic Bond',
+            title: 'compat_karmic'.tr(),
             text: report.karmicInsight!,
           ),
         ],
@@ -611,7 +608,7 @@ class _ReportContent extends StatelessWidget {
           _InsightCard(
             icon: Icons.spa_outlined,
             color: AppColors.auraAmber,
-            title: 'Intimacy Energy',
+            title: 'compat_intimacy'.tr(),
             text: report.intimacyInsight!,
           ),
         ],
@@ -620,7 +617,7 @@ class _ReportContent extends StatelessWidget {
           _InsightCard(
             icon: Icons.timeline,
             color: AppColors.auraEmerald,
-            title: 'Long-term Potential',
+            title: 'compat_long_term'.tr(),
             text: report.longTermInsight!,
           ),
         ],
@@ -631,11 +628,11 @@ class _ReportContent extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(children: [
-                  Icon(Icons.star_outline,
+                Row(children: [
+                  const Icon(Icons.star_outline,
                       color: AppColors.auraAmber, size: 18),
-                  SizedBox(width: 8),
-                  Text('Strengths', style: AppTextStyles.titleMedium),
+                  const SizedBox(width: 8),
+                  Text('compat_strengths'.tr(), style: AppTextStyles.titleMedium),
                 ]),
                 const SizedBox(height: 12),
                 ...report.strengths.map((s) => Padding(
@@ -662,11 +659,11 @@ class _ReportContent extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(children: [
-                  Icon(Icons.balance,
+                Row(children: [
+                  const Icon(Icons.balance,
                       color: AppColors.auraIndigo, size: 18),
-                  SizedBox(width: 8),
-                  Text('Growth Areas',
+                  const SizedBox(width: 8),
+                  Text('compat_growth_areas'.tr(),
                       style: AppTextStyles.titleMedium),
                 ]),
                 const SizedBox(height: 12),
@@ -695,11 +692,11 @@ class _ReportContent extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(children: [
-                  Icon(Icons.nights_stay_outlined,
+                Row(children: [
+                  const Icon(Icons.nights_stay_outlined,
                       color: AppColors.auraTeal, size: 18),
-                  SizedBox(width: 8),
-                  Text('Cosmic Advice',
+                  const SizedBox(width: 8),
+                  Text('compat_advice'.tr(),
                       style: AppTextStyles.titleMedium),
                 ]),
                 const SizedBox(height: 12),

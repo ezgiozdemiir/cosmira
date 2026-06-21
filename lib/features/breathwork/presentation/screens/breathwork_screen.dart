@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -23,10 +24,6 @@ class BreathworkScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Wrap header in AnimatedSize so it collapses to zero height
-            // when inactive — this keeps BreathingCircle at a stable position
-            // in the Column's children list, preventing widget recreation on
-            // every isActive toggle.
             AnimatedSize(
               duration: const Duration(milliseconds: 220),
               curve: Curves.easeOut,
@@ -35,83 +32,96 @@ class BreathworkScreen extends ConsumerWidget {
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Breathwork', style: AppTextStyles.headlineLarge)
+                        Text('breathwork_title'.tr(),
+                                style: AppTextStyles.headlineLarge)
                             .animate()
                             .fadeIn(),
                         const SizedBox(height: 8),
-                        const Text('Find your inner peace',
+                        Text('breathwork_subtitle'.tr(),
                             style: AppTextStyles.bodyMedium),
                         const SizedBox(height: 20),
-                        SizedBox(
-                          height: 120,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: BreathworkPattern.all.length,
-                            itemBuilder: (context, index) {
-                              final pattern = BreathworkPattern.all[index];
-                              final isSelected =
-                                  pattern.id == selectedPattern.id;
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 12),
-                                child: GestureDetector(
-                                  onTap: () => ref
-                                      .read(selectedPatternProvider.notifier)
-                                      .state = pattern,
-                                  child: AnimatedContainer(
-                                    duration:
-                                        const Duration(milliseconds: 200),
-                                    width: 140,
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      gradient: isSelected
-                                          ? AppColors.accentGradient
-                                          : null,
-                                      color: isSelected
-                                          ? null
-                                          : AppColors.surface,
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: isSelected
-                                            ? AppColors.accentGlow
-                                            : AppColors.cardBorder,
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            // 3 kart + 2 boşluk (12px) tam ekrana sığsın
+                            final cardWidth =
+                                (constraints.maxWidth - 12 * 2) / 3;
+                            return SizedBox(
+                              height: 132,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                clipBehavior: Clip.none,
+                                itemCount: BreathworkPattern.all.length,
+                                itemBuilder: (context, index) {
+                                  final pattern = BreathworkPattern.all[index];
+                                  final isSelected =
+                                      pattern.id == selectedPattern.id;
+                                  return Padding(
+                                    padding: const EdgeInsets.only(right: 12),
+                                    child: GestureDetector(
+                                      onTap: () => ref
+                                          .read(selectedPatternProvider.notifier)
+                                          .state = pattern,
+                                      child: AnimatedContainer(
+                                        duration:
+                                            const Duration(milliseconds: 200),
+                                        width: cardWidth,
+                                        padding: const EdgeInsets.all(14),
+                                        decoration: BoxDecoration(
+                                          gradient: isSelected
+                                              ? AppColors.accentGradient
+                                              : null,
+                                          color: isSelected
+                                              ? null
+                                              : AppColors.surface,
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                          border: Border.all(
+                                            color: isSelected
+                                                ? AppColors.accentGlow
+                                                : AppColors.cardBorder,
+                                          ),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'breathwork_pattern_${pattern.id}'
+                                                  .tr(),
+                                              style: AppTextStyles.labelLarge
+                                                  .copyWith(
+                                                color: Colors.white,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const Spacer(),
+                                            Text(
+                                              '${pattern.inhaleSeconds}-'
+                                              '${pattern.holdSeconds}-'
+                                              '${pattern.exhaleSeconds}',
+                                              style: AppTextStyles.bodySmall
+                                                  .copyWith(
+                                                color: Colors.white70,
+                                              ),
+                                            ),
+                                            if (pattern.isPremium)
+                                              Text(
+                                                'breathwork_premium'.tr(),
+                                                style: AppTextStyles.labelSmall
+                                                    .copyWith(
+                                                  color: AppColors.auraAmber,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          pattern.name,
-                                          style:
-                                              AppTextStyles.labelLarge.copyWith(
-                                            color: Colors.white,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const Spacer(),
-                                        Text(
-                                          '${pattern.inhaleSeconds}-${pattern.holdSeconds}-${pattern.exhaleSeconds}',
-                                          style: AppTextStyles.bodySmall
-                                              .copyWith(
-                                            color: Colors.white70,
-                                          ),
-                                        ),
-                                        if (pattern.isPremium)
-                                          Text(
-                                            'Premium',
-                                            style: AppTextStyles.labelSmall
-                                                .copyWith(
-                                              color: AppColors.auraAmber,
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                                  );
+                                },
+                              ),
+                            );
+                          },
                         ),
                         const SizedBox(height: 8),
                       ],
@@ -127,7 +137,6 @@ class BreathworkScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 8),
-            // Phase label + countdown
             if (bState.isActive) ...[
               Center(
                 child: Text(
@@ -155,14 +164,17 @@ class BreathworkScreen extends ConsumerWidget {
               const SizedBox(height: 8),
               Center(
                 child: Text(
-                  'Cycle ${bState.currentCycle} of ${bState.totalCycles}',
+                  'breathwork_cycle'.tr(namedArgs: {
+                    'current': '${bState.currentCycle}',
+                    'total': '${bState.totalCycles}',
+                  }),
                   style: AppTextStyles.bodySmall,
                 ),
               ),
             ] else if (bState.phase == BreathPhase.complete) ...[
               Center(
                 child: Text(
-                  'Session Complete',
+                  'breathwork_complete'.tr(),
                   style: AppTextStyles.headlineMedium.copyWith(
                     color: AppColors.accentGlow,
                   ),
@@ -171,7 +183,8 @@ class BreathworkScreen extends ConsumerWidget {
               const SizedBox(height: 4),
               Center(
                 child: Text(
-                  'Well done — ${bState.totalCycles} cycles finished',
+                  'breathwork_well_done'
+                      .tr(namedArgs: {'cycles': '${bState.totalCycles}'}),
                   style: AppTextStyles.bodySmall,
                 ),
               ),
@@ -182,10 +195,10 @@ class BreathworkScreen extends ConsumerWidget {
             Center(
               child: CosmicButton(
                 label: bState.isActive
-                    ? 'Stop'
+                    ? 'breathwork_stop'.tr()
                     : bState.phase == BreathPhase.complete
-                        ? 'Start Again'
-                        : 'Begin Session',
+                        ? 'breathwork_start_again'.tr()
+                        : 'breathwork_begin'.tr(),
                 isPrimary: !bState.isActive,
                 onPressed: () {
                   final notifier = ref.read(breathworkStateProvider.notifier);
@@ -205,11 +218,11 @@ class BreathworkScreen extends ConsumerWidget {
   }
 
   String _phaseLabel(BreathPhase phase) => switch (phase) {
-        BreathPhase.inhale => 'Inhale',
-        BreathPhase.hold => 'Hold',
-        BreathPhase.exhale => 'Exhale',
-        BreathPhase.holdOut => 'Hold',
-        BreathPhase.complete => 'Complete',
+        BreathPhase.inhale => 'breathwork_inhale'.tr(),
+        BreathPhase.hold => 'breathwork_hold'.tr(),
+        BreathPhase.exhale => 'breathwork_exhale'.tr(),
+        BreathPhase.holdOut => 'breathwork_hold'.tr(),
+        BreathPhase.complete => '',
         BreathPhase.idle => '',
       };
 }

@@ -37,42 +37,13 @@ function wholeSignHouses(risingSign: string): string[] {
   return Array.from({ length: 12 }, (_, i) => ZODIAC_SIGNS[(index + i) % 12]);
 }
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: CORS_HEADERS });
-  }
+async function generateHouseContent(normalised: string, language: string): Promise<unknown[]> {
+  const houses = wholeSignHouses(normalised);
+  const houseList = houses
+    .map((sign, i) => `House ${i + 1} (${HOUSE_THEMES[i]}): ${sign}`)
+    .join("\n");
 
-  try {
-    const { rising_sign } = await req.json();
-    const normalised = rising_sign?.toLowerCase();
-
-    if (!normalised || !ZODIAC_SIGNS.includes(normalised)) {
-      return new Response(
-        JSON.stringify({ error: "valid rising_sign is required" }),
-        { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
-      );
-    }
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-
-    const { data: cached } = await supabase
-      .from("house_insights")
-      .select("*")
-      .eq("rising_sign", normalised)
-      .maybeSingle();
-
-    if (cached) {
-      return new Response(JSON.stringify({ cached: true, insight: cached }), {
-        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-      });
-    }
-
-    const houses = wholeSignHouses(normalised);
-    const houseList = houses
-      .map((sign, i) => `House ${i + 1} (${HOUSE_THEMES[i]}): ${sign}`)
-      .join("\n");
-
-    const prompt = `You are a luxury astrology AI for the app Cosmira. The user has ${normalised} Rising, giving them these whole-sign house placements:
+  const prompt = `You are a luxury astrology AI for the app Cosmira. The user has ${normalised} Rising, giving them these whole-sign house placements:
 ${houseList}
 
 Write a rich, personal astrological interpretation for each of the 12 houses — how that sign's energy specifically shapes that life area for someone with ${normalised} Rising. Each interpretation should be 2-3 elegant, emotionally resonant sentences.
@@ -83,39 +54,92 @@ Return ONLY a valid JSON array with exactly 12 objects in order:
   ...
 ]
 
-Tone: premium, calming, feminine, specific — never generic or childish.`;
+Tone: premium, calming, feminine, specific — never generic or childish.${language === "tr" ? "\n\nIMPORTANT: Respond in Turkish. Translate ONLY the \"theme\" and \"interpretation\" fields. The \"sign\" field must always remain lowercase English (e.g. \"aquarius\", \"pisces\", \"aries\")." : ""}`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.8,
-            maxOutputTokens: 3000,
-            responseMimeType: "application/json",
-            thinkingConfig: { thinkingBudget: 0 },
-          },
-        }),
-      }
-    );
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.8,
+          maxOutputTokens: 3000,
+          responseMimeType: "application/json",
+          thinkingConfig: { thinkingBudget: 0 },
+        },
+      }),
+    }
+  );
 
-    const data = await response.json();
-    if (!response.ok || !data.candidates) {
-      throw new Error(`Gemini API error: ${JSON.stringify(data)}`);
+  const data = await response.json();
+  if (!response.ok || !data.candidates) {
+    throw new Error(`Gemini API error: ${JSON.stringify(data)}`);
+  }
+  return JSON.parse(data.candidates[0].content.parts[0].text);
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: CORS_HEADERS });
+  }
+
+  try {
+    const body = await req.json();
+    const rising_sign = body.rising_sign;
+    const language: string = body.language ?? "en";
+    const normalised = rising_sign?.toLowerCase();
+
+    if (!normalised || !ZODIAC_SIGNS.includes(normalised)) {
+      return new Response(
+        JSON.stringify({ error: "valid rising_sign is required" }),
+        { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+      );
     }
 
-    const content = JSON.parse(data.candidates[0].content.parts[0].text);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    const otherLang = language === "en" ? "tr" : "en";
+
+    const { data: cached } = await supabase
+      .from("house_insights")
+      .select("*")
+      .eq("rising_sign", normalised)
+      .eq("language", language)
+      .maybeSingle();
+
+    if (cached) {
+      return new Response(JSON.stringify({ cached: true, insight: cached }), {
+        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: otherCached } = await supabase
+      .from("house_insights").select("id").eq("rising_sign", normalised).eq("language", otherLang).maybeSingle();
+
+    // Generate both languages in parallel
+    const [primaryResult, otherResult] = await Promise.allSettled([
+      generateHouseContent(normalised, language),
+      otherCached ? Promise.resolve(null) : generateHouseContent(normalised, otherLang),
+    ]);
+
+    if (primaryResult.status === "rejected") throw primaryResult.reason;
+    const content = primaryResult.value;
 
     const { data: inserted, error } = await supabase
       .from("house_insights")
-      .insert({ rising_sign: normalised, content })
+      .insert({ rising_sign: normalised, content, language })
       .select()
       .single();
 
     if (error) throw error;
+
+    // Insert other language (best-effort)
+    if (otherResult.status === "fulfilled" && otherResult.value !== null) {
+      await supabase.from("house_insights")
+        .insert({ rising_sign: normalised, content: otherResult.value, language: otherLang })
+        .catch((e: unknown) => console.error("Other-lang house insights insert failed:", e));
+    }
 
     return new Response(JSON.stringify({ cached: false, insight: inserted }), {
       headers: { ...CORS_HEADERS, "Content-Type": "application/json" },

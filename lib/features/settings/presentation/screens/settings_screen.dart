@@ -1,6 +1,9 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/providers/language_provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
@@ -9,54 +12,169 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Settings', style: AppTextStyles.headlineLarge),
-            const SizedBox(height: 24),
-            _SettingsSection(
-              title: 'Notifications',
+    final currentLang = ref.watch(languageCodeProvider);
+
+    return Scaffold(
+      backgroundColor: AppColors.black,
+      body: Container(
+        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _ToggleTile(
-                  title: 'Daily Horoscope',
-                  subtitle: 'Get your horoscope every morning',
-                  value: true,
-                  onChanged: (_) {},
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back,
+                          color: AppColors.textPrimary),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                    const SizedBox(width: 4),
+                    Text('settings_title'.tr(),
+                        style: AppTextStyles.headlineLarge),
+                  ],
                 ),
-                _ToggleTile(
-                  title: 'Moon Phase Alerts',
-                  subtitle: 'New & full moon reminders',
-                  value: true,
-                  onChanged: (_) {},
+                const SizedBox(height: 16),
+                _SettingsSection(
+                  title: 'settings_language'.tr(),
+                  children: [
+                    _LanguageTile(currentLang: currentLang),
+                  ],
                 ),
-                _ToggleTile(
-                  title: 'Breathwork Reminders',
-                  subtitle: 'Daily practice nudge',
-                  value: false,
-                  onChanged: (_) {},
+                const SizedBox(height: 24),
+                _SettingsSection(
+                  title: 'settings_notifications'.tr(),
+                  children: [
+                    _ToggleTile(
+                      title: 'settings_daily_horoscope'.tr(),
+                      subtitle: 'settings_daily_horoscope_sub'.tr(),
+                      value: true,
+                      onChanged: (_) {},
+                    ),
+                    _ToggleTile(
+                      title: 'settings_moon_alerts'.tr(),
+                      subtitle: 'settings_moon_alerts_sub'.tr(),
+                      value: true,
+                      onChanged: (_) {},
+                    ),
+                    _ToggleTile(
+                      title: 'settings_breathwork_reminders'.tr(),
+                      subtitle: 'settings_breathwork_reminders_sub'.tr(),
+                      value: false,
+                      onChanged: (_) {},
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                _SettingsSection(
+                  title: 'settings_account'.tr(),
+                  children: [
+                    _ActionTile(
+                        title: 'settings_privacy_policy'.tr(), onTap: () {}),
+                    _ActionTile(
+                        title: 'settings_terms_of_service'.tr(), onTap: () {}),
+                    _ActionTile(
+                      title: 'settings_delete_account'.tr(),
+                      onTap: () {},
+                      isDestructive: true,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Center(
+                  child: Text(
+                    'settings_version'.tr(),
+                    style: AppTextStyles.bodySmall,
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            _SettingsSection(
-              title: 'Account',
-              children: [
-                _ActionTile(title: 'Privacy Policy', onTap: () {}),
-                _ActionTile(title: 'Terms of Service', onTap: () {}),
-                _ActionTile(title: 'Delete Account', onTap: () {}, isDestructive: true),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Center(
-              child: Text(
-                'Cosmira v1.0.0',
-                style: AppTextStyles.bodySmall,
-              ),
-            ),
-          ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LanguageTile extends ConsumerWidget {
+  final String currentLang;
+  const _LanguageTile({required this.currentLang});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          const Icon(Icons.language, color: AppColors.textSecondary, size: 22),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text('settings_language'.tr(), style: AppTextStyles.bodyLarge),
+          ),
+          _LangChip(
+            label: 'settings_language_en'.tr(),
+            selected: currentLang == 'en',
+            onTap: () async {
+              if (currentLang == 'en') return;
+              await context.setLocale(const Locale('en'));
+              await ref.read(languageCodeProvider.notifier).setLanguage('en');
+              if (context.mounted) context.go('/');
+            },
+          ),
+          const SizedBox(width: 8),
+          _LangChip(
+            label: 'settings_language_tr'.tr(),
+            selected: currentLang == 'tr',
+            onTap: () async {
+              if (currentLang == 'tr') return;
+              await context.setLocale(const Locale('tr'));
+              await ref.read(languageCodeProvider.notifier).setLanguage('tr');
+              if (context.mounted) context.go('/');
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LangChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _LangChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.accentGlow.withValues(alpha: 0.18)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected
+                ? AppColors.accentGlow
+                : AppColors.textTertiary.withValues(alpha: 0.4),
+          ),
+        ),
+        child: Text(
+          label,
+          style: AppTextStyles.labelSmall.copyWith(
+            color: selected ? AppColors.accentGlow : AppColors.textSecondary,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+          ),
         ),
       ),
     );
@@ -78,7 +196,7 @@ class _SettingsSection extends StatelessWidget {
         const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface.withOpacity(0.3),
+            color: AppColors.surface.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.cardBorder),
           ),
@@ -109,7 +227,7 @@ class _ToggleTile extends StatelessWidget {
       subtitle: Text(subtitle, style: AppTextStyles.bodySmall),
       value: value,
       onChanged: onChanged,
-      activeColor: AppColors.accentGlow,
+      activeThumbColor: AppColors.accentGlow,
     );
   }
 }

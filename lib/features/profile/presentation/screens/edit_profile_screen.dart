@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -50,42 +51,42 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Future<void> _save() async {
     if (_firstName.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your first name to continue.')),
+        SnackBar(content: Text('validate_first_name'.tr())),
       );
       return;
     }
 
     if (_lastName.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your last name to continue.')),
+        SnackBar(content: Text('validate_last_name'.tr())),
       );
       return;
     }
 
     if (_gender == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select your gender to continue.')),
+        SnackBar(content: Text('validate_gender'.tr())),
       );
       return;
     }
 
     if (_birthDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select your birth date to continue.')),
+        SnackBar(content: Text('validate_birth_date'.tr())),
       );
       return;
     }
 
     if (_birthTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select your birth time to continue.')),
+        SnackBar(content: Text('validate_birth_time'.tr())),
       );
       return;
     }
 
     if (_birthCity.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your birth city to continue.')),
+        SnackBar(content: Text('validate_birth_city'.tr())),
       );
       return;
     }
@@ -157,7 +158,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         context.pop();
       },
       failure: (f) => ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not save: ${f.message}')),
+        SnackBar(content: Text('edit_profile_save_error'.tr(namedArgs: {'error': f.message}))),
       ),
     );
   }
@@ -189,7 +190,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       onPressed: () => context.pop(),
                     ),
                     const SizedBox(width: 8),
-                    Text('Edit Profile', style: AppTextStyles.titleLarge),
+                    Text('edit_profile_title'.tr(), style: AppTextStyles.titleLarge),
                   ],
                 ),
               ),
@@ -230,7 +231,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 child: SizedBox(
                   width: double.infinity,
                   child: CosmicButton(
-                    label: 'Save',
+                    label: 'edit_profile_save'.tr(),
                     isLoading: _isSaving,
                     onPressed: _save,
                   ),

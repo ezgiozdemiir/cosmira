@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -30,7 +31,7 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 20),
                   CircleAvatar(
                     radius: 50,
-                    backgroundColor: AppColors.accentGlow.withOpacity(0.2),
+                    backgroundColor: AppColors.accentGlow.withValues(alpha: 0.2),
                     child: Text(
                       profile?.sunSign?.zodiacEmoji ?? '✨',
                       style: const TextStyle(fontSize: 40),
@@ -45,7 +46,7 @@ class ProfileScreen extends ConsumerWidget {
                   ).animate().fadeIn(delay: 200.ms),
                   if (profile?.sunSign != null)
                     Text(
-                      '${profile!.sunSign!.capitalize} Sun • ${profile.moonSign?.capitalize ?? '?'} Moon • ${profile.risingSign?.capitalize ?? '?'} Rising',
+                      '${profile!.sunSign!.zodiacName} ${'profile_sun'.tr()} • ${profile.moonSign?.zodiacName ?? '?'} ${'profile_moon'.tr()} • ${profile.risingSign?.zodiacName ?? '?'} ${'profile_rising'.tr()}',
                       style: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.accentGlow,
                       ),
@@ -57,21 +58,23 @@ class ProfileScreen extends ConsumerWidget {
                       _StatBadge(
                         icon: Icons.auto_awesome,
                         value: '$stardust',
-                        label: 'Stardust',
+                        label: 'profile_stardust'.tr(),
                         color: AppColors.auraAmber,
                       ),
                       const SizedBox(width: 24),
                       _StatBadge(
                         icon: Icons.local_fire_department,
                         value: '$streak',
-                        label: 'Streak',
+                        label: 'profile_streak'.tr(),
                         color: AppColors.auraRose,
                       ),
                       const SizedBox(width: 24),
                       _StatBadge(
                         icon: Icons.workspace_premium,
-                        value: profile?.isPremium == true ? 'Pro' : 'Free',
-                        label: 'Plan',
+                        value: profile?.isPremium == true
+                            ? 'profile_plan_pro'.tr()
+                            : 'profile_plan_free'.tr(),
+                        label: 'profile_plan'.tr(),
                         color: AppColors.auraViolet,
                       ),
                     ],
@@ -82,27 +85,32 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   _ProfileMenuItem(
                     icon: Icons.edit,
-                    label: 'Edit Profile',
+                    label: 'profile_edit'.tr(),
                     onTap: () => context.push('/profile/edit'),
                   ),
                   _ProfileMenuItem(
                     icon: Icons.auto_awesome,
-                    label: 'Stardust Store',
+                    label: 'profile_stardust_store'.tr(),
                     onTap: () => context.push('/stardust'),
                   ),
                   _ProfileMenuItem(
                     icon: Icons.notifications_outlined,
-                    label: 'Notifications',
+                    label: 'profile_notifications'.tr(),
                     onTap: () => context.push('/notifications'),
                   ),
                   _ProfileMenuItem(
                     icon: Icons.share,
-                    label: 'Share Cosmira',
+                    label: 'profile_share'.tr(),
                     onTap: () {},
                   ),
                   _ProfileMenuItem(
+                    icon: Icons.settings_outlined,
+                    label: 'profile_settings'.tr(),
+                    onTap: () => context.push('/settings'),
+                  ),
+                  _ProfileMenuItem(
                     icon: Icons.help_outline,
-                    label: 'Help & Support',
+                    label: 'profile_help'.tr(),
                     onTap: () {},
                   ),
                   const SizedBox(height: 16),
@@ -110,7 +118,7 @@ class ProfileScreen extends ConsumerWidget {
                     onPressed: () =>
                         ref.read(authControllerProvider.notifier).signOut(),
                     child: Text(
-                      'Sign Out',
+                      'profile_sign_out'.tr(),
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.error,
                       ),

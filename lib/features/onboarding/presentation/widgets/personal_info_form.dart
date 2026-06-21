@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -54,23 +55,23 @@ class _PersonalInfoFormState extends State<PersonalInfoForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _FieldLabel('First Name *'),
+        _FieldLabel('form_first_name'.tr()),
         const SizedBox(height: 8),
         TextField(
           controller: _firstNameController,
           style: AppTextStyles.bodyLarge,
-          decoration: const InputDecoration(hintText: 'Enter your first name'),
+          decoration: InputDecoration(hintText: 'form_first_name_hint'.tr()),
         ),
         const SizedBox(height: 24),
-        _FieldLabel('Last Name *'),
+        _FieldLabel('form_last_name'.tr()),
         const SizedBox(height: 8),
         TextField(
           controller: _lastNameController,
           style: AppTextStyles.bodyLarge,
-          decoration: const InputDecoration(hintText: 'Enter your last name'),
+          decoration: InputDecoration(hintText: 'form_last_name_hint'.tr()),
         ),
         const SizedBox(height: 24),
-        _FieldLabel('Gender *'),
+        _FieldLabel('form_gender'.tr()),
         const SizedBox(height: 8),
         _GenderSelector(
           value: _gender,
@@ -103,14 +104,14 @@ class _GenderSelector extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
               gradient: selected ? AppColors.accentGradient : null,
-              color: selected ? null : AppColors.surface.withOpacity(0.5),
+              color: selected ? null : AppColors.surface.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: selected ? Colors.transparent : AppColors.cardBorder,
               ),
             ),
             child: Text(
-              Gender.label(g),
+              'gender_$g'.tr(),
               style: AppTextStyles.bodyMedium.copyWith(
                 color: selected ? Colors.white : AppColors.textSecondary,
               ),

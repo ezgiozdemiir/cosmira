@@ -118,6 +118,7 @@ class AstrologyRepositoryImpl implements AstrologyRepository {
     required String risingSign,
     required String tier,
     required String period,
+    String language = 'en',
   }) async {
     try {
       final response = await _client.functions.invoke(
@@ -128,6 +129,7 @@ class AstrologyRepositoryImpl implements AstrologyRepository {
           'rising_sign': risingSign,
           'tier': tier,
           'period': period,
+          'language': language,
         },
       );
 
@@ -140,11 +142,14 @@ class AstrologyRepositoryImpl implements AstrologyRepository {
   }
 
   @override
-  Future<Result<HouseInsight>> getHouseInsights({required String risingSign}) async {
+  Future<Result<HouseInsight>> getHouseInsights({
+    required String risingSign,
+    String language = 'en',
+  }) async {
     try {
       final response = await _client.functions.invoke(
         'generate-house-insights',
-        body: {'rising_sign': risingSign},
+        body: {'rising_sign': risingSign, 'language': language},
       );
       final insightData =
           (response.data as Map<String, dynamic>)['insight'] as Map<String, dynamic>;
@@ -161,6 +166,7 @@ class AstrologyRepositoryImpl implements AstrologyRepository {
           .from('birth_maps')
           .select('id')
           .eq('user_id', userId)
+          .limit(1)
           .maybeSingle();
       return Result.success(data != null);
     } catch (e) {
@@ -169,12 +175,13 @@ class AstrologyRepositoryImpl implements AstrologyRepository {
   }
 
   @override
-  Future<Result<BirthMap?>> getBirthMap(String userId) async {
+  Future<Result<BirthMap?>> getBirthMap(String userId, {String language = 'en'}) async {
     try {
       final data = await _client
           .from('birth_maps')
           .select()
           .eq('user_id', userId)
+          .eq('language', language)
           .maybeSingle();
       if (data == null) return Result.success(null);
       return Result.success(BirthMap.fromJson(data));
@@ -191,6 +198,7 @@ class AstrologyRepositoryImpl implements AstrologyRepository {
     required String mcSign,
     required String birthDate,
     required String birthCity,
+    String language = 'en',
   }) async {
     try {
       final response = await _client.functions.invoke(
@@ -202,6 +210,7 @@ class AstrologyRepositoryImpl implements AstrologyRepository {
           'mc_sign': mcSign,
           'birth_date': birthDate,
           'birth_city': birthCity,
+          'language': language,
         },
       );
       final data = response.data as Map<String, dynamic>;

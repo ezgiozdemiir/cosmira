@@ -62,14 +62,16 @@ class CompatibilityRepositoryImpl implements CompatibilityRepository {
   @override
   Future<Result<CompatibilityReport?>> getReport(
     String userId,
-    String partnerId,
-  ) async {
+    String partnerId, {
+    String language = 'en',
+  }) async {
     try {
       final data = await _client
           .from('compatibility_reports')
           .select()
           .eq('user_id', userId)
           .eq('partner_id', partnerId)
+          .eq('language', language)
           .order('created_at', ascending: false)
           .limit(1)
           .maybeSingle();
@@ -82,11 +84,14 @@ class CompatibilityRepositoryImpl implements CompatibilityRepository {
   }
 
   @override
-  Future<Result<CompatibilityReport>> generateReport(String partnerId) async {
+  Future<Result<CompatibilityReport>> generateReport(
+    String partnerId, {
+    String language = 'en',
+  }) async {
     try {
       final response = await _client.functions.invoke(
         'generate-compatibility-report',
-        body: {'partner_id': partnerId},
+        body: {'partner_id': partnerId, 'language': language},
       );
       final data = (response.data as Map<String, dynamic>)['report']
           as Map<String, dynamic>;

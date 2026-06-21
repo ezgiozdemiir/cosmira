@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../config/di.dart';
+import '../../../../core/providers/language_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../home/domain/entities/daily_horoscope.dart';
 import '../../../home/presentation/providers/home_provider.dart';
@@ -26,20 +27,22 @@ final natalChartProvider = FutureProvider<NatalChart?>((ref) async {
 final moonHoroscopeProvider = FutureProvider<DailyHoroscope?>((ref) async {
   final profile = ref.watch(userProfileProvider).valueOrNull;
   if (profile?.moonSign == null) return null;
+  final language = ref.watch(languageCodeProvider);
 
   final result = await ref
       .watch(homeRepositoryProvider)
-      .getTodayHoroscope(profile!.moonSign!, point: 'moon');
+      .getTodayHoroscope(profile!.moonSign!, point: 'moon', language: language);
   return result.when(success: (d) => d, failure: (_) => null);
 });
 
 final risingHoroscopeProvider = FutureProvider<DailyHoroscope?>((ref) async {
   final profile = ref.watch(userProfileProvider).valueOrNull;
   if (profile?.risingSign == null) return null;
+  final language = ref.watch(languageCodeProvider);
 
   final result = await ref
       .watch(homeRepositoryProvider)
-      .getTodayHoroscope(profile!.risingSign!, point: 'rising');
+      .getTodayHoroscope(profile!.risingSign!, point: 'rising', language: language);
   return result.when(success: (d) => d, failure: (_) => null);
 });
 
@@ -54,6 +57,7 @@ Future<BigThreeInsight?> _fetchBigThreeInsight(
       profile?.risingSign == null) {
     return null;
   }
+  final language = ref.watch(languageCodeProvider);
 
   final result = await ref.watch(astrologyRepositoryProvider).getBigThreeInsight(
         sunSign: profile!.sunSign!,
@@ -61,6 +65,7 @@ Future<BigThreeInsight?> _fetchBigThreeInsight(
         risingSign: profile.risingSign!,
         tier: tier,
         period: period,
+        language: language,
       );
   return result.when(success: (d) => d, failure: (_) => null);
 }
@@ -86,9 +91,10 @@ final yearlyInsightProvider = FutureProvider<BigThreeInsight?>((ref) {
 final houseInsightsProvider = FutureProvider<HouseInsight?>((ref) async {
   final profile = ref.watch(userProfileProvider).valueOrNull;
   if (profile?.isPremium != true || profile?.risingSign == null) return null;
+  final language = ref.watch(languageCodeProvider);
 
   final result = await ref
       .watch(astrologyRepositoryProvider)
-      .getHouseInsights(risingSign: profile!.risingSign!);
+      .getHouseInsights(risingSign: profile!.risingSign!, language: language);
   return result.when(success: (d) => d, failure: (_) => null);
 });

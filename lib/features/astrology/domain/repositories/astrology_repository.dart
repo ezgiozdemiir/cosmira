@@ -36,12 +36,16 @@ abstract class AstrologyRepository {
     required String risingSign,
     required String tier,
     required String period,
+    String language = 'en',
   });
 
-  Future<Result<HouseInsight>> getHouseInsights({required String risingSign});
+  Future<Result<HouseInsight>> getHouseInsights({
+    required String risingSign,
+    String language = 'en',
+  });
 
   Future<Result<bool>> hasBirthMap(String userId);
-  Future<Result<BirthMap?>> getBirthMap(String userId);
+  Future<Result<BirthMap?>> getBirthMap(String userId, {String language = 'en'});
   Future<Result<BirthMap>> generateBirthMap({
     required String sunSign,
     required String moonSign,
@@ -49,5 +53,6 @@ abstract class AstrologyRepository {
     required String mcSign,
     required String birthDate,
     required String birthCity,
+    String language = 'en',
   });
 }

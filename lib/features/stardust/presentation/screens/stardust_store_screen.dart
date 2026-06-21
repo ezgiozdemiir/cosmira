@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -38,7 +39,7 @@ class StardustStoreScreen extends ConsumerWidget {
                             onPressed: () => context.pop(),
                           ),
                           const Spacer(),
-                          Text('Stardust', style: AppTextStyles.titleLarge),
+                          Text('stardust_title'.tr(), style: AppTextStyles.titleLarge),
                           const Spacer(),
                           const SizedBox(width: 48),
                         ],
@@ -59,7 +60,7 @@ class StardustStoreScreen extends ConsumerWidget {
                               ),
                             ),
                             Text(
-                              'Stardust Balance',
+                              'stardust_balance'.tr(),
                               style: AppTextStyles.bodyMedium
                                   .copyWith(color: Colors.white70),
                             ),
@@ -67,32 +68,32 @@ class StardustStoreScreen extends ConsumerWidget {
                         ),
                       ).animate().fadeIn().scale(begin: const Offset(0.95, 0.95)),
                       const SizedBox(height: 24),
-                      Text('Earn Stardust',
+                      Text('stardust_earn'.tr(),
                           style: AppTextStyles.headlineSmall),
                       const SizedBox(height: 12),
                       _EarnTile(
                         icon: Icons.play_circle,
-                        title: 'Watch a Video',
+                        title: 'stardust_watch_video'.tr(),
                         reward: '+10',
-                        subtitle: 'Watch a short ad',
+                        subtitle: 'stardust_watch_video_sub'.tr(),
                         onTap: () {},
                       ),
                       _EarnTile(
                         icon: Icons.share,
-                        title: 'Invite a Friend',
+                        title: 'stardust_invite'.tr(),
                         reward: '+50',
-                        subtitle: 'Share your referral link',
+                        subtitle: 'stardust_invite_sub'.tr(),
                         onTap: () {},
                       ),
                       _EarnTile(
                         icon: Icons.local_fire_department,
-                        title: 'Daily Login',
+                        title: 'stardust_daily_login'.tr(),
                         reward: '+5',
-                        subtitle: 'Come back every day',
+                        subtitle: 'stardust_daily_login_sub'.tr(),
                         onTap: () {},
                       ),
                       const SizedBox(height: 24),
-                      Text('History', style: AppTextStyles.headlineSmall),
+                      Text('stardust_history'.tr(), style: AppTextStyles.headlineSmall),
                       const SizedBox(height: 12),
                     ],
                   ),
@@ -103,21 +104,21 @@ class StardustStoreScreen extends ConsumerWidget {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       final tx = list[index];
+                      final isPositive = tx.isPositive;
+                      final txColor = isPositive ? AppColors.success : AppColors.error;
+                      final txKey = 'stardust_tx_${tx.source}';
+                      final txLabel = txKey.tr() == txKey ? tx.description : txKey.tr();
                       return ListTile(
                         leading: CircleAvatar(
                           radius: 18,
-                          backgroundColor: tx.isEarning
-                              ? AppColors.success.withOpacity(0.2)
-                              : AppColors.error.withOpacity(0.2),
+                          backgroundColor: txColor.withValues(alpha: 0.2),
                           child: Icon(
-                            tx.isEarning ? Icons.add : Icons.remove,
-                            color: tx.isEarning
-                                ? AppColors.success
-                                : AppColors.error,
+                            isPositive ? Icons.add : Icons.remove,
+                            color: txColor,
                             size: 16,
                           ),
                         ),
-                        title: Text(tx.description,
+                        title: Text(txLabel,
                             style: AppTextStyles.bodyMedium
                                 .copyWith(color: AppColors.textPrimary)),
                         subtitle: Text(
@@ -125,11 +126,9 @@ class StardustStoreScreen extends ConsumerWidget {
                           style: AppTextStyles.bodySmall,
                         ),
                         trailing: Text(
-                          '${tx.isEarning ? '+' : '-'}${tx.amount}',
+                          '${isPositive ? '+' : '-'}${tx.amount}',
                           style: AppTextStyles.titleMedium.copyWith(
-                            color: tx.isEarning
-                                ? AppColors.success
-                                : AppColors.error,
+                            color: txColor,
                           ),
                         ),
                       );
@@ -189,7 +188,7 @@ class _EarnTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.auraAmber.withOpacity(0.2),
+                color: AppColors.auraAmber.withValues(alpha:0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(

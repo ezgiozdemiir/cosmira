@@ -82,60 +82,52 @@ class MoonCalculator {
 
   static const _rituals = <String, Map<String, Object>>{
     'new_moon': {
-      'title': 'Plant Seeds of Intention',
-      'description':
-          'The New Moon opens a portal of infinite possibility. Sit in stillness, light a candle, and write your deepest desires on paper. The cosmos is ready to receive your call.',
-      'intentions': ['New beginnings', 'Manifestation', 'Inner clarity', 'Renewal'],
-      'crystal': 'Black Tourmaline & Labradorite',
+      'title': 'moon_ritual_new_moon_title',
+      'description': 'moon_ritual_new_moon_desc',
+      'intentions': ['moon_int_new_beginnings', 'moon_int_manifestation', 'moon_int_inner_clarity', 'moon_int_renewal'],
+      'crystal': 'moon_crystal_new_moon',
     },
     'waxing_crescent': {
-      'title': 'Nurture Your Vision',
-      'description':
-          'Your seeds are planted. Take inspired action and tend to your intentions daily. Every small, aligned step moves you closer to the life you are calling in.',
-      'intentions': ['Growth', 'Courage', 'Momentum', 'Trust'],
-      'crystal': 'Carnelian & Green Aventurine',
+      'title': 'moon_ritual_waxing_crescent_title',
+      'description': 'moon_ritual_waxing_crescent_desc',
+      'intentions': ['moon_int_growth', 'moon_int_courage', 'moon_int_momentum', 'moon_int_trust'],
+      'crystal': 'moon_crystal_waxing_crescent',
     },
     'first_quarter': {
-      'title': 'Push Through Resistance',
-      'description':
-          'The First Quarter brings challenges that test your commitment. This friction is your teacher. Recommit to your vision and take one bold, decisive action today.',
-      'intentions': ['Decision', 'Commitment', 'Strength', 'Perseverance'],
-      'crystal': "Tiger's Eye & Citrine",
+      'title': 'moon_ritual_first_quarter_title',
+      'description': 'moon_ritual_first_quarter_desc',
+      'intentions': ['moon_int_decision', 'moon_int_commitment', 'moon_int_strength', 'moon_int_perseverance'],
+      'crystal': 'moon_crystal_first_quarter',
     },
     'waxing_gibbous': {
-      'title': 'Refine & Align',
-      'description':
-          'You are almost there. Review your progress, release what is not working, and fine-tune your approach. Patience now is the most powerful force in your arsenal.',
-      'intentions': ['Refinement', 'Patience', 'Alignment', 'Devotion'],
-      'crystal': 'Lapis Lazuli & Clear Quartz',
+      'title': 'moon_ritual_waxing_gibbous_title',
+      'description': 'moon_ritual_waxing_gibbous_desc',
+      'intentions': ['moon_int_refinement', 'moon_int_patience', 'moon_int_alignment', 'moon_int_devotion'],
+      'crystal': 'moon_crystal_waxing_gibbous',
     },
     'full_moon': {
-      'title': 'Release & Illuminate',
-      'description':
-          'Under the Full Moon\'s radiant light, all is revealed. Write what you are ready to release and burn or bury the paper. Celebrate how far you have come — you are the cosmos.',
-      'intentions': ['Release', 'Celebration', 'Gratitude', 'Illumination'],
-      'crystal': 'Selenite & Moonstone',
+      'title': 'moon_ritual_full_moon_title',
+      'description': 'moon_ritual_full_moon_desc',
+      'intentions': ['moon_int_release', 'moon_int_celebration', 'moon_int_gratitude', 'moon_int_illumination'],
+      'crystal': 'moon_crystal_full_moon',
     },
     'waning_gibbous': {
-      'title': 'Share Your Wisdom',
-      'description':
-          'Having received the full light of manifestation, it is time to give. Share your gifts, teach what you know, and extend gratitude for the abundance flowing through your life.',
-      'intentions': ['Gratitude', 'Generosity', 'Teaching', 'Abundance'],
-      'crystal': 'Amethyst & Kyanite',
+      'title': 'moon_ritual_waning_gibbous_title',
+      'description': 'moon_ritual_waning_gibbous_desc',
+      'intentions': ['moon_int_gratitude', 'moon_int_generosity', 'moon_int_teaching', 'moon_int_abundance'],
+      'crystal': 'moon_crystal_waning_gibbous',
     },
     'last_quarter': {
-      'title': 'Let Go & Forgive',
-      'description':
-          'The Last Quarter calls for sacred release. Forgive yourself and others without condition. Let go of the stories, patterns, and beliefs that dim your light.',
-      'intentions': ['Forgiveness', 'Release', 'Healing', 'Surrender'],
-      'crystal': 'Obsidian & Rose Quartz',
+      'title': 'moon_ritual_last_quarter_title',
+      'description': 'moon_ritual_last_quarter_desc',
+      'intentions': ['moon_int_forgiveness', 'moon_int_release', 'moon_int_healing', 'moon_int_surrender'],
+      'crystal': 'moon_crystal_last_quarter',
     },
     'waning_crescent': {
-      'title': 'Rest & Dream',
-      'description':
-          'You have done the deep work. Now rest, dream vividly, and allow the universe to prepare the next cycle. Trust the sacred timing of all things unfolding for you.',
-      'intentions': ['Rest', 'Reflection', 'Dreams', 'Surrender'],
-      'crystal': 'Lepidolite & Celestite',
+      'title': 'moon_ritual_waning_crescent_title',
+      'description': 'moon_ritual_waning_crescent_desc',
+      'intentions': ['moon_int_rest', 'moon_int_reflection', 'moon_int_dreams', 'moon_int_surrender'],
+      'crystal': 'moon_crystal_waning_crescent',
     },
   };
 }

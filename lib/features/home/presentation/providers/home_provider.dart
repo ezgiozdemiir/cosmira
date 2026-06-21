@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../config/di.dart';
+import '../../../../core/providers/language_provider.dart';
 import '../../data/repositories/home_repository_impl.dart';
 import '../../domain/entities/daily_horoscope.dart';
 import '../../domain/repositories/home_repository.dart';
@@ -13,9 +14,11 @@ final homeRepositoryProvider = Provider<HomeRepository>((ref) {
 final todayHoroscopeProvider = FutureProvider<DailyHoroscope?>((ref) async {
   final profile = ref.watch(userProfileProvider).valueOrNull;
   if (profile?.sunSign == null) return null;
+  final language = ref.watch(languageCodeProvider);
 
-  final result =
-      await ref.watch(homeRepositoryProvider).getTodayHoroscope(profile!.sunSign!);
+  final result = await ref
+      .watch(homeRepositoryProvider)
+      .getTodayHoroscope(profile!.sunSign!, language: language);
   return result.when(success: (d) => d, failure: (_) => null);
 });
 

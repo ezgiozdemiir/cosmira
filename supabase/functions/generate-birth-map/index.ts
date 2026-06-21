@@ -1,8 +1,8 @@
 // Supabase Edge Function: Generate Birth Map
 // Called when a user purchases their Cosmic Fingerprint report.
 // Atomically deducts 50 Stardust, generates a comprehensive astrological
-// birth map via Gemini, and stores it per-user permanently.
-// Subsequent calls return the cached map at no cost.
+// birth map via Gemini, and stores it per-user per-language permanently.
+// Subsequent calls for the same language return the cached map at no cost.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -25,13 +25,18 @@ async function generateContent(params: {
   mcSign: string;
   birthYear: number;
   birthCity: string;
+  language: string;
 }): Promise<Record<string, unknown>> {
-  const { sunSign, moonSign, risingSign, mcSign, birthYear, birthCity } = params;
+  const { sunSign, moonSign, risingSign, mcSign, birthYear, birthCity, language } = params;
   const currentYear = new Date().getFullYear();
   const nextYear = currentYear + 1;
   const yearAfter = currentYear + 2;
 
   const identity = `someone born in ${birthYear}${birthCity ? ` in ${birthCity}` : ""}, with Sun in ${sunSign}, Moon in ${moonSign}, Rising in ${risingSign}${mcSign ? `, and Midheaven in ${mcSign}` : ""}`;
+
+  const langInstruction = language === "tr"
+    ? "\n\nIMPORTANT: Respond entirely in Turkish. All text values in the JSON must be in Turkish."
+    : "\n\nRespond entirely in English.";
 
   const prompt = `You are a master astrologer and cosmic guide for the luxury app Cosmira.
 Create a deeply personalized, comprehensive Cosmic Fingerprint Birth Map for ${identity}.
@@ -102,7 +107,7 @@ Return a JSON object with EXACTLY this structure:
 
 Tone: premium, intimate, wise, emotionally resonant, empowering — like a luxury astrologer who has studied this person for years.
 Every sentence must feel specific to THEIR combination, not generic horoscope language.
-Return ONLY valid JSON. No markdown, no extra text.`;
+Return ONLY valid JSON. No markdown, no extra text.${langInstruction}`;
 
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
@@ -156,22 +161,6 @@ serve(async (req) => {
 
     const userId = user.id;
 
-    // Return cached map if already purchased — no cost
-    const { data: existing, error: existingError } = await supabase
-      .from("birth_maps")
-      .select("*")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (existingError) throw new Error(`STEP_CACHE_CHECK: ${existingError.message}`);
-
-    if (existing) {
-      return new Response(
-        JSON.stringify({ cached: true, birth_map: existing }),
-        { headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
-      );
-    }
-
     let body: Record<string, string>;
     try {
       body = await req.json();
@@ -180,6 +169,7 @@ serve(async (req) => {
     }
 
     const { sun_sign, moon_sign, rising_sign, mc_sign, birth_date, birth_city } = body;
+    const language = body.language ?? "en";
 
     if (!sun_sign || !moon_sign || !rising_sign) {
       return new Response(
@@ -188,61 +178,108 @@ serve(async (req) => {
       );
     }
 
-    // Atomically deduct stardust — returns false if balance insufficient
-    const { data: spendOk, error: spendError } = await supabase.rpc("spend_stardust", {
-      p_user_id: userId,
-      p_amount: BIRTH_MAP_COST,
-      p_description: "Cosmic Fingerprint: Birth Map",
-    });
+    const otherLang = language === "en" ? "tr" : "en";
 
-    if (spendError) throw new Error(`STEP_SPEND: ${spendError.message}`);
-    if (spendOk === false || spendOk === null) {
+    // Return cached map if already purchased for this language — no cost
+    const { data: existing, error: existingError } = await supabase
+      .from("birth_maps")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("language", language)
+      .maybeSingle();
+
+    if (existingError) throw new Error(`STEP_CACHE_CHECK: ${existingError.message}`);
+
+    if (existing) {
+      // Also generate the other language in background if missing
+      const { data: otherExists } = await supabase
+        .from("birth_maps").select("id").eq("user_id", userId).eq("language", otherLang).maybeSingle();
+      if (!otherExists) {
+        const birthYear = birth_date ? new Date(birth_date).getFullYear() : new Date().getFullYear();
+        generateContent({ sunSign: sun_sign, moonSign: moon_sign, risingSign: rising_sign, mcSign: mc_sign ?? "", birthYear, birthCity: birth_city ?? "", language: otherLang })
+          .then(c => supabase.from("birth_maps").insert({ user_id: userId, content: c, language: otherLang }))
+          .catch(e => console.error("Background other-lang birth map failed:", e));
+      }
       return new Response(
-        JSON.stringify({ error: "insufficient_stardust" }),
-        { status: 402, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+        JSON.stringify({ cached: true, birth_map: existing }),
+        { headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
       );
     }
+
+    // Check if user already has a birth map in any language (already paid)
+    const { data: anyExisting } = await supabase
+      .from("birth_maps").select("id").eq("user_id", userId).limit(1).maybeSingle();
+
+    if (!anyExisting) {
+      // First-time purchase — atomically deduct stardust
+      const { data: spendOk, error: spendError } = await supabase.rpc("spend_stardust", {
+        p_user_id: userId,
+        p_amount: BIRTH_MAP_COST,
+        p_description: "Cosmic Fingerprint: Birth Map",
+      });
+
+      if (spendError) throw new Error(`STEP_SPEND: ${spendError.message}`);
+      if (spendOk === false || spendOk === null) {
+        return new Response(
+          JSON.stringify({ error: "insufficient_stardust" }),
+          { status: 402, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+        );
+      }
+    }
+    // else: user already paid — generate additional language for free
 
     const birthYear = birth_date
       ? new Date(birth_date).getFullYear()
       : new Date().getFullYear();
 
-    let content: Record<string, unknown>;
-    try {
-      content = await generateContent({
-        sunSign: sun_sign,
-        moonSign: moon_sign,
-        risingSign: rising_sign,
-        mcSign: mc_sign ?? "",
-        birthYear,
-        birthCity: birth_city ?? "",
-      });
-    } catch (e) {
-      // Refund stardust since generation failed
-      await supabase.rpc("earn_stardust", {
-        p_user_id: userId,
-        p_amount: BIRTH_MAP_COST,
-        p_source: "refund",
-        p_description: "Refund: birth map generation failed",
-      });
-      throw new Error(`STEP_GEMINI: ${e instanceof Error ? e.message : String(e)}`);
+    const genParams = {
+      sunSign: sun_sign, moonSign: moon_sign, risingSign: rising_sign,
+      mcSign: mc_sign ?? "", birthYear, birthCity: birth_city ?? "",
+    };
+
+    // Check if other language already exists before generating
+    const { data: otherExists } = await supabase
+      .from("birth_maps").select("id").eq("user_id", userId).eq("language", otherLang).maybeSingle();
+
+    // Generate both languages in parallel
+    const [primaryResult, otherResult] = await Promise.allSettled([
+      generateContent({ ...genParams, language }),
+      otherExists ? Promise.resolve(null) : generateContent({ ...genParams, language: otherLang }),
+    ]);
+
+    if (primaryResult.status === "rejected") {
+      if (!anyExisting) {
+        await supabase.rpc("earn_stardust", {
+          p_user_id: userId, p_amount: BIRTH_MAP_COST,
+          p_source: "refund", p_description: "Refund: birth map generation failed",
+        });
+      }
+      throw new Error(`STEP_GEMINI: ${primaryResult.reason}`);
     }
+
+    const content = primaryResult.value!;
 
     const { data: inserted, error: insertError } = await supabase
       .from("birth_maps")
-      .insert({ user_id: userId, content })
+      .insert({ user_id: userId, content, language })
       .select()
       .single();
 
     if (insertError) {
-      // Refund stardust since insert failed
-      await supabase.rpc("earn_stardust", {
-        p_user_id: userId,
-        p_amount: BIRTH_MAP_COST,
-        p_source: "refund",
-        p_description: "Refund: birth map insert failed",
-      });
+      if (!anyExisting) {
+        await supabase.rpc("earn_stardust", {
+          p_user_id: userId, p_amount: BIRTH_MAP_COST,
+          p_source: "refund", p_description: "Refund: birth map insert failed",
+        });
+      }
       throw new Error(`STEP_INSERT: ${insertError.message} (code: ${insertError.code})`);
+    }
+
+    // Insert other language (best-effort — no refund if fails)
+    if (otherResult.status === "fulfilled" && otherResult.value !== null) {
+      await supabase.from("birth_maps")
+        .insert({ user_id: userId, content: otherResult.value, language: otherLang })
+        .catch((e: unknown) => console.error("Other-lang birth map insert failed:", e));
     }
 
     return new Response(

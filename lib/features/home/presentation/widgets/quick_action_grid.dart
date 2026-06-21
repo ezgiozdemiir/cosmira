@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -13,7 +14,7 @@ class QuickActionGrid extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Explore', style: AppTextStyles.headlineSmall),
+        Text('explore_title'.tr(), style: AppTextStyles.headlineSmall),
         const SizedBox(height: 16),
         _AstrocartographyBanner(
           onTap: () => context.push('/astrocartography'),
@@ -29,33 +30,33 @@ class QuickActionGrid extends StatelessWidget {
           children: [
             _ExploreTile(
               emoji: '✨',
-              label: 'Natal Chart',
-              description: 'Your horoscope for today is being prepared',
-              buttonLabel: 'Explore your chart',
+              label: 'explore_natal_chart'.tr(),
+              description: 'explore_natal_chart_desc'.tr(),
+              buttonLabel: 'explore_natal_chart_btn'.tr(),
               color: AppColors.auraViolet,
               onTap: () => context.go('/astrology'),
             ),
             _ExploreTile(
               iconData: Icons.favorite_border,
-              label: 'Compatibility',
-              description: 'Discover your cosmic connection with others',
-              buttonLabel: 'Check compatibility',
+              label: 'explore_compatibility'.tr(),
+              description: 'explore_compatibility_desc'.tr(),
+              buttonLabel: 'explore_compatibility_btn'.tr(),
               color: AppColors.auraRose,
               onTap: () => context.go('/compatibility'),
             ),
             _ExploreTile(
               iconData: Icons.air,
-              label: 'Breathwork',
-              description: 'Balance your energy with guided breathing',
-              buttonLabel: 'Begin session',
+              label: 'explore_breathwork'.tr(),
+              description: 'explore_breathwork_desc'.tr(),
+              buttonLabel: 'explore_breathwork_btn'.tr(),
               color: AppColors.auraTeal,
               onTap: () => context.go('/breathwork'),
             ),
             _ExploreTile(
               iconData: Icons.nightlight_round,
-              label: 'Moon Rituals',
-              description: 'Align your intentions with the lunar cycle',
-              buttonLabel: 'View calendar',
+              label: 'explore_moon_rituals'.tr(),
+              description: 'explore_moon_rituals_desc'.tr(),
+              buttonLabel: 'explore_moon_rituals_btn'.tr(),
               color: AppColors.auraIndigo,
               onTap: () => context.go('/moon'),
             ),
@@ -188,13 +189,12 @@ class _AstrocartographyBanner extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Astrocartography',
-                    style: AppTextStyles.titleMedium
-                        .copyWith(color: Colors.white),
+                    'explore_astrocartography'.tr(),
+                    style: AppTextStyles.titleMedium.copyWith(color: Colors.white),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Discover where your cosmic power lines flow across the world',
+                    'explore_astrocartography_desc'.tr(),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textSecondary,
                       height: 1.4,
@@ -202,8 +202,7 @@ class _AstrocartographyBanner extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: AppColors.auraAmber.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
@@ -211,7 +210,7 @@ class _AstrocartographyBanner extends StatelessWidget {
                           color: AppColors.auraAmber.withValues(alpha: 0.3)),
                     ),
                     child: Text(
-                      '100 ✦  to unlock full report',
+                      'explore_astrocartography_cost'.tr(),
                       style: AppTextStyles.labelSmall.copyWith(
                         color: AppColors.auraAmber,
                         fontSize: 9,
@@ -223,15 +222,14 @@ class _AstrocartographyBanner extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: _color.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: _color.withValues(alpha: 0.4)),
               ),
               child: Text(
-                'Explore',
+                'explore_astrocartography_btn'.tr(),
                 style: AppTextStyles.labelSmall.copyWith(
                   color: _color,
                   fontSize: 10,

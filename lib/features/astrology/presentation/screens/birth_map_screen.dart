@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:easy_localization/easy_localization.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,12 +52,12 @@ class BirthMapScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, color: AppColors.auraRose, size: 48),
               const SizedBox(height: 16),
-              const Text('Could not load your Birth Map',
+              Text('bm_error_load'.tr(),
                   style: AppTextStyles.titleMedium),
               const SizedBox(height: 8),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Go back'),
+                child: Text('bm_go_back'.tr()),
               ),
             ],
           ),
@@ -71,18 +73,18 @@ class BirthMapScreen extends ConsumerWidget {
               children: [
                 const Text('✦', style: TextStyle(fontSize: 40, color: AppColors.auraAmber)),
                 const SizedBox(height: 16),
-                const Text('Birth Map not found',
+                Text('bm_not_found'.tr(),
                     style: AppTextStyles.titleMedium),
                 const SizedBox(height: 8),
                 Text(
-                  'Return to your Natal Chart to discover your Cosmic Fingerprint.',
+                  'bm_not_found_sub'.tr(),
                   style: AppTextStyles.bodySmall,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Go back'),
+                  child: Text('bm_go_back'.tr()),
                 ),
               ],
             ),
@@ -99,7 +101,7 @@ class _CosmicLoadingView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -163,7 +165,7 @@ class _BirthMapContent extends ConsumerWidget {
                 // Personality
                 if (map.personality != null)
                   _SectionCard(
-                    title: 'Personality',
+                    title: 'bm_section_personality'.tr(),
                     icon: Icons.auto_awesome,
                     accentColor: AppColors.auraViolet,
                     delay: 300.ms,
@@ -174,7 +176,7 @@ class _BirthMapContent extends ConsumerWidget {
                 // Life Purpose
                 if (map.lifePurpose != null)
                   _SectionCard(
-                    title: 'Life Purpose & Soul Path',
+                    title: 'bm_section_life_purpose'.tr(),
                     icon: Icons.brightness_high_rounded,
                     accentColor: AppColors.auraIndigo,
                     delay: 400.ms,
@@ -185,7 +187,7 @@ class _BirthMapContent extends ConsumerWidget {
                 // Love & Relationships
                 if (map.loveAndRelationships != null)
                   _SectionCard(
-                    title: 'Love & Relationships',
+                    title: 'bm_section_love'.tr(),
                     icon: Icons.favorite_rounded,
                     accentColor: AppColors.auraRose,
                     delay: 500.ms,
@@ -195,7 +197,7 @@ class _BirthMapContent extends ConsumerWidget {
                 // Career & Destiny
                 if (map.careerAndDestiny != null)
                   _SectionCard(
-                    title: 'Career & Destiny',
+                    title: 'bm_section_career'.tr(),
                     icon: Icons.star_rounded,
                     accentColor: AppColors.auraAmber,
                     delay: 600.ms,
@@ -206,7 +208,7 @@ class _BirthMapContent extends ConsumerWidget {
                 // Strengths & Challenges
                 if (map.strengthsAndChallenges != null)
                   _SectionCard(
-                    title: 'Strengths & Challenges',
+                    title: 'bm_section_strengths'.tr(),
                     icon: Icons.bolt_rounded,
                     accentColor: AppColors.auraEmerald,
                     delay: 700.ms,
@@ -217,7 +219,7 @@ class _BirthMapContent extends ConsumerWidget {
                 // Cosmic Timing
                 if (map.cosmicTiming != null)
                   _SectionCard(
-                    title: 'Cosmic Timing',
+                    title: 'bm_section_timing'.tr(),
                     icon: Icons.timeline_rounded,
                     accentColor: AppColors.auraTeal,
                     delay: 800.ms,
@@ -301,7 +303,7 @@ class _CosmicHeader extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  '✦  B I R T H   M A P  ✦',
+                  'bm_header_label'.tr(),
                   style: AppTextStyles.labelLarge.copyWith(
                     color: AppColors.auraAmber,
                     letterSpacing: 4,
@@ -309,8 +311,8 @@ class _CosmicHeader extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
-                  'Your Cosmic Fingerprint',
+                Text(
+                  'bm_fingerprint_title'.tr(),
                   style: AppTextStyles.headlineLarge,
                   textAlign: TextAlign.center,
                 ),
@@ -319,18 +321,18 @@ class _CosmicHeader extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _HeaderSign(emoji: sunSign.zodiacEmoji, label: 'Sun',
-                        sign: sunSign.capitalize),
-                    _HeaderSign(emoji: moonSign.zodiacEmoji, label: 'Moon',
-                        sign: moonSign.capitalize),
-                    _HeaderSign(emoji: risingSign.zodiacEmoji, label: 'Rising',
-                        sign: risingSign.capitalize),
+                    _HeaderSign(emoji: sunSign.zodiacEmoji, label: 'natal_sun'.tr(),
+                        sign: sunSign.zodiacName),
+                    _HeaderSign(emoji: moonSign.zodiacEmoji, label: 'natal_moon'.tr(),
+                        sign: moonSign.zodiacName),
+                    _HeaderSign(emoji: risingSign.zodiacEmoji, label: 'natal_rising'.tr(),
+                        sign: risingSign.zodiacName),
                   ],
                 ),
                 if (mcSign.isNotEmpty) ...[
                   const SizedBox(height: 10),
                   Text(
-                    'MC in ${mcSign.capitalize}',
+                    'bm_mc_in'.tr(namedArgs: {'sign': mcSign.zodiacName}),
                     style: AppTextStyles.labelSmall
                         .copyWith(color: Colors.white38),
                   ),
@@ -434,7 +436,7 @@ class _FingerprintCard extends StatelessWidget {
                 const Text('✦', style: TextStyle(color: Colors.white70)),
                 const SizedBox(width: 8),
                 Text(
-                  'Cosmic Fingerprint',
+                  'bm_fingerprint_label'.tr(),
                   style: AppTextStyles.labelLarge
                       .copyWith(color: Colors.white70, letterSpacing: 1),
                 ),
@@ -538,12 +540,12 @@ class _PersonalityBody extends StatelessWidget {
         ],
         if (lightSide.isNotEmpty) ...[
           const SizedBox(height: 16),
-          _ChipsRow(label: 'Strengths', items: lightSide,
+          _ChipsRow(label: 'bm_strengths'.tr(), items: lightSide,
               color: AppColors.auraViolet),
         ],
         if (shadowSide.isNotEmpty) ...[
           const SizedBox(height: 12),
-          _ChipsRow(label: 'Growth Edges', items: shadowSide,
+          _ChipsRow(label: 'bm_growth_edges'.tr(), items: shadowSide,
               color: AppColors.auraIndigo),
         ],
       ],
@@ -567,14 +569,14 @@ class _LifePurposeBody extends StatelessWidget {
         if (section['north_node_path'] != null) ...[
           const SizedBox(height: 16),
           _LabeledBlock(
-            label: 'North Node Path',
+            label: 'bm_north_node'.tr(),
             text: section['north_node_path'] as String,
             color: AppColors.auraIndigo,
           ),
         ],
         if (karmic.isNotEmpty) ...[
           const SizedBox(height: 16),
-          _ChipsRow(label: 'Karmic Lessons', items: karmic,
+          _ChipsRow(label: 'bm_karmic_lessons'.tr(), items: karmic,
               color: AppColors.auraIndigo),
         ],
       ],
@@ -597,7 +599,7 @@ class _LoveBody extends StatelessWidget {
         if (section['what_they_seek'] != null) ...[
           const SizedBox(height: 16),
           _LabeledBlock(
-            label: 'What You Seek',
+            label: 'bm_what_you_seek'.tr(),
             text: section['what_they_seek'] as String,
             color: AppColors.auraRose,
           ),
@@ -605,7 +607,7 @@ class _LoveBody extends StatelessWidget {
         if (section['relationship_patterns'] != null) ...[
           const SizedBox(height: 16),
           _LabeledBlock(
-            label: 'Relationship Patterns',
+            label: 'bm_relationship_patterns'.tr(),
             text: section['relationship_patterns'] as String,
             color: AppColors.auraRose,
           ),
@@ -659,12 +661,12 @@ class _CareerBody extends StatelessWidget {
           _ProseText(section['purpose_and_calling'] as String),
         if (talents.isNotEmpty) ...[
           const SizedBox(height: 16),
-          _ChipsRow(label: 'Natural Talents', items: talents,
+          _ChipsRow(label: 'bm_natural_talents'.tr(), items: talents,
               color: AppColors.auraAmber),
         ],
         if (paths.isNotEmpty) ...[
           const SizedBox(height: 12),
-          _ChipsRow(label: 'Ideal Paths', items: paths,
+          _ChipsRow(label: 'bm_ideal_paths'.tr(), items: paths,
               color: AppColors.auraAmber),
         ],
         if (section['success_formula'] != null) ...[
@@ -713,11 +715,11 @@ class _StrengthsBody extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (powers.isNotEmpty)
-          _ChipsRow(label: 'Superpowers', items: powers,
+          _ChipsRow(label: 'bm_superpowers'.tr(), items: powers,
               color: AppColors.auraEmerald),
         if (edges.isNotEmpty) ...[
           const SizedBox(height: 16),
-          _ChipsRow(label: 'Growth Edges', items: edges,
+          _ChipsRow(label: 'bm_growth_edges'.tr(), items: edges,
               color: AppColors.auraTeal),
         ],
         if (section['transformation_key'] != null) ...[
@@ -768,7 +770,7 @@ class _TimingBody extends StatelessWidget {
           _ProseText(section['current_chapter'] as String),
         if (years.isNotEmpty) ...[
           const SizedBox(height: 20),
-          Text('Year by Year',
+          Text('bm_year_by_year'.tr(),
               style: AppTextStyles.labelLarge
                   .copyWith(color: AppColors.auraTeal)),
           const SizedBox(height: 12),
@@ -887,7 +889,7 @@ class _WisdomCard extends StatelessWidget {
                 const Text('✦', style: TextStyle(color: Colors.white54)),
                 const SizedBox(width: 8),
                 Text(
-                  'A Message from the Stars',
+                  'bm_wisdom_title'.tr(),
                   style: AppTextStyles.labelLarge
                       .copyWith(color: Colors.white54, letterSpacing: 1),
                 ),
@@ -943,13 +945,13 @@ class _ExportBarState extends State<_ExportBar> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Export', style: AppTextStyles.titleMedium),
+          Text('bm_export'.tr(), style: AppTextStyles.titleMedium),
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
                 child: _ExportButton(
-                  label: 'Save PDF',
+                  label: 'bm_save_pdf'.tr(),
                   icon: Icons.picture_as_pdf_rounded,
                   color: AppColors.auraViolet,
                   isLoading: _exportingPdf,
@@ -959,7 +961,7 @@ class _ExportBarState extends State<_ExportBar> {
               const SizedBox(width: 12),
               Expanded(
                 child: _ExportButton(
-                  label: 'Share Story',
+                  label: 'bm_share_story'.tr(),
                   icon: Icons.share_rounded,
                   color: AppColors.auraRose,
                   isLoading: _exportingStory,
@@ -976,24 +978,31 @@ class _ExportBarState extends State<_ExportBar> {
   Future<void> _exportPdf() async {
     setState(() => _exportingPdf = true);
     try {
-      final doc = _buildPdf();
-      await Printing.layoutPdf(
-        onLayout: (_) async => doc.save(),
-        name: 'Cosmira_Birth_Map.pdf',
-      );
+      final regular = await PdfGoogleFonts.nunitoRegular();
+      final bold = await PdfGoogleFonts.nunitoBold();
+      final doc = _buildPdf(regular: regular, bold: bold);
+      final bytes = await doc.save();
+      await Printing.sharePdf(bytes: bytes, filename: 'Cosmira_Birth_Map.pdf');
+    } catch (e, st) {
+      debugPrint('PDF export error: $e\n$st');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('bm_pdf_error'.tr())),
+        );
+      }
     } finally {
       if (mounted) setState(() => _exportingPdf = false);
     }
   }
 
-  pw.Document _buildPdf() {
+  pw.Document _buildPdf({required pw.Font regular, required pw.Font bold}) {
     final doc = pw.Document();
     final map = widget.map;
     final profile = widget.profile;
 
-    final headerStyle = pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold);
-    final sectionStyle = pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold);
-    final bodyStyle = pw.TextStyle(fontSize: 11);
+    final headerStyle = pw.TextStyle(font: bold, fontSize: 22);
+    final sectionStyle = pw.TextStyle(font: bold, fontSize: 14);
+    final bodyStyle = pw.TextStyle(font: regular, fontSize: 11);
     final accentColor = PdfColor.fromInt(0xFF7B68EE);
 
     pw.Widget section(String title, List<pw.Widget> children) =>
@@ -1043,7 +1052,7 @@ class _ExportBarState extends State<_ExportBar> {
       footer: (ctx) => pw.Align(
         alignment: pw.Alignment.centerRight,
         child: pw.Text('Generated by Cosmira',
-            style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+            style: pw.TextStyle(font: regular, fontSize: 9, color: PdfColors.grey)),
       ),
       build: (ctx) => [
         // Cover
@@ -1051,19 +1060,19 @@ class _ExportBarState extends State<_ExportBar> {
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
-              pw.Text('✦  BIRTH MAP  ✦',
-                  style: const pw.TextStyle(
-                      fontSize: 11, color: PdfColor.fromInt(0xFFFBBF24))),
+              pw.Text('COSMIRA',
+                  style: pw.TextStyle(
+                      font: bold, fontSize: 11, color: const PdfColor.fromInt(0xFFFBBF24))),
               pw.SizedBox(height: 8),
-              pw.Text('Your Cosmic Fingerprint', style: headerStyle),
+              pw.Text('bm_fingerprint_title'.tr(), style: headerStyle),
               pw.SizedBox(height: 4),
               if (profile != null)
                 pw.Text(
-                    '${(profile.sunSign ?? '').toUpperCase()} ·'
-                    ' ${(profile.moonSign ?? '').toUpperCase()} ·'
-                    ' ${(profile.risingSign ?? '').toUpperCase()}',
-                    style: const pw.TextStyle(
-                        fontSize: 12, color: PdfColors.grey600)),
+                    '${((profile.sunSign as String?) ?? '').zodiacName.toUpperCase()} |'
+                    ' ${((profile.moonSign as String?) ?? '').zodiacName.toUpperCase()} |'
+                    ' ${((profile.risingSign as String?) ?? '').zodiacName.toUpperCase()}',
+                    style: pw.TextStyle(
+                        font: regular, fontSize: 12, color: PdfColors.grey600)),
               pw.SizedBox(height: 24),
               pw.Divider(),
             ],
@@ -1071,26 +1080,26 @@ class _ExportBarState extends State<_ExportBar> {
         ),
         // Cosmic Fingerprint
         if (map.cosmicFingerprint != null)
-          section('Cosmic Fingerprint', [prose(map.cosmicFingerprint)]),
+          section('bm_fingerprint_label'.tr(), [prose(map.cosmicFingerprint)]),
         // Personality
         if (map.personality != null)
-          section('Personality', [
+          section('bm_section_personality'.tr(), [
             prose(map.personality!['core_essence'] as String?),
             prose(map.personality!['unique_gifts'] as String?),
-            if (map.lightSide.isNotEmpty) chips('Strengths', map.lightSide),
-            if (map.shadowSide.isNotEmpty) chips('Growth Edges', map.shadowSide),
+            if (map.lightSide.isNotEmpty) chips('bm_strengths'.tr(), map.lightSide),
+            if (map.shadowSide.isNotEmpty) chips('bm_growth_edges'.tr(), map.shadowSide),
           ]),
         // Life Purpose
         if (map.lifePurpose != null)
-          section('Life Purpose & Soul Path', [
+          section('bm_section_life_purpose'.tr(), [
             prose(map.lifePurpose!['soul_mission'] as String?),
             prose(map.lifePurpose!['north_node_path'] as String?),
             if (map.karmicLessons.isNotEmpty)
-              chips('Karmic Lessons', map.karmicLessons),
+              chips('bm_karmic_lessons'.tr(), map.karmicLessons),
           ]),
         // Love
         if (map.loveAndRelationships != null)
-          section('Love & Relationships', [
+          section('bm_section_love'.tr(), [
             prose(map.loveAndRelationships!['love_style'] as String?),
             prose(map.loveAndRelationships!['what_they_seek'] as String?),
             prose(map.loveAndRelationships!['relationship_patterns'] as String?),
@@ -1098,26 +1107,26 @@ class _ExportBarState extends State<_ExportBar> {
           ]),
         // Career
         if (map.careerAndDestiny != null)
-          section('Career & Destiny', [
+          section('bm_section_career'.tr(), [
             prose(map.careerAndDestiny!['purpose_and_calling'] as String?),
             if (map.naturalTalents.isNotEmpty)
-              chips('Natural Talents', map.naturalTalents),
+              chips('bm_natural_talents'.tr(), map.naturalTalents),
             if (map.idealPaths.isNotEmpty)
-              chips('Ideal Paths', map.idealPaths),
+              chips('bm_ideal_paths'.tr(), map.idealPaths),
             prose(map.careerAndDestiny!['success_formula'] as String?),
           ]),
         // Strengths
         if (map.strengthsAndChallenges != null)
-          section('Strengths & Challenges', [
+          section('bm_section_strengths'.tr(), [
             if (map.superpowers.isNotEmpty)
-              chips('Superpowers', map.superpowers),
+              chips('bm_superpowers'.tr(), map.superpowers),
             if (map.growthEdges.isNotEmpty)
-              chips('Growth Edges', map.growthEdges),
+              chips('bm_growth_edges'.tr(), map.growthEdges),
             prose(map.strengthsAndChallenges!['transformation_key'] as String?),
           ]),
         // Cosmic Timing
         if (map.cosmicTiming != null)
-          section('Cosmic Timing', [
+          section('bm_section_timing'.tr(), [
             prose(map.cosmicTiming!['current_chapter'] as String?),
             ...map.yearPredictions.map((y) => pw.Padding(
                   padding: const pw.EdgeInsets.only(bottom: 12),
@@ -1136,7 +1145,7 @@ class _ExportBarState extends State<_ExportBar> {
           ]),
         // Cosmic Wisdom
         if (map.cosmicWisdom != null)
-          section('A Message from the Stars', [prose(map.cosmicWisdom)]),
+          section('bm_wisdom_title'.tr(), [prose(map.cosmicWisdom)]),
       ],
     ));
 
@@ -1266,7 +1275,7 @@ class _StoryCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'My Cosmic Fingerprint',
+                    'bm_story_title'.tr(),
                     style: AppTextStyles.headlineMedium
                         .copyWith(color: Colors.white),
                     textAlign: TextAlign.center,
@@ -1276,13 +1285,13 @@ class _StoryCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _StorySign(emoji: sunSign.zodiacEmoji,
-                          label: 'Sun', sign: sunSign.capitalize),
+                          label: 'natal_sun'.tr(), sign: sunSign.zodiacName),
                       const SizedBox(width: 24),
                       _StorySign(emoji: moonSign.zodiacEmoji,
-                          label: 'Moon', sign: moonSign.capitalize),
+                          label: 'natal_moon'.tr(), sign: moonSign.zodiacName),
                       const SizedBox(width: 24),
                       _StorySign(emoji: risingSign.zodiacEmoji,
-                          label: 'Rising', sign: risingSign.capitalize),
+                          label: 'natal_rising'.tr(), sign: risingSign.zodiacName),
                     ],
                   ),
                   const SizedBox(height: 32),

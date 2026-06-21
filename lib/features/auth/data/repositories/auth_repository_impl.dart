@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -131,9 +133,13 @@ class AuthRepositoryImpl implements AuthRepository {
         .from('profiles')
         .stream(primaryKey: ['id'])
         .eq('id', userId)
-        .map((data) {
+        .map<UserProfile?>((data) {
           if (data.isEmpty) return null;
           return UserProfileModel.fromJson(data.first);
-        });
+        })
+        .transform(StreamTransformer.fromHandlers(
+          // Realtime bağlantı hatalarını null'a çevir; UI error state'e girmesin
+          handleError: (_, __, sink) => sink.add(null),
+        ));
   }
 }

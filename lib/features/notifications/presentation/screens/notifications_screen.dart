@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -33,7 +34,7 @@ class NotificationsScreen extends ConsumerWidget {
                       onPressed: () => context.pop(),
                     ),
                     const SizedBox(width: 8),
-                    Text('Notifications', style: AppTextStyles.titleLarge),
+                    Text('notif_title'.tr(), style: AppTextStyles.titleLarge),
                   ],
                 ),
               ),
@@ -49,7 +50,7 @@ class NotificationsScreen extends ConsumerWidget {
                                 size: 48,
                                 color: AppColors.textTertiary),
                             const SizedBox(height: 12),
-                            Text('No notifications yet',
+                            Text('notif_empty'.tr(),
                                 style: AppTextStyles.bodyMedium),
                           ],
                         ),
@@ -115,7 +116,7 @@ class NotificationsScreen extends ConsumerWidget {
                   loading: () =>
                       const Center(child: CircularProgressIndicator()),
                   error: (_, __) =>
-                      const Center(child: Text('Error loading notifications')),
+                      Center(child: Text('notif_error'.tr())),
                 ),
               ),
             ],

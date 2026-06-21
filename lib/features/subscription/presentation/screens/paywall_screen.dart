@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -42,13 +43,13 @@ class PaywallScreen extends ConsumerWidget {
                           .scale(begin: const Offset(0.5, 0.5)),
                       const SizedBox(height: 16),
                       Text(
-                        'Unlock the\nFull Cosmos',
+                        'paywall_title'.tr(),
                         textAlign: TextAlign.center,
                         style: AppTextStyles.displayMedium,
                       ).animate().fadeIn(delay: 200.ms),
                       const SizedBox(height: 8),
                       Text(
-                        'Upgrade to Astral for unlimited access',
+                        'paywall_subtitle'.tr(),
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: AppColors.accentGlow,
                         ),
@@ -76,8 +77,8 @@ class PaywallScreen extends ConsumerWidget {
                         children: [
                           Expanded(
                             child: _PlanOption(
-                              label: 'Monthly',
-                              price: '\$9.99/mo',
+                              label: 'paywall_monthly'.tr(),
+                              price: 'paywall_price_monthly'.tr(),
                               isSelected: selectedPlan == 'monthly',
                               onTap: () => ref
                                   .read(selectedPlanProvider.notifier)
@@ -87,9 +88,9 @@ class PaywallScreen extends ConsumerWidget {
                           const SizedBox(width: 12),
                           Expanded(
                             child: _PlanOption(
-                              label: 'Yearly',
-                              price: '\$59.99/yr',
-                              badge: 'Save 50%',
+                              label: 'paywall_yearly'.tr(),
+                              price: 'paywall_price_yearly'.tr(),
+                              badge: 'paywall_save'.tr(),
                               isSelected: selectedPlan == 'yearly',
                               onTap: () => ref
                                   .read(selectedPlanProvider.notifier)
@@ -102,14 +103,14 @@ class PaywallScreen extends ConsumerWidget {
                       SizedBox(
                         width: double.infinity,
                         child: CosmicButton(
-                          label: 'Start Free Trial',
+                          label: 'paywall_trial'.tr(),
                           isLoading: isLoading,
                           onPressed: () {},
                         ),
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        '7-day free trial, cancel anytime',
+                        'paywall_trial_sub'.tr(),
                         style: AppTextStyles.bodySmall,
                       ),
                       const SizedBox(height: 8),
@@ -118,7 +119,7 @@ class PaywallScreen extends ConsumerWidget {
                         children: [
                           TextButton(
                             onPressed: () {},
-                            child: Text('Restore',
+                            child: Text('paywall_restore'.tr(),
                                 style: AppTextStyles.bodySmall
                                     .copyWith(color: AppColors.textSecondary)),
                           ),
@@ -127,7 +128,7 @@ class PaywallScreen extends ConsumerWidget {
                                   .copyWith(color: AppColors.textTertiary)),
                           TextButton(
                             onPressed: () {},
-                            child: Text('Terms',
+                            child: Text('paywall_terms'.tr(),
                                 style: AppTextStyles.bodySmall
                                     .copyWith(color: AppColors.textSecondary)),
                           ),

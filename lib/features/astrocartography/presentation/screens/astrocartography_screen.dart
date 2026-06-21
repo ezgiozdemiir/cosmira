@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,126 +16,57 @@ import '../providers/astrocartography_provider.dart';
 
 class _Line {
   final String emoji;
-  final String planet;
-  final String lineType;
+  final String translationKey; // e.g. 'sun', 'moon', 'venus' …
   final Color color;
-  final String theme;
-  final String bestFor;
-  final String reading;
-  // Approximate map position (0–1 fractions of width/height, Mercator-ish)
   final double mapX;
   final double mapY;
 
   const _Line({
     required this.emoji,
-    required this.planet,
-    required this.lineType,
+    required this.translationKey,
     required this.color,
-    required this.theme,
-    required this.bestFor,
-    required this.reading,
     required this.mapX,
     required this.mapY,
   });
+
+  String get planet => 'astro_line_${translationKey}_planet'.tr();
+  String get lineType => 'astro_line_${translationKey}_type'.tr();
+  String get theme => 'astro_line_${translationKey}_theme'.tr();
+  String get bestFor => 'astro_line_${translationKey}_best_for'.tr();
+  String get reading => 'astro_line_${translationKey}_reading'.tr();
 }
 
 const _lines = <_Line>[
-  _Line(
-    emoji: '☀️',
-    planet: 'Sun',
-    lineType: 'Rising',
-    color: AppColors.auraAmber,
-    theme: 'Identity & Recognition',
-    bestFor: 'Career, Leadership, Legacy',
-    reading:
-        'Where your Sun line rises, you are fully seen. Your authentic self shines without effort and people recognise your gifts immediately. Opportunities to lead appear naturally, and a lasting visible legacy becomes possible. Long-term residence here accelerates career recognition and personal authority.',
-    mapX: 0.54,
-    mapY: 0.32,
-  ),
-  _Line(
-    emoji: '🌙',
-    planet: 'Moon',
-    lineType: 'Culminating',
-    color: AppColors.accentGlow,
-    theme: 'Emotional Comfort & Belonging',
-    bestFor: 'Family, Healing, Roots',
-    reading:
-        'Your Moon line marks territory that feels like home — even on a first visit. Emotional bonds form deeply and quickly here. The landscape nourishes your inner world and heals old wounds. Ideal for settling down, raising a family, or retreating for profound personal renewal.',
-    mapX: 0.49,
-    mapY: 0.22,
-  ),
-  _Line(
-    emoji: '♀',
-    planet: 'Venus',
-    lineType: 'Setting',
-    color: AppColors.auraRose,
-    theme: 'Love & Creative Beauty',
-    bestFor: 'Romance, Art, Collaboration',
-    reading:
-        'Venus magnetises love and beauty wherever her line falls. Relationships formed in these regions carry rare depth and pleasure. Creativity flows effortlessly, and the environments themselves tend toward elegance. Romantic and professional partnerships formed here are unusually harmonious and long-lasting.',
-    mapX: 0.82,
-    mapY: 0.52,
-  ),
-  _Line(
-    emoji: '♂',
-    planet: 'Mars',
-    lineType: 'Rising',
-    color: Color(0xFFEF4444),
-    theme: 'Drive & Physical Vitality',
-    bestFor: 'Business, Sports, Ambition',
-    reading:
-        'Mars ignites. Physical energy is amplified here, and competitive environments feel invigorating rather than draining. Entrepreneurship, athletics, and bold ventures flourish. Beware: conflicts can intensify, so channel the fire consciously into purposeful action.',
-    mapX: 0.19,
-    mapY: 0.42,
-  ),
-  _Line(
-    emoji: '♃',
-    planet: 'Jupiter',
-    lineType: 'Culminating',
-    color: AppColors.auraEmerald,
-    theme: 'Expansion & Abundance',
-    bestFor: 'Travel, Education, Prosperity',
-    reading:
-        'Jupiter\'s line is universally beloved. Fortune flows naturally — doors open, opportunities multiply, and optimism becomes contagious. Higher education, philosophy, travel, and financial growth are all amplified. A wonderful destination for both short visits and extended stays.',
-    mapX: 0.62,
-    mapY: 0.45,
-  ),
-  _Line(
-    emoji: '♄',
-    planet: 'Saturn',
-    lineType: 'Setting',
-    color: AppColors.auraIndigo,
-    theme: 'Discipline & Mastery',
-    bestFor: 'Long-term Goals, Legacy, Structure',
-    reading:
-        'Saturn demands dedication — but the rewards are unmatched in permanence. Work done along this line is of the highest quality and creates a legacy that outlasts you. Not a place for shortcuts; a place for forging character and building something that will endure across generations.',
-    mapX: 0.36,
-    mapY: 0.28,
-  ),
-  _Line(
-    emoji: '♅',
-    planet: 'Uranus',
-    lineType: 'Rising',
-    color: AppColors.auraTeal,
-    theme: 'Innovation & Liberation',
-    bestFor: 'Technology, Reinvention, Freedom',
-    reading:
-        'Uranus breaks patterns and invites radical change — the best kind. Unexpected breakthroughs arrive suddenly along this line. Original thinking is valued, and futuristic or tech-forward environments feel natural. Ideal for those ready to reinvent themselves or disrupt an entire field.',
-    mapX: 0.72,
-    mapY: 0.36,
-  ),
-  _Line(
-    emoji: '♆',
-    planet: 'Neptune',
-    lineType: 'Culminating',
-    color: AppColors.auraViolet,
-    theme: 'Intuition & Spiritual Depth',
-    bestFor: 'Art, Spirituality, Healing',
-    reading:
-        'Neptune dissolves the boundary between self and cosmos. Creativity flows like water, intuition becomes prophetic, and spiritual experiences arise spontaneously. Art created here resonates far beyond the local audience. Ideal for healers, mystics, artists, and deep-sea dreamers.',
-    mapX: 0.27,
-    mapY: 0.58,
-  ),
+  _Line(emoji: '☀️', translationKey: 'sun',     color: AppColors.auraAmber,   mapX: 0.54, mapY: 0.32),
+  _Line(emoji: '🌙', translationKey: 'moon',    color: AppColors.accentGlow,  mapX: 0.49, mapY: 0.22),
+  _Line(emoji: '♀',  translationKey: 'venus',   color: AppColors.auraRose,    mapX: 0.82, mapY: 0.52),
+  _Line(emoji: '♂',  translationKey: 'mars',    color: Color(0xFFEF4444),     mapX: 0.19, mapY: 0.42),
+  _Line(emoji: '♃',  translationKey: 'jupiter', color: AppColors.auraEmerald, mapX: 0.62, mapY: 0.45),
+  _Line(emoji: '♄',  translationKey: 'saturn',  color: AppColors.auraIndigo,  mapX: 0.36, mapY: 0.28),
+  _Line(emoji: '♅',  translationKey: 'uranus',  color: AppColors.auraTeal,    mapX: 0.72, mapY: 0.36),
+  _Line(emoji: '♆',  translationKey: 'neptune', color: AppColors.auraViolet,  mapX: 0.27, mapY: 0.58),
+];
+
+class _Destination {
+  final String translationKey; // 'career', 'love', 'home'
+  final String emoji;
+  final Color color;
+
+  const _Destination({
+    required this.translationKey,
+    required this.emoji,
+    required this.color,
+  });
+
+  String get label  => 'astro_dest_${translationKey}_label'.tr();
+  String get region => 'astro_dest_${translationKey}_region'.tr();
+  String get why    => 'astro_dest_${translationKey}_why'.tr();
+}
+
+const _destinations = [
+  _Destination(translationKey: 'career', emoji: '☀️', color: AppColors.auraAmber),
+  _Destination(translationKey: 'love',   emoji: '♀',  color: AppColors.auraRose),
+  _Destination(translationKey: 'home',   emoji: '🌙', color: AppColors.accentGlow),
 ];
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -173,10 +105,8 @@ class _AstrocartographyScreenState
     final profile = ref.watch(userProfileProvider).valueOrNull;
     final balance = ref.watch(stardustBalanceProvider).valueOrNull ?? 0;
     final astroState = ref.watch(astrocartographyProvider);
-    final isUnlocked =
-        astroState.status == AstrocartographyStatus.unlocked;
-    final isLoading =
-        astroState.status == AstrocartographyStatus.loading;
+    final isUnlocked = astroState.status == AstrocartographyStatus.unlocked;
+    final isLoading  = astroState.status == AstrocartographyStatus.loading;
 
     return Scaffold(
       backgroundColor: AppColors.black,
@@ -186,7 +116,6 @@ class _AstrocartographyScreenState
         child: SafeArea(
           child: CustomScrollView(
             slivers: [
-              // ── Header ────────────────────────────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(4, 16, 20, 0),
@@ -200,7 +129,7 @@ class _AstrocartographyScreenState
                       const SizedBox(width: 4),
                       const Text('🌍', style: TextStyle(fontSize: 22)),
                       const SizedBox(width: 10),
-                      Text('Astrocartography',
+                      Text('astro_title'.tr(),
                           style: AppTextStyles.headlineSmall),
                     ],
                   ),
@@ -213,7 +142,6 @@ class _AstrocartographyScreenState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ── Summary (free for everyone) ───────────────────────
                       _SummarySection(birthCity: profile?.birthCity)
                           .animate()
                           .fadeIn(delay: 100.ms)
@@ -221,7 +149,6 @@ class _AstrocartographyScreenState
 
                       const SizedBox(height: 20),
 
-                      // ── Gate / Full Report ────────────────────────────────
                       if (isLoading)
                         const Center(
                             child: Padding(
@@ -235,25 +162,22 @@ class _AstrocartographyScreenState
                           onEarnMore: () => context.push('/stardust'),
                         ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.08)
                       else ...[
-                        // ── Full Report ───────────────────────────────────
                         _SectionLabel(
-                          title: 'Your Planetary Lines',
-                          subtitle:
-                              '8 lines calculated from your birth moment',
+                          title: 'astro_planetary_lines'.tr(),
+                          subtitle: 'astro_planetary_lines_sub'.tr(),
                         ),
                         const SizedBox(height: 12),
-                        _PlanetLineTable()
+                        const _PlanetLineTable()
                             .animate()
                             .fadeIn(delay: 100.ms),
                         const SizedBox(height: 20),
-                        _WorldMapSection()
+                        const _WorldMapSection()
                             .animate()
                             .fadeIn(delay: 150.ms),
                         const SizedBox(height: 20),
                         _SectionLabel(
-                          title: 'Planet by Planet',
-                          subtitle:
-                              'Tap each planet to read your detailed line interpretation',
+                          title: 'astro_planet_by_planet'.tr(),
+                          subtitle: 'astro_planet_by_planet_sub'.tr(),
                         ),
                         const SizedBox(height: 12),
                         ...List.generate(_lines.length, (i) {
@@ -272,7 +196,7 @@ class _AstrocartographyScreenState
                           );
                         }),
                         const SizedBox(height: 20),
-                        _DestinyCompass()
+                        const _DestinyCompass()
                             .animate()
                             .fadeIn(delay: 200.ms),
                       ],
@@ -298,8 +222,8 @@ class _SummarySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final locationText = birthCity != null
-        ? 'Born in $birthCity, you carry the cosmic signature of that exact sky wherever you travel.'
-        : 'Your birth location carries a unique cosmic signature that follows you wherever you travel.';
+        ? 'astro_summary_para3_city'.tr(namedArgs: {'city': birthCity!})
+        : 'astro_summary_para3_no_city'.tr();
 
     return CosmicCard(
       gradient: const LinearGradient(
@@ -314,22 +238,21 @@ class _SummarySection extends StatelessWidget {
             const Text('🌐', style: TextStyle(fontSize: 18)),
             const SizedBox(width: 10),
             Text(
-              'What is Astrocartography?',
-              style: AppTextStyles.titleMedium
-                  .copyWith(color: Colors.white),
+              'astro_what_is'.tr(),
+              style: AppTextStyles.titleMedium.copyWith(color: Colors.white),
             ),
           ]),
           const SizedBox(height: 14),
           const Divider(color: AppColors.cardBorder, height: 1),
           const SizedBox(height: 14),
           Text(
-            'At the exact moment you were born, every planet occupied a precise angle in the sky — rising on the eastern horizon, setting in the west, culminating at its peak, or resting at its lowest. Projected onto a world map, these positions become lines of planetary influence crossing every continent.',
+            'astro_summary_para1'.tr(),
             style: AppTextStyles.bodyMedium
                 .copyWith(color: Colors.white.withValues(alpha: 0.82), height: 1.65),
           ),
           const SizedBox(height: 12),
           Text(
-            'Every city you visit and every country you call home sits under the pull of different planetary lines — some amplifying your gifts, some calling you toward growth, and some offering the quiet of deep belonging.',
+            'astro_summary_para2'.tr(),
             style: AppTextStyles.bodyMedium
                 .copyWith(color: Colors.white.withValues(alpha: 0.82), height: 1.65),
           ),
@@ -350,11 +273,12 @@ class _SummarySection extends StatelessWidget {
                   color: AppColors.auraAmber.withValues(alpha: 0.25)),
             ),
             child: Row(children: [
-              const Text('✦', style: TextStyle(color: AppColors.auraAmber, fontSize: 13)),
+              const Text('✦',
+                  style: TextStyle(color: AppColors.auraAmber, fontSize: 13)),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Unlock your full report to see all 8 planetary lines, world map, and personalised destination insights.',
+                  'astro_summary_unlock'.tr(),
                   style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.auraAmber.withValues(alpha: 0.85),
                       height: 1.5),
@@ -383,17 +307,17 @@ class _UnlockGate extends StatelessWidget {
     required this.onEarnMore,
   });
 
-  static const _includes = [
-    'Detailed reading for all 8 planetary lines',
-    'Astrocartography world map with your power lines',
-    'Planet-by-planet travel & life insights',
-    'Your 3 most powerful global destinations',
-    'Best regions for love, career & healing',
-  ];
-
   @override
   Widget build(BuildContext context) {
     final canAfford = balance >= 100;
+
+    final includes = [
+      'astro_include_1'.tr(),
+      'astro_include_2'.tr(),
+      'astro_include_3'.tr(),
+      'astro_include_4'.tr(),
+      'astro_include_5'.tr(),
+    ];
 
     return CosmicCard(
       gradient: const LinearGradient(
@@ -404,7 +328,6 @@ class _UnlockGate extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Lock icon + title
           Row(children: [
             Container(
               padding: const EdgeInsets.all(10),
@@ -422,13 +345,12 @@ class _UnlockGate extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Full Report',
+                  Text('astro_full_report'.tr(),
                       style: AppTextStyles.titleMedium
                           .copyWith(color: Colors.white)),
-                  Text('One-time unlock · 100 ✦ Stardust',
+                  Text('astro_one_time'.tr(),
                       style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.auraAmber
-                              .withValues(alpha: 0.85))),
+                          color: AppColors.auraAmber.withValues(alpha: 0.85))),
                 ],
               ),
             ),
@@ -438,12 +360,11 @@ class _UnlockGate extends StatelessWidget {
           const Divider(color: AppColors.cardBorder, height: 1),
           const SizedBox(height: 16),
 
-          // What's included
-          Text('What\'s included',
+          Text('astro_whats_included'.tr(),
               style: AppTextStyles.labelSmall
                   .copyWith(color: AppColors.textSecondary, letterSpacing: 1.2)),
           const SizedBox(height: 10),
-          ..._includes.map((item) => Padding(
+          ...includes.map((item) => Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -466,25 +387,22 @@ class _UnlockGate extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // Balance row
           Row(children: [
             const Icon(Icons.auto_awesome,
                 color: AppColors.auraAmber, size: 15),
             const SizedBox(width: 6),
-            Text('Your balance: ',
+            Text('astro_balance'.tr(),
                 style: AppTextStyles.bodySmall
                     .copyWith(color: AppColors.textSecondary)),
             Text('$balance ✦',
                 style: AppTextStyles.bodySmall.copyWith(
-                    color: canAfford
-                        ? AppColors.auraAmber
-                        : AppColors.error,
+                    color: canAfford ? AppColors.auraAmber : AppColors.error,
                     fontWeight: FontWeight.w600)),
             if (!canAfford) ...[
               const Spacer(),
               GestureDetector(
                 onTap: onEarnMore,
-                child: Text('Earn more →',
+                child: Text('astro_earn_more'.tr(),
                     style: AppTextStyles.labelSmall.copyWith(
                         color: AppColors.accentGlow,
                         decoration: TextDecoration.underline,
@@ -495,7 +413,6 @@ class _UnlockGate extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // Unlock button
           SizedBox(
             width: double.infinity,
             child: GestureDetector(
@@ -518,12 +435,11 @@ class _UnlockGate extends StatelessWidget {
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white))
+                            strokeWidth: 2, color: Colors.white))
                     : Text(
                         canAfford
-                            ? 'Unlock Full Report  ·  100 ✦'
-                            : 'Not enough Stardust',
+                            ? 'astro_unlock_btn'.tr()
+                            : 'astro_not_enough'.tr(),
                         style: AppTextStyles.titleMedium.copyWith(
                           color: canAfford
                               ? Colors.black
@@ -573,22 +489,21 @@ class _PlanetLineTable extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: Row(children: [
               const SizedBox(width: 44),
               Expanded(
-                  child: Text('PLANET',
+                  child: Text('astro_col_planet'.tr(),
                       style: AppTextStyles.labelSmall
                           .copyWith(letterSpacing: 1.0))),
               Expanded(
-                  child: Text('LINE',
+                  child: Text('astro_col_line'.tr(),
                       style: AppTextStyles.labelSmall
                           .copyWith(letterSpacing: 1.0))),
               Expanded(
                 flex: 2,
-                child: Text('THEME',
+                child: Text('astro_col_theme'.tr(),
                     style: AppTextStyles.labelSmall
                         .copyWith(letterSpacing: 1.0)),
               ),
@@ -605,7 +520,6 @@ class _PlanetLineTable extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 9),
                   child: Row(
                     children: [
-                      // Color dot + emoji
                       Container(
                         width: 4,
                         height: 32,
@@ -618,20 +532,17 @@ class _PlanetLineTable extends StatelessWidget {
                       Text(line.emoji,
                           style: const TextStyle(fontSize: 18)),
                       const SizedBox(width: 8),
-                      // Planet name
                       Expanded(
                         child: Text(line.planet,
                             style: AppTextStyles.bodyMedium.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w500)),
                       ),
-                      // Line type
                       Expanded(
                         child: Text(line.lineType,
                             style: AppTextStyles.bodySmall
                                 .copyWith(color: line.color)),
                       ),
-                      // Theme
                       Expanded(
                         flex: 2,
                         child: Text(line.theme,
@@ -643,8 +554,7 @@ class _PlanetLineTable extends StatelessWidget {
                   ),
                 ),
                 if (!isLast)
-                  const Divider(
-                      color: AppColors.cardBorder, height: 1),
+                  const Divider(color: AppColors.cardBorder, height: 1),
               ],
             );
           }),
@@ -665,15 +575,13 @@ class _WorldMapSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Power Regions',
-              style:
-                  AppTextStyles.titleMedium.copyWith(color: Colors.white)),
+          Text('astro_power_regions'.tr(),
+              style: AppTextStyles.titleMedium.copyWith(color: Colors.white)),
           const SizedBox(height: 2),
-          Text('Your planetary lines across the globe',
+          Text('astro_power_regions_sub'.tr(),
               style: AppTextStyles.bodySmall),
           const SizedBox(height: 14),
 
-          // Map container
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: SizedBox(
@@ -681,70 +589,43 @@ class _WorldMapSection extends StatelessWidget {
               child: LayoutBuilder(builder: (context, constraints) {
                 return Stack(
                   children: [
-                    // Grid background
                     Positioned.fill(
                       child: CustomPaint(painter: _MapGridPainter()),
                     ),
 
-                    // Planet line dots
                     ..._lines.map((line) {
-                      final x =
-                          line.mapX * constraints.maxWidth;
-                      final y =
-                          line.mapY * 180;
+                      final x = line.mapX * constraints.maxWidth;
+                      final y = line.mapY * 180;
                       return Positioned(
                         left: x - 6,
                         top: y - 6,
-                        child: _MapDot(color: line.color, label: line.planet),
+                        child: _MapDot(color: line.color),
                       );
                     }),
 
-                    // Region labels
-                    const Positioned(
-                        left: 28,
-                        top: 52,
-                        child: _RegionLabel('N. America')),
-                    const Positioned(
-                        left: 28,
-                        top: 100,
-                        child: _RegionLabel('S. America')),
-                    const Positioned(
-                        left: 160,
-                        top: 35,
-                        child: _RegionLabel('Europe')),
-                    const Positioned(
-                        left: 148,
-                        top: 80,
-                        child: _RegionLabel('Africa')),
-                    const Positioned(
-                        right: 68,
-                        top: 32,
-                        child: _RegionLabel('Asia')),
-                    const Positioned(
-                        right: 16,
-                        top: 110,
-                        child: _RegionLabel('Oceania')),
+                    Positioned(left: 28,  top: 52,  child: _RegionLabel('astro_region_n_america'.tr())),
+                    Positioned(left: 28,  top: 100, child: _RegionLabel('astro_region_s_america'.tr())),
+                    Positioned(left: 160, top: 35,  child: _RegionLabel('astro_region_europe'.tr())),
+                    Positioned(left: 148, top: 80,  child: _RegionLabel('astro_region_africa'.tr())),
+                    Positioned(right: 68, top: 32,  child: _RegionLabel('astro_region_asia'.tr())),
+                    Positioned(right: 16, top: 110, child: _RegionLabel('astro_region_oceania'.tr())),
 
-                    // Equator line label
                     Positioned(
                       left: 6,
                       top: 87,
-                      child: Text('— Equator',
+                      child: Text('astro_equator'.tr(),
                           style: AppTextStyles.bodySmall.copyWith(
-                              color: Colors.white
-                                  .withValues(alpha: 0.22),
+                              color: Colors.white.withValues(alpha: 0.22),
                               fontSize: 9)),
                     ),
 
-                    // Coming-soon note
                     Positioned(
                       bottom: 6,
                       right: 8,
                       child: Text(
-                        'Interactive map coming soon',
+                        'astro_interactive_coming'.tr(),
                         style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.textTertiary,
-                            fontSize: 9),
+                            color: AppColors.textTertiary, fontSize: 9),
                       ),
                     ),
                   ],
@@ -755,7 +636,6 @@ class _WorldMapSection extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // Legend
           Wrap(
             spacing: 12,
             runSpacing: 8,
@@ -783,7 +663,6 @@ class _WorldMapSection extends StatelessWidget {
 class _MapGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    // Ocean background
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.width, size.height),
       Paint()..color = const Color(0xFF060E24),
@@ -793,18 +672,15 @@ class _MapGridPainter extends CustomPainter {
       ..color = Colors.white.withValues(alpha: 0.055)
       ..strokeWidth = 0.7;
 
-    // Longitude lines
     for (int i = 0; i <= 12; i++) {
       final x = size.width * i / 12;
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), grid);
     }
-    // Latitude lines
     for (int i = 0; i <= 6; i++) {
       final y = size.height * i / 6;
       canvas.drawLine(Offset(0, y), Offset(size.width, y), grid);
     }
 
-    // Equator (brighter)
     canvas.drawLine(
       Offset(0, size.height * 0.5),
       Offset(size.width, size.height * 0.5),
@@ -813,7 +689,6 @@ class _MapGridPainter extends CustomPainter {
         ..strokeWidth = 1.0,
     );
 
-    // Draw very simplified continent blobs as filled polygons
     _drawContinent(canvas, size, _europeAfrica(size));
     _drawContinent(canvas, size, _americas(size));
     _drawContinent(canvas, size, _asia(size));
@@ -827,13 +702,11 @@ class _MapGridPainter extends CustomPainter {
       path.lineTo(p.dx, p.dy);
     }
     path.close();
-    canvas.drawPath(
-        path,
+    canvas.drawPath(path,
         Paint()
           ..color = const Color(0xFF1A2A4A)
           ..style = PaintingStyle.fill);
-    canvas.drawPath(
-        path,
+    canvas.drawPath(path,
         Paint()
           ..color = Colors.white.withValues(alpha: 0.07)
           ..style = PaintingStyle.stroke
@@ -879,29 +752,23 @@ class _MapGridPainter extends CustomPainter {
 
 class _MapDot extends StatelessWidget {
   final Color color;
-  final String label;
-  const _MapDot({required this.color, required this.label});
+  const _MapDot({required this.color});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: color,
-            boxShadow: [
-              BoxShadow(
-                  color: color.withValues(alpha: 0.6),
-                  blurRadius: 6,
-                  spreadRadius: 1)
-            ],
-          ),
-        ),
-      ],
+    return Container(
+      width: 10,
+      height: 10,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+        boxShadow: [
+          BoxShadow(
+              color: color.withValues(alpha: 0.6),
+              blurRadius: 6,
+              spreadRadius: 1)
+        ],
+      ),
     );
   }
 }
@@ -954,15 +821,13 @@ class _PlanetCard extends StatelessWidget {
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-              color: line.color
-                  .withValues(alpha: expanded ? 0.45 : 0.22)),
+              color: line.color.withValues(alpha: expanded ? 0.45 : 0.22)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(children: [
-              Text(line.emoji,
-                  style: const TextStyle(fontSize: 20)),
+              Text(line.emoji, style: const TextStyle(fontSize: 20)),
               const SizedBox(width: 10),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -976,7 +841,6 @@ class _PlanetCard extends StatelessWidget {
                 ],
               ),
               const Spacer(),
-              // Best for badge
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -987,8 +851,8 @@ class _PlanetCard extends StatelessWidget {
                       color: line.color.withValues(alpha: 0.3)),
                 ),
                 child: Text(line.theme.split('&').first.trim(),
-                    style: AppTextStyles.labelSmall.copyWith(
-                        color: line.color, fontSize: 9)),
+                    style: AppTextStyles.labelSmall
+                        .copyWith(color: line.color, fontSize: 9)),
               ),
               const SizedBox(width: 8),
               Icon(
@@ -1000,8 +864,7 @@ class _PlanetCard extends StatelessWidget {
             ]),
             if (expanded) ...[
               const SizedBox(height: 12),
-              Divider(
-                  color: line.color.withValues(alpha: 0.2), height: 1),
+              Divider(color: line.color.withValues(alpha: 0.2), height: 1),
               const SizedBox(height: 12),
               Text(
                 line.reading,
@@ -1010,10 +873,9 @@ class _PlanetCard extends StatelessWidget {
                     height: 1.65),
               ),
               const SizedBox(height: 10),
-              Text('Best for: ',
+              Text('astro_best_for'.tr(),
                   style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.textSecondary,
-                      letterSpacing: 0.8)),
+                      color: AppColors.textSecondary, letterSpacing: 0.8)),
               const SizedBox(height: 4),
               Text(line.bestFor,
                   style: AppTextStyles.bodySmall
@@ -1031,40 +893,15 @@ class _PlanetCard extends StatelessWidget {
 class _DestinyCompass extends StatelessWidget {
   const _DestinyCompass();
 
-  static const _destinations = [
-    _Destination(
-      label: 'Career & Legacy',
-      emoji: '☀️',
-      color: AppColors.auraAmber,
-      region: 'Central Europe & Eastern Mediterranean',
-      why: 'Your Sun and Saturn lines converge here, creating an environment where your work is recognised and your legacy is built to last.',
-    ),
-    _Destination(
-      label: 'Love & Creativity',
-      emoji: '♀',
-      color: AppColors.auraRose,
-      region: 'Southeast Asia & Pacific Islands',
-      why: 'Venus and Neptune lines cross this region, heightening beauty, romantic connection, and artistic inspiration.',
-    ),
-    _Destination(
-      label: 'Home & Healing',
-      emoji: '🌙',
-      color: AppColors.accentGlow,
-      region: 'Northern Europe & New Zealand',
-      why: 'Your Moon line rests here. Emotional safety, belonging, and deep restoration are the gifts of these lands.',
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Destiny Compass',
-            style:
-                AppTextStyles.titleMedium.copyWith(color: Colors.white)),
+        Text('astro_destiny_compass'.tr(),
+            style: AppTextStyles.titleMedium.copyWith(color: Colors.white)),
         const SizedBox(height: 2),
-        Text('Your three most powerful global directions',
+        Text('astro_destiny_compass_sub'.tr(),
             style: AppTextStyles.bodySmall),
         const SizedBox(height: 12),
         ..._destinations.map((d) => Padding(
@@ -1074,21 +911,6 @@ class _DestinyCompass extends StatelessWidget {
       ],
     );
   }
-}
-
-class _Destination {
-  final String label;
-  final String emoji;
-  final Color color;
-  final String region;
-  final String why;
-  const _Destination({
-    required this.label,
-    required this.emoji,
-    required this.color,
-    required this.region,
-    required this.why,
-  });
 }
 
 class _DestinationCard extends StatelessWidget {
@@ -1109,8 +931,7 @@ class _DestinationCard extends StatelessWidget {
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border:
-            Border.all(color: dest.color.withValues(alpha: 0.28)),
+        border: Border.all(color: dest.color.withValues(alpha: 0.28)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1121,12 +942,10 @@ class _DestinationCard extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: dest.color.withValues(alpha: 0.12),
-              border:
-                  Border.all(color: dest.color.withValues(alpha: 0.3)),
+              border: Border.all(color: dest.color.withValues(alpha: 0.3)),
             ),
             alignment: Alignment.center,
-            child: Text(dest.emoji,
-                style: const TextStyle(fontSize: 18)),
+            child: Text(dest.emoji, style: const TextStyle(fontSize: 18)),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1134,8 +953,8 @@ class _DestinationCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(dest.label,
-                    style: AppTextStyles.labelSmall.copyWith(
-                        color: dest.color, letterSpacing: 0.8)),
+                    style: AppTextStyles.labelSmall
+                        .copyWith(color: dest.color, letterSpacing: 0.8)),
                 const SizedBox(height: 3),
                 Text(dest.region,
                     style: AppTextStyles.titleMedium

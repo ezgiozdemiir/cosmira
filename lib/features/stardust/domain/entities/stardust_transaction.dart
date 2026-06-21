@@ -21,6 +21,9 @@ class StardustTransaction extends Equatable {
 
   bool get isEarning => type == 'earn';
   bool get isSpending => type == 'spend';
+  bool get isRefund =>
+      source.contains('refund') || description.toLowerCase().contains('refund');
+  bool get isPositive => isEarning || isRefund;
 
   @override
   List<Object?> get props => [id];

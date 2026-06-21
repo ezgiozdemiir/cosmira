@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -9,10 +10,7 @@ import '../../../../core/widgets/cosmic_card.dart';
 import '../../domain/entities/moon_phase.dart';
 import '../providers/moon_provider.dart';
 
-const _monthNames = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
+String _monthName(int month) => 'month_$month'.tr();
 
 class MoonCalendarScreen extends ConsumerWidget {
   const MoonCalendarScreen({super.key});
@@ -37,23 +35,19 @@ class MoonCalendarScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Title ────────────────────────────────────────────────
-                  const Text('Moon Calendar',
-                          style: AppTextStyles.headlineLarge)
+                  Text('moon_title'.tr(), style: AppTextStyles.headlineLarge)
                       .animate()
                       .fadeIn(),
                   const SizedBox(height: 4),
                   Text(
-                    isToday ? 'Today\'s energy' : _formatDate(selectedDay),
+                    isToday
+                        ? 'moon_today_energy'.tr()
+                        : _formatDate(selectedDay),
                     style: AppTextStyles.bodySmall,
                   ),
                   const SizedBox(height: 20),
-
-                  // ── Hero card ────────────────────────────────────────────
                   _MoonHeroCard(phase: displayPhase),
                   const SizedBox(height: 24),
-
-                  // ── Month navigation + calendar ──────────────────────────
                   _MonthHeader(month: selectedMonth, ref: ref),
                   const SizedBox(height: 12),
                   _CalendarGrid(
@@ -63,14 +57,10 @@ class MoonCalendarScreen extends ConsumerWidget {
                     selectedDay: selectedDay,
                   ),
                   const SizedBox(height: 24),
-
-                  // ── Ritual card ───────────────────────────────────────────
                   _RitualCard(phase: displayPhase),
                   const SizedBox(height: 16),
-
-                  // ── Intentions ────────────────────────────────────────────
                   if (displayPhase.intentions.isNotEmpty) ...[
-                    const Text('Set Your Intentions',
+                    Text('moon_set_intentions'.tr(),
                         style: AppTextStyles.titleMedium),
                     const SizedBox(height: 10),
                     Wrap(
@@ -88,7 +78,7 @@ class MoonCalendarScreen extends ConsumerWidget {
                             ),
                           ),
                           child: Text(
-                            intention,
+                            intention.tr(),
                             style: AppTextStyles.labelSmall.copyWith(
                               color: AppColors.auraIndigo,
                               letterSpacing: 0.4,
@@ -99,8 +89,6 @@ class MoonCalendarScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 16),
                   ],
-
-                  // ── Crystal ───────────────────────────────────────────────
                   if (displayPhase.crystalRecommendation != null)
                     CosmicCard(
                       child: Row(
@@ -112,11 +100,11 @@ class MoonCalendarScreen extends ConsumerWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Crystal Ally',
+                                Text('moon_crystal_ally'.tr(),
                                     style: AppTextStyles.labelSmall),
                                 const SizedBox(height: 2),
                                 Text(
-                                  displayPhase.crystalRecommendation!,
+                                  displayPhase.crystalRecommendation!.tr(),
                                   style: AppTextStyles.titleMedium.copyWith(
                                     color: AppColors.auraTeal,
                                   ),
@@ -141,12 +129,8 @@ class MoonCalendarScreen extends ConsumerWidget {
       a.year == b.year && a.month == b.month && a.day == b.day;
 
   String _formatDate(DateTime d) =>
-      '${_monthNames[d.month - 1]} ${d.day}, ${d.year}';
+      '${_monthName(d.month)} ${d.day}, ${d.year}';
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Hero card
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _MoonHeroCard extends StatelessWidget {
   final MoonPhase phase;
@@ -165,7 +149,6 @@ class _MoonHeroCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Moon emoji with glow
           Container(
             width: 88,
             height: 88,
@@ -194,24 +177,25 @@ class _MoonHeroCard extends StatelessWidget {
               )
               .fadeIn(duration: 400.ms),
           const SizedBox(width: 16),
-          // Phase info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  phase.phaseName.replaceAll('_', ' ').capitalize,
+                  'moon_phase_${phase.phaseName}'.tr(),
                   style: AppTextStyles.headlineSmall,
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'in ${phase.zodiacSign.capitalize} ${phase.zodiacSign.zodiacEmoji}',
+                  'moon_zodiac_in'.tr(namedArgs: {
+                    'sign': phase.zodiacSign.zodiacName,
+                    'emoji': phase.zodiacSign.zodiacEmoji,
+                  }),
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.accentGlow,
                   ),
                 ),
                 const SizedBox(height: 12),
-                // Illumination bar
                 Row(
                   children: [
                     Expanded(
@@ -238,8 +222,8 @@ class _MoonHeroCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  'illuminated',
+                Text(
+                  'moon_illuminated'.tr(),
                   style: AppTextStyles.bodySmall,
                 ),
               ],
@@ -250,10 +234,6 @@ class _MoonHeroCard extends StatelessWidget {
     ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.05, duration: 400.ms);
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Month navigation header
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _MonthHeader extends StatelessWidget {
   final DateTime month;
@@ -268,7 +248,6 @@ class _MonthHeader extends StatelessWidget {
           onPressed: () {
             final prev = DateTime(month.year, month.month - 1);
             ref.read(selectedMonthProvider.notifier).state = prev;
-            // Reset selected day to first day of new month
             ref.read(selectedDayProvider.notifier).state = prev;
           },
           icon: const Icon(Icons.chevron_left, color: AppColors.textSecondary),
@@ -277,7 +256,7 @@ class _MonthHeader extends StatelessWidget {
         Expanded(
           child: Center(
             child: Text(
-              '${_monthNames[month.month - 1]} ${month.year}',
+              '${_monthName(month.month)} ${month.year}',
               style: AppTextStyles.titleMedium,
             ),
           ),
@@ -297,10 +276,6 @@ class _MonthHeader extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Calendar grid
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _CalendarGrid extends ConsumerWidget {
   final int year;
   final int month;
@@ -314,7 +289,11 @@ class _CalendarGrid extends ConsumerWidget {
     required this.selectedDay,
   });
 
-  static const _dayHeaders = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  static List<String> get _dayHeaders => [
+    'moon_day_mon'.tr(), 'moon_day_tue'.tr(), 'moon_day_wed'.tr(),
+    'moon_day_thu'.tr(), 'moon_day_fri'.tr(), 'moon_day_sat'.tr(),
+    'moon_day_sun'.tr(),
+  ];
 
   static const _majorPhases = {
     'new_moon', 'first_quarter', 'full_moon', 'last_quarter'
@@ -323,12 +302,10 @@ class _CalendarGrid extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final today = DateTime.now();
-    // weekday: 1=Mon … 7=Sun, so offset = weekday - 1
     final firstWeekday = DateTime(year, month, 1).weekday - 1;
 
     return Column(
       children: [
-        // Day-of-week header
         Row(
           children: _dayHeaders.map((d) {
             return Expanded(
@@ -345,17 +322,14 @@ class _CalendarGrid extends ConsumerWidget {
           }).toList(),
         ),
         const SizedBox(height: 6),
-        // Day cells
         LayoutBuilder(builder: (context, constraints) {
           final cellSize = constraints.maxWidth / 7;
           return Wrap(
             children: [
-              // Empty offset cells
               ...List.generate(
                 firstWeekday,
                 (_) => SizedBox(width: cellSize, height: cellSize),
               ),
-              // Day cells
               ...phases.asMap().entries.map((e) {
                 final dayIndex = e.key;
                 final phase = e.value;
@@ -374,7 +348,6 @@ class _CalendarGrid extends ConsumerWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Phase indicator dot or emoji
                         if (isMajor)
                           Text(
                             phase.phaseEmoji,
@@ -392,7 +365,6 @@ class _CalendarGrid extends ConsumerWidget {
                             ),
                           ),
                         const SizedBox(height: 3),
-                        // Day number
                         Container(
                           width: 26,
                           height: 26,
@@ -441,17 +413,16 @@ class _CalendarGrid extends ConsumerWidget {
           );
         }),
         const SizedBox(height: 12),
-        // Phase legend
-        const Row(
+        Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _LegendItem(emoji: '🌑', label: 'New'),
-            SizedBox(width: 16),
-            _LegendItem(emoji: '🌓', label: '1st Qtr'),
-            SizedBox(width: 16),
-            _LegendItem(emoji: '🌕', label: 'Full'),
-            SizedBox(width: 16),
-            _LegendItem(emoji: '🌗', label: 'Last Qtr'),
+            _LegendItem(emoji: '🌑', label: 'moon_new'.tr()),
+            const SizedBox(width: 16),
+            _LegendItem(emoji: '🌓', label: 'moon_first_qtr'.tr()),
+            const SizedBox(width: 16),
+            _LegendItem(emoji: '🌕', label: 'moon_full'.tr()),
+            const SizedBox(width: 16),
+            _LegendItem(emoji: '🌗', label: 'moon_last_qtr'.tr()),
           ],
         ),
       ],
@@ -480,10 +451,6 @@ class _LegendItem extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Ritual card
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _RitualCard extends StatelessWidget {
   final MoonPhase phase;
   const _RitualCard({required this.phase});
@@ -503,7 +470,7 @@ class _RitualCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  phase.ritualTitle,
+                  phase.ritualTitle.tr(),
                   style: AppTextStyles.titleLarge,
                 ),
               ),
@@ -511,7 +478,7 @@ class _RitualCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            phase.ritualDescription,
+            phase.ritualDescription.tr(),
             style: AppTextStyles.bodyMedium,
           ),
         ],

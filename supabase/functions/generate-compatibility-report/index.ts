@@ -55,7 +55,9 @@ serve(async (req) => {
     );
     if (authErr || !user) return json({ error: "Invalid token" }, 401);
 
-    const { partner_id } = await req.json();
+    const body = await req.json();
+    const { partner_id } = body;
+    const language: string = body.language ?? "en";
     if (!partner_id) return json({ error: "partner_id is required" }, 400);
 
     // Return cached report if exists
@@ -64,6 +66,7 @@ serve(async (req) => {
       .select("*")
       .eq("user_id", user.id)
       .eq("partner_id", partner_id)
+      .eq("language", language)
       .maybeSingle();
 
     if (existing) return json({ cached: true, report: existing });
@@ -95,7 +98,8 @@ serve(async (req) => {
     const identity = `You (Sun: ${profile.sun_sign ?? "unknown"}${profile.moon_sign ? `, Moon: ${profile.moon_sign}` : ""}${profile.rising_sign ? `, Rising: ${profile.rising_sign}` : ""}${userAge ? `, ~${userAge} years old` : ""})`;
     const partnerIdentity = `${partner.name} (Sun: ${partner.sun_sign}${partnerAge ? `, ~${partnerAge} years old` : ""}, relationship: ${partner.relationship})`;
 
-    const prompt = `You are a master astrologer for the luxury app Cosmira. Generate a deeply personalised, premium compatibility report.
+    const buildPrompt = (lang: string) =>
+      `You are a master astrologer for the luxury app Cosmira. Generate a deeply personalised, premium compatibility report.
 
 User: ${identity}
 Partner: ${partnerIdentity}
@@ -124,33 +128,53 @@ Return ONLY valid JSON with EXACTLY this structure — all scores are integers 0
   }
 }
 
-Tone: premium, intimate, poetic, emotionally resonant. Every sentence must feel specific to THESE signs, not generic zodiac content. Return ONLY valid JSON.`;
+Tone: premium, intimate, poetic, emotionally resonant. Every sentence must feel specific to THESE signs, not generic zodiac content. Return ONLY valid JSON.${lang === "tr" ? "\n\nIMPORTANT: Respond entirely in Turkish. All text values in the JSON must be in Turkish." : ""}`;
 
-    const geminiResult = await callGemini(prompt);
-
-    const insertData = {
+    const toInsertData = (r: Record<string, unknown>, lang: string) => ({
       user_id: user.id,
       partner_id,
-      overall_score: geminiResult.overall_score,
-      emotional_alignment: geminiResult.emotional_alignment,
-      communication_score: geminiResult.communication_score,
-      karmic_bond: geminiResult.karmic_bond,
-      intimacy_energy: geminiResult.intimacy_energy,
-      soulmate_probability: geminiResult.soulmate_probability,
-      long_term_score: geminiResult.long_term_score,
-      energetic_balance: geminiResult.energetic_balance,
-      ai_analysis: geminiResult.ai_analysis,
+      language: lang,
+      overall_score: r.overall_score,
+      emotional_alignment: r.emotional_alignment,
+      communication_score: r.communication_score,
+      karmic_bond: r.karmic_bond,
+      intimacy_energy: r.intimacy_energy,
+      soulmate_probability: r.soulmate_probability,
+      long_term_score: r.long_term_score,
+      energetic_balance: r.energetic_balance,
+      ai_analysis: r.ai_analysis,
       is_deep_scan: true,
       stardust_cost: 0,
-    };
+    });
+
+    const otherLang = language === "en" ? "tr" : "en";
+    const { data: otherExisting } = await supabase
+      .from("compatibility_reports").select("id")
+      .eq("user_id", user.id).eq("partner_id", partner_id).eq("language", otherLang).maybeSingle();
+
+    // Generate both languages in parallel
+    const [primaryResult, otherResult] = await Promise.allSettled([
+      callGemini(buildPrompt(language)),
+      otherExisting ? Promise.resolve(null) : callGemini(buildPrompt(otherLang)),
+    ]);
+
+    if (primaryResult.status === "rejected") throw new Error(`Gemini error: ${primaryResult.reason}`);
+    const geminiResult = primaryResult.value;
 
     const { data: inserted, error: insertErr } = await supabase
       .from("compatibility_reports")
-      .insert(insertData)
+      .insert(toInsertData(geminiResult, language))
       .select()
       .single();
 
     if (insertErr) throw new Error(`Insert failed: ${insertErr.message}`);
+
+    // Insert other language (best-effort)
+    if (otherResult.status === "fulfilled" && otherResult.value !== null) {
+      await supabase.from("compatibility_reports")
+        .insert(toInsertData(otherResult.value, otherLang))
+        .catch((e: unknown) => console.error("Other-lang compatibility report insert failed:", e));
+    }
 
     return json({ cached: false, report: inserted });
   } catch (err) {

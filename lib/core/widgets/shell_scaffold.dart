@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -45,7 +46,7 @@ class ShellScaffold extends StatelessWidget {
               case 0:
                 context.go('/');
               case 1:
-                context.go('/horoscope');
+                context.go('/astrology');
               case 2:
                 context.go('/breathwork');
               case 3:
@@ -54,26 +55,26 @@ class ShellScaffold extends StatelessWidget {
                 context.go('/profile');
             }
           },
-          items: const [
+          items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.auto_awesome),
-              label: 'Home',
+              icon: const Icon(Icons.auto_awesome),
+              label: 'nav_home'.tr(),
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.stars),
-              label: 'Stars',
+              icon: const Icon(Icons.stars),
+              label: 'nav_stars'.tr(),
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.air),
-              label: 'Breathe',
+              icon: const Icon(Icons.air),
+              label: 'nav_breathe'.tr(),
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.nightlight_round),
-              label: 'Moon',
+              icon: const Icon(Icons.nightlight_round),
+              label: 'nav_moon'.tr(),
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              label: 'Profile',
+              icon: const Icon(Icons.person_outline),
+              label: 'nav_profile'.tr(),
             ),
           ],
         ),

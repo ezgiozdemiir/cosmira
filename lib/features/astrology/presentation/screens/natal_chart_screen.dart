@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -32,16 +33,17 @@ class NatalChartScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(24),
                 child: CosmicCard(
                   onTap: () => context.push('/onboarding'),
-                  child: const Column(
+                  child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.stars, size: 48, color: AppColors.auraViolet),
-                      SizedBox(height: 16),
-                      Text('Chart not calculated yet',
+                      const Icon(Icons.stars,
+                          size: 48, color: AppColors.auraViolet),
+                      const SizedBox(height: 16),
+                      Text('natal_not_calculated'.tr(),
                           style: AppTextStyles.titleMedium),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       Text(
-                        'Tap here to complete your birth details and unlock your natal chart.',
+                        'natal_complete_details'.tr(),
                         style: AppTextStyles.bodySmall,
                         textAlign: TextAlign.center,
                       ),
@@ -53,7 +55,8 @@ class NatalChartScreen extends ConsumerWidget {
           }
 
           final bd = profile.birthDate!;
-          final birthDateStr = '${bd.day} ${_monthName(bd.month)} ${bd.year}';
+          final birthDateStr =
+              '${bd.day} ${'month_${bd.month}'.tr()} ${bd.year}';
           final sunSign = profile.sunSign ?? '';
 
           return CustomScrollView(
@@ -64,18 +67,18 @@ class NatalChartScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text('Your Natal Chart', style: AppTextStyles.headlineLarge)
+                      Text('natal_title'.tr(),
+                              style: AppTextStyles.headlineLarge)
                           .animate()
                           .fadeIn(),
                       const SizedBox(height: 4),
                       Text(
-                        'Based on your birth information',
+                        'natal_subtitle'.tr(),
                         style: AppTextStyles.bodySmall
                             .copyWith(color: AppColors.textSecondary),
                       ).animate().fadeIn(delay: 100.ms),
                       const SizedBox(height: 24),
 
-                      // Birth details
                       CosmicCard(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,34 +89,39 @@ class NatalChartScreen extends ConsumerWidget {
                                     size: 16, color: AppColors.accentGlow),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'Birth Details',
+                                  'natal_birth_details'.tr(),
                                   style: AppTextStyles.labelLarge
                                       .copyWith(color: AppColors.accentGlow),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 16),
-                            _DetailRow(label: 'Date', value: birthDateStr),
+                            _DetailRow(
+                                label: 'natal_date'.tr(),
+                                value: birthDateStr),
                             if (profile.birthTime != null) ...[
                               const SizedBox(height: 10),
-                              _DetailRow(label: 'Time', value: profile.birthTime!),
+                              _DetailRow(
+                                  label: 'natal_time'.tr(),
+                                  value: profile.birthTime!),
                             ],
                             if (profile.birthCity != null) ...[
                               const SizedBox(height: 10),
-                              _DetailRow(label: 'City', value: profile.birthCity!),
+                              _DetailRow(
+                                  label: 'natal_city'.tr(),
+                                  value: profile.birthCity!),
                             ],
                           ],
                         ),
                       ).animate().fadeIn(delay: 200.ms),
                       const SizedBox(height: 16),
 
-                      // Big Three
                       CosmicCard(
                         gradient: AppColors.premiumGradient,
                         child: Column(
                           children: [
                             Text(
-                              'The Big Three',
+                              'natal_big_three'.tr(),
                               style: AppTextStyles.labelLarge
                                   .copyWith(color: Colors.white70),
                             ),
@@ -122,17 +130,17 @@ class NatalChartScreen extends ConsumerWidget {
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
                                 _BigThree(
-                                  label: 'Sun',
+                                  label: 'natal_sun'.tr(),
                                   sign: sunSign,
                                   isCalculated: sunSign.isNotEmpty,
                                 ),
                                 _BigThree(
-                                  label: 'Moon',
+                                  label: 'natal_moon'.tr(),
                                   sign: profile.moonSign ?? '',
                                   isCalculated: profile.moonSign != null,
                                 ),
                                 _BigThree(
-                                  label: 'Rising',
+                                  label: 'natal_rising'.tr(),
                                   sign: profile.risingSign ?? '',
                                   isCalculated: profile.risingSign != null,
                                 ),
@@ -142,7 +150,6 @@ class NatalChartScreen extends ConsumerWidget {
                         ),
                       ).animate().fadeIn(delay: 400.ms),
 
-                      // Houses
                       if (profile.risingSign != null) ...[
                         const SizedBox(height: 16),
                         CosmicCard(
@@ -150,7 +157,7 @@ class NatalChartScreen extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Houses',
+                                'natal_houses'.tr(),
                                 style: AppTextStyles.labelLarge
                                     .copyWith(color: AppColors.accentGlow),
                               ),
@@ -177,28 +184,25 @@ class NatalChartScreen extends ConsumerWidget {
                         ).animate().fadeIn(delay: 470.ms),
                       ],
 
-                      // House interpretations (pro only)
                       if (profile.isPremium)
                         _HouseInsightsSection(delay: 520.ms),
 
-                      // Today / This Month / This Year (all users)
                       _InsightSection(
-                        title: 'Today',
+                        title: 'natal_today'.tr(),
                         provider: dailyInsightProvider,
                         delay: 570.ms,
                       ),
                       _InsightSection(
-                        title: 'This Month',
+                        title: 'natal_this_month'.tr(),
                         provider: monthlyInsightProvider,
                         delay: 620.ms,
                       ),
                       _InsightSection(
-                        title: 'This Year',
+                        title: 'natal_this_year'.tr(),
                         provider: yearlyInsightProvider,
                         delay: 670.ms,
                       ),
 
-                      // Birth Map entry card
                       const _BirthMapEntryCard()
                           .animate()
                           .fadeIn(delay: 720.ms),
@@ -211,17 +215,10 @@ class NatalChartScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: ShimmerCardLoading()),
-        error: (_, __) => const Center(child: Text('Error loading profile')),
+        error: (_, __) =>
+            Center(child: Text('natal_error_profile'.tr())),
       ),
     );
-  }
-
-  static String _monthName(int month) {
-    const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
-    ];
-    return months[month - 1];
   }
 }
 
@@ -244,13 +241,13 @@ class _HouseTile extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'House $houseNumber',
+            'natal_house_n'.tr(namedArgs: {'n': '$houseNumber'}),
             style: AppTextStyles.labelSmall
                 .copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 4),
           Text(sign.zodiacEmoji, style: const TextStyle(fontSize: 18)),
-          Text(sign.capitalize, style: AppTextStyles.bodySmall),
+          Text(sign.zodiacName, style: AppTextStyles.bodySmall),
         ],
       ),
     );
@@ -403,7 +400,7 @@ class _BigThree extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          isCalculated ? sign.capitalize : '—',
+          isCalculated ? sign.zodiacName : '—',
           style: AppTextStyles.labelLarge.copyWith(color: Colors.white),
         ),
         Text(
@@ -444,16 +441,17 @@ class _HouseInsightsSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(houseInsightsProvider);
     return state.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.only(top: 24),
+      loading: () => Padding(
+        padding: const EdgeInsets.only(top: 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('House Interpretations', style: AppTextStyles.titleMedium),
-            SizedBox(height: 12),
-            ShimmerLoading(height: 120),
-            SizedBox(height: 12),
-            ShimmerLoading(height: 120),
+            Text('natal_house_interpretations'.tr(),
+                style: AppTextStyles.titleMedium),
+            const SizedBox(height: 12),
+            const ShimmerLoading(height: 120),
+            const SizedBox(height: 12),
+            const ShimmerLoading(height: 120),
           ],
         ),
       ).animate().fadeIn(delay: delay),
@@ -464,7 +462,8 @@ class _HouseInsightsSection extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('House Interpretations', style: AppTextStyles.titleMedium),
+              Text('natal_house_interpretations'.tr(),
+                  style: AppTextStyles.titleMedium),
               const SizedBox(height: 12),
               ...insight.houses.map((h) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
@@ -519,7 +518,7 @@ class _HouseInsightCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      detail.sign.capitalize,
+                      detail.sign.zodiacName,
                       style: AppTextStyles.bodySmall
                           .copyWith(color: AppColors.textSecondary),
                     ),
@@ -593,15 +592,15 @@ class _BirthMapEntryCard extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Discover Your Cosmic Fingerprint',
+              Text(
+                'natal_birth_map_title'.tr(),
                 style: AppTextStyles.headlineSmall,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Birth Map',
-                style: TextStyle(
+              Text(
+                'natal_birth_map_name'.tr(),
+                style: const TextStyle(
                   fontFamily: 'Satoshi',
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
@@ -612,16 +611,15 @@ class _BirthMapEntryCard extends ConsumerWidget {
               ),
               const SizedBox(height: 14),
               Text(
-                'Your complete astrological blueprint — personality, purpose, love, career & a 3-year cosmic forecast.',
-                style: AppTextStyles.bodySmall
-                    .copyWith(color: Colors.white54),
+                'natal_birth_map_desc'.tr(),
+                style: AppTextStyles.bodySmall.copyWith(color: Colors.white54),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
               if (alreadyPurchased)
-                _buildViewBadge()
+                _buildViewBadge(context)
               else
-                _buildCostBadge(),
+                _buildCostBadge(context),
             ],
           ),
         ),
@@ -629,9 +627,8 @@ class _BirthMapEntryCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildViewBadge() => Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+  Widget _buildViewBadge(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
           gradient: AppColors.premiumGradient,
           borderRadius: BorderRadius.circular(30),
@@ -641,28 +638,25 @@ class _BirthMapEntryCard extends ConsumerWidget {
           children: [
             const Icon(Icons.auto_awesome, color: Colors.white, size: 16),
             const SizedBox(width: 8),
-            Text('View Your Birth Map',
-                style: AppTextStyles.labelLarge
-                    .copyWith(color: Colors.white)),
+            Text('natal_birth_map_view'.tr(),
+                style: AppTextStyles.labelLarge.copyWith(color: Colors.white)),
           ],
         ),
       );
 
-  Widget _buildCostBadge() => Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+  Widget _buildCostBadge(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.07),
           borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-              color: Colors.white.withValues(alpha: 0.15)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text('✨', style: TextStyle(fontSize: 16)),
             const SizedBox(width: 8),
-            Text('50 Stardust',
+            Text('natal_birth_map_cost'.tr(),
                 style: AppTextStyles.labelLarge
                     .copyWith(color: AppColors.auraAmber)),
           ],
@@ -691,13 +685,11 @@ class _PurchaseBottomSheet extends ConsumerStatefulWidget {
       _PurchaseBottomSheetState();
 }
 
-class _PurchaseBottomSheetState
-    extends ConsumerState<_PurchaseBottomSheet> {
+class _PurchaseBottomSheetState extends ConsumerState<_PurchaseBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final purchaseState = ref.watch(birthMapPurchaseProvider);
-    final balance =
-        ref.watch(stardustBalanceProvider).valueOrNull ?? 0;
+    final balance = ref.watch(stardustBalanceProvider).valueOrNull ?? 0;
     final profile = ref.watch(userProfileProvider).valueOrNull;
     final canAfford = balance >= 50;
 
@@ -715,7 +707,6 @@ class _PurchaseBottomSheetState
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Handle
           Center(
             child: Container(
               width: 40,
@@ -727,28 +718,24 @@ class _PurchaseBottomSheetState
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
-            '✦  Your Cosmic Fingerprint',
+          Text(
+            'natal_birth_map_sheet_title'.tr(),
             style: AppTextStyles.headlineSmall,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
-            'A one-time purchase — your Birth Map is yours forever.',
+            'natal_birth_map_sheet_subtitle'.tr(),
             style: AppTextStyles.bodySmall.copyWith(color: Colors.white38),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          // What you get
-          ...const [
-            _BulletRow('Personality deep-dive synthesizing all 4 placements'),
-            _BulletRow('Soul purpose, karmic lessons & north node path'),
-            _BulletRow('Love, career & cosmic strengths analysis'),
-            _BulletRow('3-year year-by-year cosmic forecast'),
-            _BulletRow('Export as PDF or Instagram Story'),
-          ],
+          _BulletRow('natal_birth_map_bullet_1'.tr()),
+          _BulletRow('natal_birth_map_bullet_2'.tr()),
+          _BulletRow('natal_birth_map_bullet_3'.tr()),
+          _BulletRow('natal_birth_map_bullet_4'.tr()),
+          _BulletRow('natal_birth_map_bullet_5'.tr()),
           const SizedBox(height: 24),
-          // Balance row
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
@@ -758,7 +745,7 @@ class _PurchaseBottomSheetState
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Your Stardust',
+                Text('natal_your_stardust'.tr(),
                     style: AppTextStyles.bodyMedium
                         .copyWith(color: Colors.white60)),
                 Row(
@@ -777,17 +764,13 @@ class _PurchaseBottomSheetState
             const SizedBox(height: 12),
             Text(
               purchaseState.error!,
-              style: AppTextStyles.bodySmall
-                  .copyWith(color: AppColors.auraRose),
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.auraRose),
               textAlign: TextAlign.center,
             ),
           ],
           const SizedBox(height: 20),
-          // Confirm button
           GestureDetector(
-            onTap: (purchaseState.isLoading ||
-                    !canAfford ||
-                    profile == null)
+            onTap: (purchaseState.isLoading || !canAfford || profile == null)
                 ? null
                 : () => _purchase(context, profile),
             child: Container(
@@ -809,8 +792,8 @@ class _PurchaseBottomSheetState
                       )
                     : Text(
                         canAfford
-                            ? 'Unlock for 50 ✨ Stardust'
-                            : 'Not enough Stardust',
+                            ? 'natal_unlock_btn'.tr()
+                            : 'natal_not_enough'.tr(),
                         style: AppTextStyles.labelLarge
                             .copyWith(color: Colors.white),
                       ),
@@ -825,7 +808,7 @@ class _PurchaseBottomSheetState
                 context.push('/stardust');
               },
               child: Text(
-                'Get more Stardust →',
+                'natal_get_more'.tr(),
                 style: AppTextStyles.bodySmall
                     .copyWith(color: AppColors.auraAmber),
                 textAlign: TextAlign.center,

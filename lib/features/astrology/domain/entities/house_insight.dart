@@ -13,10 +13,29 @@ class HouseDetail {
 
   factory HouseDetail.fromJson(Map<String, dynamic> json) => HouseDetail(
         house: (json['house'] as num).toInt(),
-        sign: json['sign'] as String,
+        sign: _toEnglishSign(json['sign'] as String),
         theme: json['theme'] as String,
         interpretation: json['interpretation'] as String,
       );
+
+  static String _toEnglishSign(String sign) {
+    const trToEn = {
+      'koç': 'aries',         'koc': 'aries',
+      'boğa': 'taurus',       'boga': 'taurus',
+      'ikizler': 'gemini',    'i̇kizler': 'gemini',
+      'yengeç': 'cancer',     'yengec': 'cancer',
+      'aslan': 'leo',
+      'başak': 'virgo',       'basak': 'virgo',
+      'terazi': 'libra',
+      'akrep': 'scorpio',
+      'yay': 'sagittarius',
+      'oğlak': 'capricorn',   'oglak': 'capricorn',
+      'kova': 'aquarius',
+      'balık': 'pisces',      'balik': 'pisces',
+    };
+    final lower = sign.toLowerCase();
+    return trToEn[lower] ?? lower;
+  }
 }
 
 class HouseInsight {

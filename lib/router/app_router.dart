@@ -23,6 +23,7 @@ import '../features/subscription/presentation/screens/paywall_screen.dart';
 import '../features/stardust/presentation/screens/stardust_store_screen.dart';
 import '../features/astrocartography/presentation/screens/astrocartography_screen.dart';
 import '../features/notifications/presentation/screens/notifications_screen.dart';
+import '../features/settings/presentation/screens/settings_screen.dart';
 import '../core/widgets/shell_scaffold.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -120,6 +121,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/notifications',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: '/settings',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
         path: '/profile/edit',

@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -60,42 +61,42 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Future<void> _saveAndContinue() async {
     if (_firstName.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your first name to continue.')),
+        SnackBar(content: Text('validate_first_name'.tr())),
       );
       return;
     }
 
     if (_lastName.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your last name to continue.')),
+        SnackBar(content: Text('validate_last_name'.tr())),
       );
       return;
     }
 
     if (_gender == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select your gender to continue.')),
+        SnackBar(content: Text('validate_gender'.tr())),
       );
       return;
     }
 
     if (_birthDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select your birth date to continue.')),
+        SnackBar(content: Text('validate_birth_date'.tr())),
       );
       return;
     }
 
     if (_birthTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select your birth time to continue.')),
+        SnackBar(content: Text('validate_birth_time'.tr())),
       );
       return;
     }
 
     if (_birthCity.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your birth city to continue.')),
+        SnackBar(content: Text('validate_birth_city'.tr())),
       );
       return;
     }

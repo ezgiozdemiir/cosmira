@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -53,7 +54,7 @@ class _BirthDataFormState extends ConsumerState<BirthDataForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _FieldLabel('Date of Birth *'),
+        _FieldLabel('form_birth_date'.tr()),
         const SizedBox(height: 8),
         GestureDetector(
           onTap: () async {
@@ -72,7 +73,7 @@ class _BirthDataFormState extends ConsumerState<BirthDataForm> {
             child: Text(
               _selectedDate != null
                   ? '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}'
-                  : 'Select your birth date',
+                  : 'form_birth_date_hint'.tr(),
               style: _selectedDate != null
                   ? AppTextStyles.bodyLarge
                   : AppTextStyles.bodyMedium,
@@ -80,7 +81,7 @@ class _BirthDataFormState extends ConsumerState<BirthDataForm> {
           ),
         ),
         const SizedBox(height: 24),
-        _FieldLabel('Time of Birth *'),
+        _FieldLabel('form_birth_time'.tr()),
         const SizedBox(height: 8),
         GestureDetector(
           onTap: () async {
@@ -98,7 +99,7 @@ class _BirthDataFormState extends ConsumerState<BirthDataForm> {
             child: Text(
               _selectedTime != null
                   ? _selectedTime!.format(context)
-                  : 'Select your birth time',
+                  : 'form_birth_time_hint'.tr(),
               style: _selectedTime != null
                   ? AppTextStyles.bodyLarge
                   : AppTextStyles.bodyMedium,
@@ -106,15 +107,15 @@ class _BirthDataFormState extends ConsumerState<BirthDataForm> {
           ),
         ),
         const SizedBox(height: 24),
-        _FieldLabel('Birth City *'),
+        _FieldLabel('form_birth_city'.tr()),
         const SizedBox(height: 8),
         TextField(
           controller: _cityController,
           style: AppTextStyles.bodyLarge,
-          decoration: const InputDecoration(
-            hintText: 'Enter your birth city',
+          decoration: InputDecoration(
+            hintText: 'form_birth_city_hint'.tr(),
             prefixIcon:
-                Icon(Icons.location_on_outlined, color: AppColors.textTertiary),
+                const Icon(Icons.location_on_outlined, color: AppColors.textTertiary),
           ),
         ),
       ],
@@ -145,7 +146,7 @@ class _FieldBox extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.5),
+        color: AppColors.surface.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.cardBorder),
       ),

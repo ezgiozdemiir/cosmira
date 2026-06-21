@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -29,12 +30,13 @@ class CompatibilityScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Compatibility', style: AppTextStyles.headlineLarge)
+                        Text('compat_title'.tr(),
+                                style: AppTextStyles.headlineLarge)
                             .animate()
                             .fadeIn(),
                         const SizedBox(height: 4),
                         Text(
-                          'Explore your cosmic connections',
+                          'compat_subtitle'.tr(),
                           style: AppTextStyles.bodyMedium,
                         ).animate().fadeIn(delay: 200.ms),
                       ],
@@ -70,17 +72,17 @@ class CompatibilityScreen extends ConsumerWidget {
                           const Icon(Icons.favorite_border,
                               size: 48, color: AppColors.auraRose),
                           const SizedBox(height: 16),
-                          Text('No partners yet',
+                          Text('compat_no_partners'.tr(),
                               style: AppTextStyles.titleMedium),
                           const SizedBox(height: 8),
                           Text(
-                            'Add someone to discover your cosmic compatibility.',
+                            'compat_no_partners_sub'.tr(),
                             style: AppTextStyles.bodySmall,
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 20),
                           CosmicButton(
-                            label: 'Add Partner',
+                            label: 'compat_add_partner'.tr(),
                             icon: Icons.add,
                             onPressed: () => _showAddSheet(context),
                           ),
@@ -122,7 +124,7 @@ class CompatibilityScreen extends ConsumerWidget {
                                   Text(partner.name,
                                       style: AppTextStyles.titleMedium),
                                   Text(
-                                    '${partner.sunSign.capitalize} • ${partner.relationship.capitalize}',
+                                    '${partner.sunSign.zodiacName} • ${'compat_${partner.relationship}'.tr()}',
                                     style: AppTextStyles.bodySmall,
                                   ),
                                 ],
@@ -145,8 +147,8 @@ class CompatibilityScreen extends ConsumerWidget {
             loading: () => const SliverToBoxAdapter(
               child: Center(child: CircularProgressIndicator()),
             ),
-            error: (_, __) => const SliverToBoxAdapter(
-              child: Center(child: Text('Error loading partners')),
+            error: (_, __) => SliverToBoxAdapter(
+              child: Center(child: Text('compat_error'.tr())),
             ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
@@ -165,10 +167,6 @@ class CompatibilityScreen extends ConsumerWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Add Partner bottom sheet
-// ---------------------------------------------------------------------------
-
 class _AddPartnerSheet extends ConsumerStatefulWidget {
   const _AddPartnerSheet();
 
@@ -184,12 +182,12 @@ class _AddPartnerSheetState extends ConsumerState<_AddPartnerSheet> {
   String _relationship = 'romantic';
   DateTime? _birthDate;
 
-  static const _relationships = [
-    ('romantic', '💕', 'Romantic'),
-    ('friend', '🌟', 'Friend'),
-    ('family', '👨‍👩‍👧', 'Family'),
-    ('colleague', '🤝', 'Colleague'),
-  ];
+  List<(String, String, String)> get _relationships => [
+        ('romantic', '💕', 'compat_romantic'.tr()),
+        ('friend', '🌟', 'compat_friend'.tr()),
+        ('family', '👨‍👩‍👧', 'compat_family'.tr()),
+        ('colleague', '🤝', 'compat_colleague'.tr()),
+      ];
 
   @override
   void dispose() {
@@ -204,10 +202,10 @@ class _AddPartnerSheetState extends ConsumerState<_AddPartnerSheet> {
       initialDate: _birthDate ?? DateTime(1995, 6, 15),
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
-      helpText: 'Select their birthday',
+      helpText: 'compat_select_birthday_hint'.tr(),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: ColorScheme.dark(
+          colorScheme: const ColorScheme.dark(
             primary: AppColors.auraRose,
             onPrimary: Colors.white,
             surface: AppColors.card,
@@ -224,7 +222,7 @@ class _AddPartnerSheetState extends ConsumerState<_AddPartnerSheet> {
     if (!_formKey.currentState!.validate()) return;
     if (_birthDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select their birthday')),
+        SnackBar(content: Text('compat_select_birthday_snack'.tr())),
       );
       return;
     }
@@ -258,7 +256,6 @@ class _AddPartnerSheetState extends ConsumerState<_AddPartnerSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Handle
             Center(
               child: Container(
                 width: 40,
@@ -271,25 +268,26 @@ class _AddPartnerSheetState extends ConsumerState<_AddPartnerSheet> {
             ),
             const SizedBox(height: 20),
 
-            Text('Add Partner', style: AppTextStyles.titleLarge),
+            Text('compat_add_partner'.tr(), style: AppTextStyles.titleLarge),
             const SizedBox(height: 4),
-            Text('Discover your cosmic compatibility',
+            Text('compat_add_partner_subtitle'.tr(),
                 style: AppTextStyles.bodySmall),
             const SizedBox(height: 24),
 
-            // Name
             TextFormField(
               controller: _nameController,
               textCapitalization: TextCapitalization.words,
-              decoration: _inputDecoration('Their name', Icons.person_outline),
+              decoration:
+                  _inputDecoration('compat_their_name'.tr(), Icons.person_outline),
               style: AppTextStyles.bodyMedium,
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Name is required' : null,
+                  (v == null || v.trim().isEmpty)
+                      ? 'compat_name_required'.tr()
+                      : null,
             ),
             const SizedBox(height: 16),
 
-            // Relationship chips
-            const Text('Relationship', style: AppTextStyles.labelLarge),
+            Text('compat_relationship'.tr(), style: AppTextStyles.labelLarge),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -317,14 +315,14 @@ class _AddPartnerSheetState extends ConsumerState<_AddPartnerSheet> {
             ),
             const SizedBox(height: 16),
 
-            // Birthday
-            const Text('Birthday', style: AppTextStyles.labelLarge),
+            Text('compat_birthday'.tr(), style: AppTextStyles.labelLarge),
             const SizedBox(height: 8),
             GestureDetector(
               onTap: _pickDate,
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
                   border: Border.all(
                     color: _birthDate != null
@@ -345,8 +343,8 @@ class _AddPartnerSheetState extends ConsumerState<_AddPartnerSheet> {
                     const SizedBox(width: 12),
                     Text(
                       _birthDate != null
-                          ? '${_birthDate!.day} ${_monthName(_birthDate!.month)} ${_birthDate!.year}'
-                          : 'Select their birthday',
+                          ? '${_birthDate!.day} ${'month_${_birthDate!.month}'.tr()} ${_birthDate!.year}'
+                          : 'compat_select_birthday_hint'.tr(),
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: _birthDate != null
                             ? AppColors.textPrimary
@@ -359,12 +357,11 @@ class _AddPartnerSheetState extends ConsumerState<_AddPartnerSheet> {
             ),
             const SizedBox(height: 16),
 
-            // Birth city (optional)
             TextFormField(
               controller: _cityController,
               textCapitalization: TextCapitalization.words,
               decoration: _inputDecoration(
-                  'Birth city (optional)', Icons.location_on_outlined),
+                  'compat_birth_city_opt'.tr(), Icons.location_on_outlined),
               style: AppTextStyles.bodyMedium,
             ),
             const SizedBox(height: 24),
@@ -377,7 +374,7 @@ class _AddPartnerSheetState extends ConsumerState<_AddPartnerSheet> {
             ],
 
             CosmicButton(
-              label: isLoading ? 'Adding…' : 'Add Partner',
+              label: isLoading ? 'compat_adding'.tr() : 'compat_add_partner'.tr(),
               icon: Icons.favorite_border,
               onPressed: isLoading ? null : _submit,
             ),
@@ -413,9 +410,4 @@ class _AddPartnerSheetState extends ConsumerState<_AddPartnerSheet> {
           borderSide: const BorderSide(color: AppColors.auraRose),
         ),
       );
-
-  String _monthName(int month) => const [
-        '', 'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
-      ][month];
 }

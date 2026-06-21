@@ -23,8 +23,13 @@ class AiService {
 
   const AiService(this._model);
 
-  Future<String> generateContent(String prompt) async {
-    final response = await _model.generateContent([Content.text(prompt)]);
+  Future<String> generateContent(String prompt,
+      {String languageCode = 'en'}) async {
+    final langInstruction = languageCode == 'tr'
+        ? '\nRespond entirely in Turkish.'
+        : '\nRespond entirely in English.';
+    final response = await _model
+        .generateContent([Content.text(prompt + langInstruction)]);
     return response.text ?? '';
   }
 
@@ -32,11 +37,12 @@ class AiService {
     required String sign,
     required String mood,
     required int energyScore,
+    String languageCode = 'en',
   }) async {
     final prompt = '''
 You are a luxury astrology AI for Cosmira. Generate a brief, elegant aura reading.
 Sign: $sign, Mood: $mood, Energy: $energyScore/100.
 Return 2-3 sentences. Tone: premium, calming, empowering. No generic platitudes.''';
-    return generateContent(prompt);
+    return generateContent(prompt, languageCode: languageCode);
   }
 }

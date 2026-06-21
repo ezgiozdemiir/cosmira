@@ -2,28 +2,55 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../config/di.dart';
+import '../../../../core/providers/language_provider.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../home/presentation/providers/home_provider.dart';
 import '../../domain/entities/birth_map.dart';
 import '../../domain/repositories/astrology_repository.dart';
 import 'astrology_provider.dart';
 
-/// Lightweight existence check — avoids fetching the full content blob
-/// when only the entry card on the natal chart screen needs to know.
+/// Returns true if the user has purchased a birth map in ANY language.
 final birthMapExistsProvider = FutureProvider<bool>((ref) async {
   final user = ref.watch(currentUserProvider);
   if (user == null) return false;
-  final result =
-      await ref.watch(astrologyRepositoryProvider).hasBirthMap(user.id);
+  final result = await ref
+      .watch(astrologyRepositoryProvider)
+      .hasBirthMap(user.id);
   return result.when(success: (d) => d, failure: (_) => false);
 });
 
 /// Full birth map — only watched from BirthMapScreen.
+/// Auto-generates the current language version if the user has already paid
+/// but only has a different language version cached.
 final birthMapProvider = FutureProvider<BirthMap?>((ref) async {
   final user = ref.watch(currentUserProvider);
   if (user == null) return null;
-  final result =
-      await ref.watch(astrologyRepositoryProvider).getBirthMap(user.id);
-  return result.when(success: (d) => d, failure: (_) => null);
+  final language = ref.watch(languageCodeProvider);
+  final repo = ref.watch(astrologyRepositoryProvider);
+
+  final result = await repo.getBirthMap(user.id, language: language);
+  final existing = result.when(success: (d) => d, failure: (_) => null);
+  if (existing != null) return existing;
+
+  // No version for this language yet — check if user has paid (any language)
+  final paidResult = await repo.hasBirthMap(user.id);
+  final hasPaid = paidResult.when(success: (d) => d, failure: (_) => false);
+  if (!hasPaid) return null;
+
+  // User already paid — generate the missing language for free
+  final profile = ref.read(userProfileProvider).valueOrNull;
+  if (profile == null) return null;
+
+  final genResult = await repo.generateBirthMap(
+    sunSign: profile.sunSign ?? '',
+    moonSign: profile.moonSign ?? '',
+    risingSign: profile.risingSign ?? '',
+    mcSign: profile.mcSign ?? '',
+    birthDate: profile.birthDate?.toIso8601String().split('T').first ?? '',
+    birthCity: profile.birthCity ?? '',
+    language: language,
+  );
+  return genResult.when(success: (d) => d, failure: (_) => null);
 });
 
 // ---------------------------------------------------------------------------
@@ -62,6 +89,7 @@ class BirthMapPurchaseNotifier
     required String birthCity,
   }) async {
     state = const BirthMapPurchaseState(isLoading: true);
+    final language = _ref.read(languageCodeProvider);
 
     final result = await _repo.generateBirthMap(
       sunSign: sunSign,
@@ -70,6 +98,7 @@ class BirthMapPurchaseNotifier
       mcSign: mcSign,
       birthDate: birthDate,
       birthCity: birthCity,
+      language: language,
     );
 
     return result.when(

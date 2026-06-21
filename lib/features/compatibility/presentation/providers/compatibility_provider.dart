@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../config/di.dart';
+import '../../../../core/providers/language_provider.dart';
 import '../../../../core/utils/zodiac_utils.dart';
 import '../../data/repositories/compatibility_repository_impl.dart';
 import '../../domain/entities/compatibility_partner.dart';
@@ -92,9 +93,10 @@ final compatibilityReportProvider =
         (ref, partnerId) async {
   final user = ref.watch(currentUserProvider);
   if (user == null) return null;
+  final language = ref.watch(languageCodeProvider);
   final result = await ref
       .watch(compatibilityRepositoryProvider)
-      .getReport(user.id, partnerId);
+      .getReport(user.id, partnerId, language: language);
   return result.when(success: (d) => d, failure: (_) => null);
 });
 
@@ -107,7 +109,8 @@ class GenerateReportNotifier extends StateNotifier<AsyncValue<void>> {
 
   Future<bool> generate(String partnerId) async {
     state = const AsyncValue.loading();
-    final result = await _repo.generateReport(partnerId);
+    final language = _ref.read(languageCodeProvider);
+    final result = await _repo.generateReport(partnerId, language: language);
     return result.when(
       success: (_) {
         state = const AsyncValue.data(null);

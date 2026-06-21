@@ -21,7 +21,7 @@ class HoroscopeCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                '${horoscope.sign.capitalize} ${horoscope.sign.zodiacEmoji}',
+                '${horoscope.sign.zodiacName} ${horoscope.sign.zodiacEmoji}',
                 style: AppTextStyles.titleLarge.copyWith(color: Colors.white),
               ),
               const Spacer(),

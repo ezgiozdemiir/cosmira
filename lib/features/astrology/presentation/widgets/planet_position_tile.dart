@@ -35,7 +35,7 @@ class PlanetPositionTile extends StatelessWidget {
                   style: AppTextStyles.titleMedium,
                 ),
                 Text(
-                  '${position.sign.capitalize} ${position.sign.zodiacEmoji} at ${position.degree.toStringAsFixed(1)}°',
+                  '${position.sign.zodiacName} ${position.sign.zodiacEmoji} at ${position.degree.toStringAsFixed(1)}°',
                   style: AppTextStyles.bodySmall,
                 ),
               ],
