@@ -62,6 +62,10 @@ class QuickActionGrid extends StatelessWidget {
             ),
           ],
         ),
+        const SizedBox(height: 12),
+        _NumerologyBanner(
+          onTap: () => context.push('/numerology'),
+        ),
       ],
     );
   }
@@ -145,6 +149,76 @@ class _ExploreTile extends StatelessWidget {
                 buttonLabel,
                 style: AppTextStyles.labelSmall.copyWith(
                   color: color,
+                  fontSize: 10,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NumerologyBanner extends StatelessWidget {
+  final VoidCallback onTap;
+  const _NumerologyBanner({required this.onTap});
+
+  static const _color = Color(0xFFE879F9);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        HapticUtils.light();
+        onTap();
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0x36E879F9), Color(0x148B5CF6)],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: _color.withValues(alpha: 0.30)),
+        ),
+        child: Row(
+          children: [
+            const Text('🔢', style: TextStyle(fontSize: 36)),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'explore_numerology'.tr(),
+                    style: AppTextStyles.titleMedium.copyWith(color: Colors.white),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'explore_numerology_desc'.tr(),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textSecondary,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: _color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _color.withValues(alpha: 0.4)),
+              ),
+              child: Text(
+                'explore_numerology_btn'.tr(),
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: _color,
                   fontSize: 10,
                 ),
               ),

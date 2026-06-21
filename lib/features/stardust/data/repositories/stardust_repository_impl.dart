@@ -67,6 +67,34 @@ class StardustRepositoryImpl implements StardustRepository {
   }
 
   @override
+  Future<Result<bool>> claimDailyCheckIn({required String userId}) async {
+    try {
+      final result = await _client.rpc('claim_daily_checkin', params: {
+        'p_user_id': userId,
+      });
+      return Result.success(result as bool);
+    } catch (e) {
+      return Result.failure(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Result<bool>> claimReferral({
+    required String referralCode,
+    required String newUserId,
+  }) async {
+    try {
+      final result = await _client.rpc('claim_referral', params: {
+        'p_referral_code': referralCode,
+        'p_new_user_id': newUserId,
+      });
+      return Result.success(result as bool);
+    } catch (e) {
+      return Result.failure(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Result<int>> spendStardust({
     required String userId,
     required int amount,

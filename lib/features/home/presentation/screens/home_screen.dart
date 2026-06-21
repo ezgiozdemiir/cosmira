@@ -14,6 +14,7 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/home_provider.dart';
 import '../widgets/horoscope_card.dart';
 import '../widgets/stardust_header.dart';
+import '../widgets/aura_card.dart';
 import '../widgets/quick_action_grid.dart';
 
 String _dailyText() {
@@ -68,6 +69,13 @@ class HomeScreen extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: _buildMainCard(context, ref, profile),
             ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 20)),
+          SliverToBoxAdapter(
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: AuraCard(),
+            ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.08),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
           SliverToBoxAdapter(

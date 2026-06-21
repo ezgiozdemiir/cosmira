@@ -394,7 +394,7 @@ class _UnlockGate extends StatelessWidget {
             Text('astro_balance'.tr(),
                 style: AppTextStyles.bodySmall
                     .copyWith(color: AppColors.textSecondary)),
-            Text('$balance ✦',
+            Text('$balance',
                 style: AppTextStyles.bodySmall.copyWith(
                     color: canAfford ? AppColors.auraAmber : AppColors.error,
                     fontWeight: FontWeight.w600)),

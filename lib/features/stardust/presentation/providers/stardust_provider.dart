@@ -18,3 +18,14 @@ final stardustTransactionsProvider =
       await ref.watch(stardustRepositoryProvider).getTransactions(user.id);
   return result.when(success: (d) => d, failure: (_) => []);
 });
+
+/// True if the user already has a daily_login transaction for today.
+final hasCheckedInTodayProvider = FutureProvider<bool>((ref) async {
+  final transactions = await ref.watch(stardustTransactionsProvider.future);
+  final today = DateTime.now();
+  return transactions.any((tx) =>
+      tx.source == 'daily_login' &&
+      tx.createdAt.year == today.year &&
+      tx.createdAt.month == today.month &&
+      tx.createdAt.day == today.day);
+});

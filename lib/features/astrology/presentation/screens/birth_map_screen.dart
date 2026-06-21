@@ -71,7 +71,7 @@ class BirthMapScreen extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('✦', style: TextStyle(fontSize: 40, color: AppColors.auraAmber)),
+                const Icon(Icons.auto_awesome, color: AppColors.auraAmber, size: 40),
                 const SizedBox(height: 16),
                 Text('bm_not_found'.tr(),
                     style: AppTextStyles.titleMedium),
