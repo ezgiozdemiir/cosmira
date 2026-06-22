@@ -133,9 +133,16 @@ class NotificationsScreen extends ConsumerWidget {
       case 'moon':
         return Icons.nightlight_round;
       case 'stardust':
+      case 'stardust_milestone':
         return Icons.auto_awesome;
       case 'streak':
         return Icons.local_fire_department;
+      case 'cosmic_event':
+        return Icons.flare;
+      case 'weekly_summary':
+        return Icons.calendar_today;
+      case 'breathwork':
+        return Icons.air;
       default:
         return Icons.notifications;
     }
@@ -148,9 +155,16 @@ class NotificationsScreen extends ConsumerWidget {
       case 'moon':
         return AppColors.auraIndigo;
       case 'stardust':
+      case 'stardust_milestone':
         return AppColors.auraAmber;
       case 'streak':
         return AppColors.auraRose;
+      case 'cosmic_event':
+        return AppColors.accentGlow;
+      case 'weekly_summary':
+        return AppColors.auraViolet;
+      case 'breathwork':
+        return AppColors.auraTeal;
       default:
         return AppColors.accentGlow;
     }

@@ -189,7 +189,7 @@ class BreathworkScreen extends ConsumerWidget {
                 ),
               ),
             ] else ...[
-              const SizedBox(height: 64),
+              const SizedBox.shrink(),
             ],
             const Spacer(),
             Center(

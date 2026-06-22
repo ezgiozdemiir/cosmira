@@ -497,7 +497,7 @@ class _HouseInsightCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'H${detail.house}',
+                '${'natal_house_abbr'.tr()}${detail.house}',
                 style: AppTextStyles.labelSmall
                     .copyWith(color: AppColors.accentGlow),
               ),
@@ -654,7 +654,7 @@ class _BirthMapEntryCard extends ConsumerWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('✨', style: TextStyle(fontSize: 16)),
+            const Icon(Icons.auto_awesome, color: AppColors.auraAmber, size: 16),
             const SizedBox(width: 8),
             Text('natal_birth_map_cost'.tr(),
                 style: AppTextStyles.labelLarge
@@ -691,7 +691,7 @@ class _PurchaseBottomSheetState extends ConsumerState<_PurchaseBottomSheet> {
     final purchaseState = ref.watch(birthMapPurchaseProvider);
     final balance = ref.watch(stardustBalanceProvider).valueOrNull ?? 0;
     final profile = ref.watch(userProfileProvider).valueOrNull;
-    final canAfford = balance >= 50;
+    final canAfford = balance >= 200;
 
     return Container(
       decoration: const BoxDecoration(
@@ -750,7 +750,7 @@ class _PurchaseBottomSheetState extends ConsumerState<_PurchaseBottomSheet> {
                         .copyWith(color: Colors.white60)),
                 Row(
                   children: [
-                    const Text('✨', style: TextStyle(fontSize: 14)),
+                    const Icon(Icons.auto_awesome, color: AppColors.auraAmber, size: 14),
                     const SizedBox(width: 6),
                     Text('$balance',
                         style: AppTextStyles.labelLarge
@@ -790,12 +790,22 @@ class _PurchaseBottomSheetState extends ConsumerState<_PurchaseBottomSheet> {
                         child: CircularProgressIndicator(
                             color: Colors.white, strokeWidth: 2),
                       )
-                    : Text(
-                        canAfford
-                            ? 'natal_unlock_btn'.tr()
-                            : 'natal_not_enough'.tr(),
-                        style: AppTextStyles.labelLarge
-                            .copyWith(color: Colors.white),
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (canAfford) ...[
+                            const Icon(Icons.auto_awesome,
+                                color: Colors.white, size: 15),
+                            const SizedBox(width: 6),
+                          ],
+                          Text(
+                            canAfford
+                                ? 'natal_unlock_btn'.tr()
+                                : 'natal_not_enough'.tr(),
+                            style: AppTextStyles.labelLarge
+                                .copyWith(color: Colors.white),
+                          ),
+                        ],
                       ),
               ),
             ),

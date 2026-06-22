@@ -81,8 +81,8 @@ class CompatibilityDetailScreen extends ConsumerWidget {
 
                   const SizedBox(height: 16),
 
-                  // Basic element compatibility card
-                  if (userSunSign.isNotEmpty)
+                  // Basic element compatibility card — Pro only
+                  if (userSunSign.isNotEmpty && isPremium)
                     _CompatibilityCard(
                       userSunSign: userSunSign,
                       partnerSunSign: partner.sunSign,

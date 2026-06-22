@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/providers/language_provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../notifications/presentation/providers/notification_prefs_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -44,29 +45,7 @@ class SettingsScreen extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 24),
-                _SettingsSection(
-                  title: 'settings_notifications'.tr(),
-                  children: [
-                    _ToggleTile(
-                      title: 'settings_daily_horoscope'.tr(),
-                      subtitle: 'settings_daily_horoscope_sub'.tr(),
-                      value: true,
-                      onChanged: (_) {},
-                    ),
-                    _ToggleTile(
-                      title: 'settings_moon_alerts'.tr(),
-                      subtitle: 'settings_moon_alerts_sub'.tr(),
-                      value: true,
-                      onChanged: (_) {},
-                    ),
-                    _ToggleTile(
-                      title: 'settings_breathwork_reminders'.tr(),
-                      subtitle: 'settings_breathwork_reminders_sub'.tr(),
-                      value: false,
-                      onChanged: (_) {},
-                    ),
-                  ],
-                ),
+                _NotificationSettingsSection(),
                 const SizedBox(height: 24),
                 _SettingsSection(
                   title: 'settings_account'.tr(),
@@ -201,6 +180,50 @@ class _SettingsSection extends StatelessWidget {
             border: Border.all(color: AppColors.cardBorder),
           ),
           child: Column(children: children),
+        ),
+      ],
+    );
+  }
+}
+
+class _NotificationSettingsSection extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final prefs = ref.watch(notifPrefsProvider);
+    final notifier = ref.read(notifPrefsProvider.notifier);
+
+    return _SettingsSection(
+      title: 'settings_notifications'.tr(),
+      children: [
+        _ToggleTile(
+          title: 'settings_daily_horoscope'.tr(),
+          subtitle: 'settings_daily_horoscope_sub'.tr(),
+          value: prefs['daily_horoscope'] ?? true,
+          onChanged: (v) => notifier.toggle('daily_horoscope', v),
+        ),
+        _ToggleTile(
+          title: 'settings_moon_alerts'.tr(),
+          subtitle: 'settings_moon_alerts_sub'.tr(),
+          value: prefs['moon_alerts'] ?? true,
+          onChanged: (v) => notifier.toggle('moon_alerts', v),
+        ),
+        _ToggleTile(
+          title: 'settings_cosmic_events'.tr(),
+          subtitle: 'settings_cosmic_events_sub'.tr(),
+          value: prefs['cosmic_events'] ?? true,
+          onChanged: (v) => notifier.toggle('cosmic_events', v),
+        ),
+        _ToggleTile(
+          title: 'settings_weekly_summary'.tr(),
+          subtitle: 'settings_weekly_summary_sub'.tr(),
+          value: prefs['weekly_summary'] ?? true,
+          onChanged: (v) => notifier.toggle('weekly_summary', v),
+        ),
+        _ToggleTile(
+          title: 'settings_breathwork_reminders'.tr(),
+          subtitle: 'settings_breathwork_reminders_sub'.tr(),
+          value: prefs['breathwork'] ?? false,
+          onChanged: (v) => notifier.toggle('breathwork', v),
         ),
       ],
     );

@@ -17,6 +17,8 @@ class NumerologyScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final result = ref.watch(userNumerologyProvider);
+    final isPremium =
+        ref.watch(userProfileProvider).valueOrNull?.isPremium ?? false;
 
     return Scaffold(
       backgroundColor: AppColors.black,
@@ -96,7 +98,12 @@ class NumerologyScreen extends ConsumerWidget {
                         const SizedBox(height: 32),
 
                         // ── Family section ──
-                        _FamilyTreeSection().animate().fadeIn(delay: 550.ms),
+                        if (isPremium)
+                          _FamilyTreeSection().animate().fadeIn(delay: 550.ms)
+                        else
+                          const _FamilyProLockedCard()
+                              .animate()
+                              .fadeIn(delay: 550.ms),
                       ],
                     ],
                   ),
@@ -1588,6 +1595,86 @@ class _SheetNumberRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Family Numerology — Pro locked card
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _FamilyProLockedCard extends StatelessWidget {
+  const _FamilyProLockedCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        CosmicCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('num_family_title'.tr(), style: AppTextStyles.titleMedium),
+              const SizedBox(height: 8),
+              Text('num_family_subtitle'.tr(),
+                  style: AppTextStyles.bodySmall
+                      .copyWith(color: AppColors.textSecondary)),
+              const SizedBox(height: 16),
+              Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.textTertiary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.textTertiary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.midnight.withValues(alpha: 0.75),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.auraViolet.withValues(alpha: 0.15),
+                    border: Border.all(
+                        color: AppColors.auraViolet.withValues(alpha: 0.4)),
+                  ),
+                  child: const Icon(Icons.lock_outline,
+                      color: AppColors.auraViolet, size: 28),
+                ),
+                const SizedBox(height: 14),
+                Text('num_family_pro_feature'.tr(),
+                    style: AppTextStyles.titleMedium),
+                const SizedBox(height: 6),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(
+                    'num_family_pro_sub'.tr(),
+                    style: AppTextStyles.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

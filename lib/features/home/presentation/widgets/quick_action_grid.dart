@@ -283,12 +283,20 @@ class _AstrocartographyBanner extends StatelessWidget {
                       border: Border.all(
                           color: AppColors.auraAmber.withValues(alpha: 0.3)),
                     ),
-                    child: Text(
-                      'explore_astrocartography_cost'.tr(),
-                      style: AppTextStyles.labelSmall.copyWith(
-                        color: AppColors.auraAmber,
-                        fontSize: 9,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'explore_astrocartography_cost'.tr(),
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: AppColors.auraAmber,
+                            fontSize: 9,
+                          ),
+                        ),
+                        const SizedBox(width: 3),
+                        const Icon(Icons.auto_awesome,
+                            color: AppColors.auraAmber, size: 9),
+                      ],
                     ),
                   ),
                 ],

@@ -79,13 +79,6 @@ class StardustStoreScreen extends ConsumerWidget {
                       Text('stardust_earn'.tr(),
                           style: AppTextStyles.headlineSmall),
                       const SizedBox(height: 12),
-                      _EarnTile(
-                        icon: Icons.play_circle,
-                        title: 'stardust_watch_video'.tr(),
-                        reward: '+10',
-                        subtitle: 'stardust_watch_video_sub'.tr(),
-                        onTap: () {},
-                      ),
                       const _DailyCheckInTile(),
                       const _InviteTile(),
                       const SizedBox(height: 24),
@@ -371,64 +364,6 @@ class _InviteTile extends ConsumerWidget {
                         color: AppColors.accentGlow, size: 18),
                   ),
                 ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Generic earn tile ──────────────────────────────────────────────────────────
-
-class _EarnTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String reward;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _EarnTile({
-    required this.icon,
-    required this.title,
-    required this.reward,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: CosmicCard(
-        onTap: onTap,
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Icon(icon, color: AppColors.accentGlow, size: 28),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: AppTextStyles.titleMedium),
-                  Text(subtitle, style: AppTextStyles.bodySmall),
-                ],
-              ),
-            ),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.auraAmber.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                reward,
-                style: AppTextStyles.labelLarge.copyWith(
-                  color: AppColors.auraAmber,
-                ),
               ),
             ),
           ],

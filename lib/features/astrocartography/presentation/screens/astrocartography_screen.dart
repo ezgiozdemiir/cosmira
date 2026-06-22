@@ -41,10 +41,10 @@ const _lines = <_Line>[
   _Line(emoji: '🌙', translationKey: 'moon',    color: AppColors.accentGlow,  mapX: 0.49, mapY: 0.22),
   _Line(emoji: '♀',  translationKey: 'venus',   color: AppColors.auraRose,    mapX: 0.82, mapY: 0.52),
   _Line(emoji: '♂',  translationKey: 'mars',    color: Color(0xFFEF4444),     mapX: 0.19, mapY: 0.42),
-  _Line(emoji: '♃',  translationKey: 'jupiter', color: AppColors.auraEmerald, mapX: 0.62, mapY: 0.45),
-  _Line(emoji: '♄',  translationKey: 'saturn',  color: AppColors.auraIndigo,  mapX: 0.36, mapY: 0.28),
+  _Line(emoji: '♃',  translationKey: 'jupiter', color: AppColors.auraEmerald, mapX: 0.60, mapY: 0.44),
+  _Line(emoji: '♄',  translationKey: 'saturn',  color: AppColors.auraIndigo,  mapX: 0.32, mapY: 0.69),
   _Line(emoji: '♅',  translationKey: 'uranus',  color: AppColors.auraTeal,    mapX: 0.72, mapY: 0.36),
-  _Line(emoji: '♆',  translationKey: 'neptune', color: AppColors.auraViolet,  mapX: 0.27, mapY: 0.58),
+  _Line(emoji: '♆',  translationKey: 'neptune', color: AppColors.auraViolet,  mapX: 0.90, mapY: 0.68),
 ];
 
 class _Destination {
@@ -273,8 +273,8 @@ class _SummarySection extends StatelessWidget {
                   color: AppColors.auraAmber.withValues(alpha: 0.25)),
             ),
             child: Row(children: [
-              const Text('✦',
-                  style: TextStyle(color: AppColors.auraAmber, fontSize: 13)),
+              const Icon(Icons.auto_awesome,
+                  color: AppColors.auraAmber, size: 14),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -668,17 +668,23 @@ class _MapGridPainter extends CustomPainter {
       Paint()..color = const Color(0xFF060E24),
     );
 
-    final grid = Paint()
+    // lon/lat → pixel
+    Offset geo(double lon, double lat) => Offset(
+          (lon + 180) / 360 * size.width,
+          (90 - lat) / 180 * size.height,
+        );
+
+    final gridPaint = Paint()
       ..color = Colors.white.withValues(alpha: 0.055)
       ..strokeWidth = 0.7;
 
     for (int i = 0; i <= 12; i++) {
       final x = size.width * i / 12;
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), grid);
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
     }
     for (int i = 0; i <= 6; i++) {
       final y = size.height * i / 6;
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), grid);
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
     }
 
     canvas.drawLine(
@@ -689,62 +695,92 @@ class _MapGridPainter extends CustomPainter {
         ..strokeWidth = 1.0,
     );
 
-    _drawContinent(canvas, size, _europeAfrica(size));
-    _drawContinent(canvas, size, _americas(size));
-    _drawContinent(canvas, size, _asia(size));
-    _drawContinent(canvas, size, _oceania(size));
-  }
+    final fill = Paint()
+      ..color = const Color(0xFF1A2A4A)
+      ..style = PaintingStyle.fill;
+    final stroke = Paint()
+      ..color = Colors.white.withValues(alpha: 0.07)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8;
 
-  void _drawContinent(Canvas canvas, Size s, List<Offset> pts) {
-    if (pts.isEmpty) return;
-    final path = Path()..moveTo(pts[0].dx, pts[0].dy);
-    for (final p in pts.skip(1)) {
-      path.lineTo(p.dx, p.dy);
+    void land(List<(double, double)> pts) {
+      if (pts.length < 3) return;
+      final path = Path()..moveTo(geo(pts[0].$1, pts[0].$2).dx, geo(pts[0].$1, pts[0].$2).dy);
+      for (var i = 1; i < pts.length; i++) {
+        path.lineTo(geo(pts[i].$1, pts[i].$2).dx, geo(pts[i].$1, pts[i].$2).dy);
+      }
+      path.close();
+      canvas.drawPath(path, fill);
+      canvas.drawPath(path, stroke);
     }
-    path.close();
-    canvas.drawPath(path,
-        Paint()
-          ..color = const Color(0xFF1A2A4A)
-          ..style = PaintingStyle.fill);
-    canvas.drawPath(path,
-        Paint()
-          ..color = Colors.white.withValues(alpha: 0.07)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 0.8);
+
+    // ── North America ────────────────────────────────────────────────────────
+    land([
+      (-168, 66), (-141, 60), (-127, 50), (-124, 47),
+      (-124, 37), (-117, 33), (-110, 23), (-104, 19),
+      (-90, 15),  (-87, 14),  (-83,  9),
+      (-81, 25),  (-80, 26),  (-80, 31),  (-75, 35),
+      (-74, 40),  (-70, 42),  (-63, 45),  (-53, 47),
+      (-56, 52),  (-68, 58),  (-79, 62),  (-85, 67),
+      (-105, 72), (-135, 70), (-163, 68),
+    ]);
+
+    // ── Greenland ─────────────────────────────────────────────────────────────
+    land([
+      (-44, 83), (-18, 76), (-19, 68), (-27, 64),
+      (-44, 60), (-55, 67), (-58, 76),
+    ]);
+
+    // ── South America ────────────────────────────────────────────────────────
+    land([
+      (-78,  8), (-63, 11), (-50,  5), (-35, -4),
+      (-35,-10), (-39,-18), (-43,-23), (-49,-28),
+      (-52,-33), (-58,-35), (-64,-42), (-68,-54),
+      (-74,-50), (-72,-30), (-80, -3), (-80,  0),
+    ]);
+
+    // ── Europe ────────────────────────────────────────────────────────────────
+    land([
+      ( -9, 37), (  3, 36), (  7, 44), ( 15, 38),
+      ( 18, 40), ( 26, 37), ( 30, 44), ( 30, 60),
+      ( 28, 71), ( 15, 69), (  5, 58), (  8, 55),
+      ( 10, 54), (  8, 47), (  5, 51), ( -2, 51),
+      ( -4, 48), ( -2, 44),
+    ]);
+
+    // ── Africa ────────────────────────────────────────────────────────────────
+    land([
+      ( -5, 36), ( 10, 37), ( 14, 32), ( 25, 31),
+      ( 33, 29), ( 37, 22), ( 43, 12), ( 51, 11),
+      ( 45,-12), ( 40,-12), ( 35,-18), ( 35,-26),
+      ( 19,-35), ( 17,-30), ( 12,-18), ( 12, -5),
+      (  9, -1), ( 10,  1), (  8,  5), ( -1,  5),
+      ( -5,  5), (-16,  5), (-17, 15), (-16, 21),
+      (-13, 28),
+    ]);
+
+    // ── Asia (inc. Arabian peninsula & Indian subcontinent) ──────────────────
+    land([
+      ( 29, 41), ( 36, 36), ( 41, 42), ( 50, 43),
+      ( 60, 43), ( 63, 40), ( 60, 35), ( 57, 22),
+      ( 60, 22), ( 67, 25), ( 73, 20), ( 76, 10),
+      ( 80,  8), ( 80, 14), ( 80, 20), ( 88, 22),
+      ( 92, 22), ( 99, 14), (100,  5), (104,  1),
+      (106, 10), (109, 21), (117, 24), (122, 30),
+      (122, 37), (120, 40), (131, 43), (141, 46),
+      (163, 52), (163, 60), (170, 66), (160, 70),
+      (140, 70), (120, 72), (100, 70), ( 80, 73),
+      ( 60, 68), ( 55, 55), ( 37, 47), ( 34, 46),
+      ( 30, 44),
+    ]);
+
+    // ── Australia ─────────────────────────────────────────────────────────────
+    land([
+      (114,-22), (122,-18), (136,-12), (145,-14),
+      (154,-28), (151,-34), (147,-39), (140,-38),
+      (130,-34), (117,-34), (114,-34),
+    ]);
   }
-
-  List<Offset> _europeAfrica(Size s) => [
-        Offset(s.width * 0.44, s.height * 0.10),
-        Offset(s.width * 0.56, s.height * 0.10),
-        Offset(s.width * 0.58, s.height * 0.45),
-        Offset(s.width * 0.54, s.height * 0.82),
-        Offset(s.width * 0.46, s.height * 0.82),
-        Offset(s.width * 0.42, s.height * 0.45),
-      ];
-
-  List<Offset> _americas(Size s) => [
-        Offset(s.width * 0.08, s.height * 0.12),
-        Offset(s.width * 0.28, s.height * 0.12),
-        Offset(s.width * 0.30, s.height * 0.55),
-        Offset(s.width * 0.22, s.height * 0.90),
-        Offset(s.width * 0.16, s.height * 0.90),
-        Offset(s.width * 0.06, s.height * 0.55),
-      ];
-
-  List<Offset> _asia(Size s) => [
-        Offset(s.width * 0.58, s.height * 0.08),
-        Offset(s.width * 0.94, s.height * 0.08),
-        Offset(s.width * 0.96, s.height * 0.60),
-        Offset(s.width * 0.78, s.height * 0.65),
-        Offset(s.width * 0.60, s.height * 0.48),
-      ];
-
-  List<Offset> _oceania(Size s) => [
-        Offset(s.width * 0.76, s.height * 0.68),
-        Offset(s.width * 0.92, s.height * 0.68),
-        Offset(s.width * 0.94, s.height * 0.90),
-        Offset(s.width * 0.74, s.height * 0.90),
-      ];
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
