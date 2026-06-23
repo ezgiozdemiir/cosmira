@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +7,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/particle_background.dart';
+import '../../../legal/legal_bottom_sheet.dart';
+import '../../../legal/legal_documents.dart';
 import '../providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerWidget {
@@ -55,11 +58,7 @@ class LoginScreen extends ConsumerWidget {
                   if (authState.isLoading)
                     const CircularProgressIndicator(color: AppColors.accentGlow),
                   const Spacer(),
-                  Text(
-                    'By continuing, you agree to our\nTerms of Service & Privacy Policy',
-                    textAlign: TextAlign.center,
-                    style: AppTextStyles.bodySmall,
-                  ).animate().fadeIn(delay: 1000.ms),
+                  _LegalLinks().animate().fadeIn(delay: 1000.ms),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -121,6 +120,51 @@ class _AppleSignInButton extends ConsumerWidget {
               ),
             ),
           ),
+      ],
+    );
+  }
+}
+
+class _LegalLinks extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final isTr = context.locale.languageCode == 'tr';
+    final linkStyle = AppTextStyles.bodySmall.copyWith(
+      color: AppColors.accentGlow,
+      decoration: TextDecoration.underline,
+      decorationColor: AppColors.accentGlow,
+    );
+
+    return Column(
+      children: [
+        Text(
+          isTr
+              ? 'Devam ederek aşağıdakileri kabul etmiş olursunuz:'
+              : 'By continuing, you agree to our',
+          textAlign: TextAlign.center,
+          style: AppTextStyles.bodySmall,
+        ),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            GestureDetector(
+              onTap: () => showLegalBottomSheet(context, LegalDocType.terms),
+              child: Text(
+                isTr ? 'Kullanım Koşulları' : 'Terms of Service',
+                style: linkStyle,
+              ),
+            ),
+            const Text(' & ', style: AppTextStyles.bodySmall),
+            GestureDetector(
+              onTap: () => showLegalBottomSheet(context, LegalDocType.privacy),
+              child: Text(
+                isTr ? 'Gizlilik Politikası' : 'Privacy Policy',
+                style: linkStyle,
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }

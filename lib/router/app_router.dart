@@ -32,10 +32,21 @@ final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 /// Converts a [Stream] into a [Listenable] so GoRouter can refresh
 /// its redirect logic whenever the auth state changes.
+///
+/// Tracks [initialized] so the redirect can avoid acting before the first
+/// auth event arrives (prevents a premature /login redirect on web refresh
+/// when the Supabase session-restore event fires before this stream
+/// subscribes).
 class _GoRouterRefreshStream extends ChangeNotifier {
   _GoRouterRefreshStream(Stream<dynamic> stream) {
-    _subscription = stream.listen((_) => notifyListeners());
+    _subscription = stream.listen((_) {
+      _initialized = true;
+      notifyListeners();
+    });
   }
+
+  bool _initialized = false;
+  bool get initialized => _initialized;
 
   late final StreamSubscription<dynamic> _subscription;
 
@@ -52,14 +63,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       _GoRouterRefreshStream(supabase.auth.onAuthStateChange);
   ref.onDispose(refreshListenable.dispose);
 
+  // Set the initial location based on the session that Supabase already
+  // restored during initialize() (which is awaited before runApp()).
+  // This prevents the router from defaulting to '/' and immediately
+  // redirecting an unauthenticated user to /login before the stream fires.
+  final initialLocation =
+      supabase.auth.currentUser != null ? '/' : '/login';
+
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/',
+    initialLocation: initialLocation,
     refreshListenable: refreshListenable,
     redirect: (context, state) {
+      // Don't redirect until we've received the first onAuthStateChange event.
+      // On web page refresh, Supabase may restore the session asynchronously
+      // after initialize() returns; waiting for the event avoids a brief
+      // incorrect redirect while the session is still being established.
+      if (!refreshListenable.initialized) return null;
+
       final isLoggedIn = supabase.auth.currentUser != null;
       final isAuthRoute = state.matchedLocation == '/login';
-      final isOnboarding = state.matchedLocation == '/onboarding';
 
       if (!isLoggedIn && !isAuthRoute) return '/login';
       if (isLoggedIn && isAuthRoute) return '/';
