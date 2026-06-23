@@ -627,5 +627,13 @@
   "sign_sagittarius": "Yay",
   "sign_capricorn": "Oğlak",
   "sign_aquarius": "Kova",
-  "sign_pisces": "Balık"
+  "sign_pisces": "Balık",
+
+  "login_tagline": "Kozmik yol arkadaşınız",
+  "login_apple": "Apple ile devam et",
+  "login_google": "Google ile devam et",
+  "login_coming_soon": "Yakında",
+  "login_agree": "Devam ederek aşağıdakileri kabul etmiş olursunuz:",
+  "login_terms": "Kullanım Koşulları",
+  "login_privacy": "Gizlilik Politikası"
 }

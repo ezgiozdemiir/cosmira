@@ -627,5 +627,13 @@
   "sign_sagittarius": "Sagittarius",
   "sign_capricorn": "Capricorn",
   "sign_aquarius": "Aquarius",
-  "sign_pisces": "Pisces"
+  "sign_pisces": "Pisces",
+
+  "login_tagline": "Your cosmic companion",
+  "login_apple": "Continue with Apple",
+  "login_google": "Continue with Google",
+  "login_coming_soon": "Coming soon",
+  "login_agree": "By continuing, you agree to our",
+  "login_terms": "Terms of Service",
+  "login_privacy": "Privacy Policy"
 }
