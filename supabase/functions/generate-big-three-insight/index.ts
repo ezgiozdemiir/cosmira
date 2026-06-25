@@ -59,6 +59,39 @@ function promptFor(
     };
   }
 
+  if (tier === "free" && period === "daily") {
+    return {
+      system: `You are a luxury astrology AI for the app Cosmira. Write a brief daily cosmic nudge for ${identity}, for ${key}. Short and uplifting, blending their three placements.`,
+      schema: `{
+  "insight": "2 elegant sentences for today, blending all three signs.",
+  "focus_area": "one short phrase naming today's main theme",
+  "advice": "1 short actionable sentence"
+}`,
+    };
+  }
+
+  if (tier === "free" && period === "monthly") {
+    return {
+      system: `You are a luxury astrology AI for the app Cosmira. Write a brief monthly overview for ${identity}, for the month of ${key}, synthesizing all three placements.`,
+      schema: `{
+  "theme": "short phrase naming the month's overall theme",
+  "forecast": "2-3 elegant sentences forecasting the month",
+  "opportunities": "1 sentence on key opportunities"
+}`,
+    };
+  }
+
+  if (tier === "free" && period === "yearly") {
+    return {
+      system: `You are a luxury astrology AI for the app Cosmira. Write a brief yearly overview for ${identity}, for the year ${key}, synthesizing all three placements.`,
+      schema: `{
+  "theme": "short phrase naming the year's overall theme",
+  "forecast": "2-3 elegant sentences forecasting the year",
+  "cosmic_advice": "1 elegant closing sentence"
+}`,
+    };
+  }
+
   if (tier === "premium" && period === "daily") {
     return {
       system: `You are a luxury astrology AI for the app Cosmira. Write a deep daily insight for ${identity}, for ${key}, synthesizing how all three placements interact today specifically (richer and more specific than a generic sun-sign horoscope).`,
@@ -101,7 +134,8 @@ async function generateContent(
   moonSign: string,
   risingSign: string,
   key: string,
-  language: string
+  language: string,
+  attempt = 0,
 ): Promise<Record<string, unknown>> {
   const { system, schema } = promptFor(tier, period, sunSign, moonSign, risingSign, key);
   const prompt = `${system}
@@ -130,6 +164,25 @@ Return ONLY valid JSON, no markdown.${language === "tr" ? "\n\nIMPORTANT: Respon
   );
 
   const data = await response.json();
+
+  if (response.status === 429 && attempt < 2) {
+    const retryDelayStr =
+      data?.error?.details
+        ?.find((d: Record<string, unknown>) =>
+          d["@type"]?.toString().includes("RetryInfo")
+        )
+        ?.retryDelay?.replace("s", "") ?? "15";
+    const retryDelaySec = parseInt(retryDelayStr);
+    // If Gemini says wait > 60s it's a daily quota limit — don't retry, fail fast.
+    if (retryDelaySec > 60) {
+      throw new Error(`Gemini daily quota exceeded. Resets at midnight UTC.`);
+    }
+    const waitMs = Math.min(retryDelaySec + 2, 25) * 1000;
+    console.log(`Rate limited ${tier}:${period}:${language}, retry in ${waitMs}ms (attempt ${attempt + 1})`);
+    await new Promise((r) => setTimeout(r, waitMs));
+    return generateContent(tier, period, sunSign, moonSign, risingSign, key, language, attempt + 1);
+  }
+
   if (!response.ok || !data.candidates) {
     throw new Error(`Gemini API error: ${JSON.stringify(data)}`);
   }
@@ -195,14 +248,19 @@ serve(async (req) => {
       .eq("tier", tier).eq("period", period).eq("period_key", key).eq("language", otherLang)
       .maybeSingle();
 
-    // Generate both languages in parallel
-    const [primaryResult, otherResult] = await Promise.allSettled([
-      generateContent(tier, period, sun_sign, moon_sign, rising_sign, key, language),
-      otherCached ? Promise.resolve(null) : generateContent(tier, period, sun_sign, moon_sign, rising_sign, key, otherLang),
-    ]);
+    // Generate primary language first, then other language sequentially
+    // to avoid triggering Gemini rate limits when multiple periods are
+    // requested simultaneously (daily + monthly + yearly on page load).
+    const content = await generateContent(tier, period, sun_sign, moon_sign, rising_sign, key, language);
 
-    if (primaryResult.status === "rejected") throw primaryResult.reason;
-    const content = primaryResult.value!;
+    let otherContent: Record<string, unknown> | null = null;
+    if (!otherCached) {
+      try {
+        otherContent = await generateContent(tier, period, sun_sign, moon_sign, rising_sign, key, otherLang);
+      } catch (e) {
+        console.error(`Other-lang generation failed (${otherLang}):`, e);
+      }
+    }
 
     const { data: inserted, error } = await supabase
       .from("big_three_insights")
@@ -213,10 +271,14 @@ serve(async (req) => {
     if (error) throw error;
 
     // Insert other language (best-effort)
-    if (otherResult.status === "fulfilled" && otherResult.value !== null) {
-      await supabase.from("big_three_insights")
-        .insert({ sun_sign, moon_sign, rising_sign, tier, period, period_key: key, content: otherResult.value, language: otherLang })
-        .catch((e: unknown) => console.error("Other-lang big-three insert failed:", e));
+    if (otherContent !== null) {
+      try {
+        const { error: otherError } = await supabase.from("big_three_insights")
+          .insert({ sun_sign, moon_sign, rising_sign, tier, period, period_key: key, content: otherContent, language: otherLang });
+        if (otherError) console.error("Other-lang big-three insert failed:", otherError);
+      } catch (e) {
+        console.error("Other-lang big-three insert failed:", e);
+      }
     }
 
     return new Response(JSON.stringify({ cached: false, insight: inserted }), {

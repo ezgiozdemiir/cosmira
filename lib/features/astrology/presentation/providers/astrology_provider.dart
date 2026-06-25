@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../config/di.dart';
@@ -67,7 +68,13 @@ Future<BigThreeInsight?> _fetchBigThreeInsight(
         period: period,
         language: language,
       );
-  return result.when(success: (d) => d, failure: (_) => null);
+  return result.when(
+    success: (d) => d,
+    failure: (f) {
+      debugPrint('getBigThreeInsight $period error: ${f.message}');
+      return null;
+    },
+  );
 }
 
 final dailyInsightProvider = FutureProvider<BigThreeInsight?>((ref) {

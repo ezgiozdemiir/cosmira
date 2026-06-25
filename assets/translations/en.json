@@ -351,6 +351,7 @@
   "edit_profile_title": "Edit Profile",
   "edit_profile_save": "Save",
   "edit_profile_save_error": "Could not save: {error}",
+  "edit_profile_birth_calc_error": "Could not calculate your birth chart. Check your birth city and try again.",
 
   "astro_title": "Astrocartography",
   "astro_what_is": "What is Astrocartography?",
@@ -455,6 +456,9 @@
   "horoscope_title": "Daily Horoscope",
   "horoscope_empty": "Complete your birth details to unlock your daily horoscope",
   "horoscope_error": "Error loading horoscope",
+  "horoscope_sun": "Sun Sign",
+  "horoscope_moon": "Moon Sign",
+  "horoscope_rising": "Rising Sign",
 
   "notif_title": "Notifications",
   "notif_empty": "No notifications yet",

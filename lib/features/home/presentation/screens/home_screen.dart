@@ -11,8 +11,6 @@ import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/extensions/string_extensions.dart';
 import '../../../auth/domain/entities/user_profile.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../providers/home_provider.dart';
-import '../widgets/horoscope_card.dart';
 import '../widgets/stardust_header.dart';
 import '../widgets/aura_card.dart';
 import '../widgets/quick_action_grid.dart';
@@ -120,20 +118,10 @@ class HomeScreen extends ConsumerWidget {
       );
     }
 
-    final horoscope = ref.watch(todayHoroscopeProvider);
-    return horoscope.when(
-      data: (h) => h != null
-          ? HoroscopeCard(horoscope: h)
-              .animate()
-              .fadeIn(delay: 300.ms)
-              .slideY(begin: 0.1)
-          : _DailyTextCard()
-              .animate()
-              .fadeIn(delay: 300.ms)
-              .slideY(begin: 0.08),
-      loading: () => const ShimmerCardLoading(),
-      error: (_, __) => const SizedBox.shrink(),
-    );
+    return _DailyTextCard()
+        .animate()
+        .fadeIn(delay: 300.ms)
+        .slideY(begin: 0.08);
   }
 }
 

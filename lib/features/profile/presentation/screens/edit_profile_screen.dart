@@ -112,6 +112,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           birthTime: birthTimeStr,
           birthCity: _birthCity.trim(),
         );
+    bool bigThreeFailed = false;
     bigThree.when(
       success: (r) {
         sunSign = r.sunSign;
@@ -121,10 +122,22 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         birthLat = r.birthLat;
         birthLng = r.birthLng;
       },
-      // Network hiccup or unrecognized city: keep the date-based sun sign
-      // and leave moon/rising/mc as-is. User can retry by saving again.
-      failure: (_) {},
+      failure: (f) {
+        bigThreeFailed = true;
+        debugPrint('calculateBigThree failed: ${f.message}');
+      },
     );
+
+    if (bigThreeFailed && mounted) {
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('edit_profile_birth_calc_error'.tr()),
+          backgroundColor: Colors.red[700],
+        ),
+      );
+      return;
+    }
 
     final updated = UserProfileModel(
       id: profile?.id ?? userId,

@@ -1,6 +1,8 @@
 // Supabase Edge Function: Generate Daily Horoscopes
-// Runs via cron at 00:00 UTC daily
-// Generates 72 horoscopes (12 signs x 3 points x 2 languages: en/tr) using Gemini API
+// Runs via cron at 00:00 UTC daily.
+// Generates 72 horoscopes (12 signs × 3 points × 2 languages) using Gemini.
+// Parallelised with a concurrency cap so all 72 finish well within the
+// Edge Function 60-second timeout (target: ~20 s with concurrency=6).
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -43,12 +45,19 @@ interface HoroscopeData {
   spotify_artist: string | null;
 }
 
-async function generateHoroscope(sign: string, point: Point, date: string, language: Language, attempt = 0): Promise<HoroscopeData> {
+async function generateHoroscope(
+  sign: string,
+  point: Point,
+  date: string,
+  language: Language,
+  attempt = 0,
+): Promise<HoroscopeData> {
   const langInstruction = language === "tr"
     ? "\n\nIMPORTANT: Respond entirely in Turkish. All text values in the JSON must be in Turkish."
     : "";
 
-  const prompt = `You are a luxury astrology AI for the app Cosmira. Generate a daily ${point.toUpperCase()} sign horoscope for someone with their ${point} in ${sign}, for ${date}.
+  const prompt =
+    `You are a luxury astrology AI for the app Cosmira. Generate a daily ${point.toUpperCase()} sign horoscope for someone with their ${point} in ${sign}, for ${date}.
 
 Focus specifically on ${POINT_FOCUS[point]}.
 
@@ -80,26 +89,29 @@ Return ONLY valid JSON, no markdown.${langInstruction}`;
           thinkingConfig: { thinkingBudget: 0 },
         },
       }),
-    }
+    },
   );
 
   const data = await response.json();
+
   if (response.status === 429 && attempt < 3) {
-    // Parse retry delay from Gemini error details
-    const retryDelay = data?.error?.details
-      ?.find((d: Record<string, unknown>) => d["@type"]?.toString().includes("RetryInfo"))
-      ?.retryDelay?.replace("s", "") ?? "25";
+    const retryDelay =
+      data?.error?.details
+        ?.find((d: Record<string, unknown>) =>
+          d["@type"]?.toString().includes("RetryInfo")
+        )
+        ?.retryDelay?.replace("s", "") ?? "20";
     const waitMs = (parseInt(retryDelay) + 2) * 1000;
-    console.log(`Rate limited on ${sign}:${point}:${language}, waiting ${waitMs}ms...`);
+    console.log(`Rate limited ${sign}:${point}:${language}, retry in ${waitMs}ms`);
     await new Promise((r) => setTimeout(r, waitMs));
     return generateHoroscope(sign, point, date, language, attempt + 1);
   }
-  if (!response.ok || !data.candidates?.[0]) {
-    throw new Error(`Gemini API error: ${JSON.stringify(data)}`);
-  }
-  const text = data.candidates[0].content.parts[0].text;
-  const parsed = JSON.parse(text);
 
+  if (!response.ok || !data.candidates?.[0]) {
+    throw new Error(`Gemini error for ${sign}:${point}:${language}: ${JSON.stringify(data)}`);
+  }
+
+  const parsed = JSON.parse(data.candidates[0].content.parts[0].text);
   return {
     sign,
     point,
@@ -118,32 +130,58 @@ Return ONLY valid JSON, no markdown.${langInstruction}`;
   };
 }
 
+// Run up to `concurrency` promises at a time, collecting all results.
+async function runWithConcurrency<T>(
+  tasks: (() => Promise<T>)[],
+  concurrency: number,
+): Promise<PromiseSettledResult<T>[]> {
+  const results: PromiseSettledResult<T>[] = [];
+  let index = 0;
+
+  async function worker() {
+    while (index < tasks.length) {
+      const i = index++;
+      try {
+        results[i] = { status: "fulfilled", value: await tasks[i]() };
+      } catch (e) {
+        results[i] = { status: "rejected", reason: e };
+      }
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(concurrency, tasks.length) }, worker);
+  await Promise.all(workers);
+  return results;
+}
+
 serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", {
+      headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" },
+    });
+  }
+
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
     const today = new Date().toISOString().split("T")[0];
 
-    // Optional: limit how many to generate per call (to avoid worker timeout)
-    let maxItems = 72;
-    try {
-      const body = await req.json().catch(() => ({}));
-      if (body?.maxItems) maxItems = Number(body.maxItems);
-    } catch (_) { /* ignore parse errors */ }
+    const body = await req.json().catch(() => ({}));
+    const concurrency: number = body?.concurrency ?? 6;
 
-    // Check which (sign, point, language) combos already exist for today.
+    // Find which combos are already generated for today.
     const { data: existing } = await supabase
       .from("daily_horoscopes")
       .select("sign, point, language")
       .eq("date", today);
 
     const existingKeys = new Set(
-      (existing || []).map((h: any) => `${h.sign}:${h.point}:${h.language}`)
+      (existing ?? []).map((h: any) => `${h.sign}:${h.point}:${h.language}`),
     );
 
     const missing: { sign: string; point: Point; language: Language }[] = [];
-    for (const language of LANGUAGES) {
-      for (const sign of ZODIAC_SIGNS) {
-        for (const point of POINTS) {
+    for (const sign of ZODIAC_SIGNS) {
+      for (const point of POINTS) {
+        for (const language of LANGUAGES) {
           if (!existingKeys.has(`${sign}:${point}:${language}`)) {
             missing.push({ sign, point, language });
           }
@@ -152,40 +190,51 @@ serve(async (req) => {
     }
 
     if (missing.length === 0) {
-      return new Response(JSON.stringify({ message: "All horoscopes already generated" }), {
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ message: "All horoscopes already generated for " + today }),
+        { headers: { "Content-Type": "application/json" } },
+      );
     }
 
-    const batch = missing.slice(0, maxItems);
-    let generated = 0;
+    console.log(`Generating ${missing.length} horoscopes with concurrency=${concurrency}`);
+
+    const tasks = missing.map(
+      ({ sign, point, language }) =>
+        () => generateHoroscope(sign, point, today, language),
+    );
+
+    const results = await runWithConcurrency(tasks, concurrency);
+
+    const succeeded: HoroscopeData[] = [];
     const failed: string[] = [];
 
-    // Insert each horoscope immediately so partial progress is saved on timeout.
-    // 429 retry is handled inside generateHoroscope with built-in back-off.
-    for (const { sign, point, language } of batch) {
-      try {
-        const horoscope = await generateHoroscope(sign, point, today, language);
-        await supabase.from("daily_horoscopes").insert(horoscope);
-        generated++;
-      } catch (e) {
-        console.error(`Skipped ${sign}:${point}:${language}:`, e);
+    results.forEach((r, i) => {
+      const { sign, point, language } = missing[i];
+      if (r.status === "fulfilled") {
+        succeeded.push(r.value);
+      } else {
+        console.error(`Failed ${sign}:${point}:${language}:`, r.reason);
         failed.push(`${sign}:${point}:${language}`);
       }
-      // Small fixed delay between successful requests
-      await new Promise((r) => setTimeout(r, 500));
+    });
+
+    // Bulk insert all successes in one round-trip.
+    if (succeeded.length > 0) {
+      const { error } = await supabase.from("daily_horoscopes").insert(succeeded);
+      if (error) console.error("Bulk insert error:", error);
     }
 
     return new Response(
       JSON.stringify({
-        message: `Generated ${generated} / ${batch.length} in this batch. Total missing was ${missing.length} for ${today}`,
-        remaining: missing.length - batch.length,
-        failed,
+        date: today,
+        generated: succeeded.length,
+        failed: failed.length,
+        failedItems: failed,
       }),
-      { headers: { "Content-Type": "application/json" } }
+      { headers: { "Content-Type": "application/json" } },
     );
   } catch (error) {
-    console.error("Error generating horoscopes:", error);
+    console.error("Fatal error:", error);
     return new Response(JSON.stringify({ error: String(error) }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

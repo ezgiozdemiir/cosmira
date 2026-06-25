@@ -351,6 +351,7 @@
   "edit_profile_title": "Profili Düzenle",
   "edit_profile_save": "Kaydet",
   "edit_profile_save_error": "Kaydedilemedi: {error}",
+  "edit_profile_birth_calc_error": "Doğum haritanız hesaplanamadı. Doğum şehrini kontrol edip tekrar dene.",
 
   "astro_title": "Astrokartografi",
   "astro_what_is": "Astrokartografi Nedir?",
@@ -455,6 +456,9 @@
   "horoscope_title": "Günlük Burç",
   "horoscope_empty": "Günlük burcunuzun kilidini açmak için doğum bilgilerinizi tamamlayın",
   "horoscope_error": "Burç yüklenirken hata oluştu",
+  "horoscope_sun": "Güneş Burcu",
+  "horoscope_moon": "Ay Burcu",
+  "horoscope_rising": "Yükselen Burç",
 
   "notif_title": "Bildirimler",
   "notif_empty": "Henüz bildirim yok",

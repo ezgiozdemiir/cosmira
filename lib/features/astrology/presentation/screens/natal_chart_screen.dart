@@ -254,7 +254,7 @@ class _HouseTile extends StatelessWidget {
   }
 }
 
-class _InsightSection extends StatelessWidget {
+class _InsightSection extends ConsumerStatefulWidget {
   final String title;
   final ProviderListenable<AsyncValue<BigThreeInsight?>> provider;
   final Duration delay;
@@ -266,40 +266,56 @@ class _InsightSection extends StatelessWidget {
   });
 
   @override
+  ConsumerState<_InsightSection> createState() => _InsightSectionState();
+}
+
+class _InsightSectionState extends ConsumerState<_InsightSection> {
+  BigThreeInsight? _cached;
+
+  Widget _buildContent(BigThreeInsight insight) => Padding(
+        padding: const EdgeInsets.only(top: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(widget.title, style: AppTextStyles.titleMedium),
+            const SizedBox(height: 12),
+            _InsightCard(content: insight.content),
+          ],
+        ),
+      );
+
+  Widget _buildShimmer() => Padding(
+        padding: const EdgeInsets.only(top: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(widget.title, style: AppTextStyles.titleMedium),
+            const SizedBox(height: 12),
+            const ShimmerLoading(height: 120),
+          ],
+        ),
+      );
+
+  @override
   Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, ref, _) {
-        final state = ref.watch(provider);
-        return state.when(
-          loading: () => Padding(
-            padding: const EdgeInsets.only(top: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: AppTextStyles.titleMedium),
-                const SizedBox(height: 12),
-                const ShimmerLoading(height: 120),
-              ],
-            ),
-          ),
-          data: (insight) {
-            if (insight == null) return const SizedBox.shrink();
-            return Padding(
-              padding: const EdgeInsets.only(top: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: AppTextStyles.titleMedium),
-                  const SizedBox(height: 12),
-                  _InsightCard(content: insight.content),
-                ],
-              ),
-            );
-          },
-          error: (_, __) => const SizedBox.shrink(),
-        );
+    final state = ref.watch(widget.provider);
+
+    // Cache the last non-null insight so re-runs caused by stream re-emits
+    // (Supabase Realtime reconnects) don't erase already-loaded content.
+    if (state is AsyncData<BigThreeInsight?> && state.value != null) {
+      _cached = state.value;
+    }
+
+    return state.when(
+      loading: () => _cached != null ? _buildContent(_cached!) : _buildShimmer(),
+      data: (insight) {
+        final effective = insight ?? _cached;
+        if (effective == null) return const SizedBox.shrink();
+        return _buildContent(effective);
       },
-    ).animate().fadeIn(delay: delay);
+      error: (_, __) =>
+          _cached != null ? _buildContent(_cached!) : const SizedBox.shrink(),
+    ).animate().fadeIn(delay: widget.delay);
   }
 }
 

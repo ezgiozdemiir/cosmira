@@ -211,9 +211,20 @@ class AuthRepositoryImpl implements AuthRepository {
           if (data.isEmpty) return null;
           return UserProfileModel.fromJson(data.first);
         })
-        .transform(StreamTransformer.fromHandlers(
+        .transform(StreamTransformer<UserProfile?, UserProfile?>.fromHandlers(
           // Realtime bağlantı hatalarını null'a çevir; UI error state'e girmesin
           handleError: (_, __, sink) => sink.add(null),
-        ));
+        ))
+        // Suppress redundant re-emits so in-progress async providers
+        // (e.g. Gemini calls in natal chart) are not cancelled unnecessarily.
+        .distinct((a, b) {
+          if (a == null && b == null) return true;
+          if (a == null || b == null) return false;
+          return a.id == b.id &&
+              a.sunSign == b.sunSign &&
+              a.moonSign == b.moonSign &&
+              a.risingSign == b.risingSign &&
+              a.subscriptionTier == b.subscriptionTier;
+        });
   }
 }
