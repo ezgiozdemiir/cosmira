@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,6 +28,7 @@ void main() async {
   );
 
   await Hive.initFlutter();
+
   await Supabase.initialize(
     url: Env.supabaseUrl.isNotEmpty
         ? Env.supabaseUrl
@@ -35,7 +37,7 @@ void main() async {
         ? Env.supabaseAnonKey
         : 'placeholder',
     authOptions: const FlutterAuthClientOptions(
-      authFlowType: AuthFlowType.pkce,
+      authFlowType: kIsWeb ? AuthFlowType.implicit : AuthFlowType.pkce,
     ),
   );
 

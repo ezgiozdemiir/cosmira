@@ -43,6 +43,35 @@ class AuthController extends AsyncNotifier<void> {
     );
   }
 
+  Future<void> signInWithEmail(String email, String password) async {
+    state = const AsyncLoading();
+    final result = await ref.read(authRepositoryProvider).signInWithEmail(email, password);
+    state = result.when(
+      success: (_) => const AsyncData(null),
+      failure: (f) => AsyncError(f.message, StackTrace.current),
+    );
+  }
+
+  // Returns true if email confirmation is required.
+  Future<bool> signUpWithEmail(String email, String password, String name) async {
+    state = const AsyncLoading();
+    final result = await ref.read(authRepositoryProvider).signUpWithEmail(email, password, name);
+    return result.when(
+      success: (needsConfirmation) {
+        state = const AsyncData(null);
+        return needsConfirmation;
+      },
+      failure: (f) {
+        state = AsyncError(f.message, StackTrace.current);
+        return false;
+      },
+    );
+  }
+
+  Future<void> resendConfirmationEmail(String email) async {
+    await ref.read(authRepositoryProvider).resendConfirmationEmail(email);
+  }
+
   Future<void> signOut() async {
     await ref.read(authRepositoryProvider).signOut();
   }

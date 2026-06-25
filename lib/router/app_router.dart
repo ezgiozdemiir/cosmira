@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/di.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
+import '../features/auth/presentation/screens/confirm_email_screen.dart';
 import '../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../features/home/presentation/screens/home_screen.dart';
 import '../features/astrology/presentation/screens/natal_chart_screen.dart';
@@ -75,23 +76,35 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: initialLocation,
     refreshListenable: refreshListenable,
     redirect: (context, state) {
-      // Don't redirect until we've received the first onAuthStateChange event.
-      // On web page refresh, Supabase may restore the session asynchronously
-      // after initialize() returns; waiting for the event avoids a brief
-      // incorrect redirect while the session is still being established.
+      final isLoggedIn = supabase.auth.currentUser != null;
+      final isAuthRoute = state.matchedLocation == '/login' ||
+          state.matchedLocation == '/confirm-email';
+
+      // Redirect away from auth screens as soon as a session is available.
+      // This handles PKCE email confirmation where supabase_flutter exchanges
+      // the code during initialize() — the session is set before the GoRouter
+      // stream subscriber exists, so we can't rely on an auth event to trigger
+      // this; instead we check currentUser directly on every redirect evaluation.
+      if (isLoggedIn && isAuthRoute) return '/';
+
+      // For protecting authenticated routes, wait for the first auth-state event
+      // before redirecting. This prevents a premature /login flash on page
+      // refresh while Supabase is still restoring the session asynchronously.
       if (!refreshListenable.initialized) return null;
 
-      final isLoggedIn = supabase.auth.currentUser != null;
-      final isAuthRoute = state.matchedLocation == '/login';
-
       if (!isLoggedIn && !isAuthRoute) return '/login';
-      if (isLoggedIn && isAuthRoute) return '/';
       return null;
     },
     routes: [
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/confirm-email',
+        builder: (context, state) => ConfirmEmailScreen(
+          email: state.extra as String? ?? '',
+        ),
       ),
       GoRoute(
         path: '/onboarding',

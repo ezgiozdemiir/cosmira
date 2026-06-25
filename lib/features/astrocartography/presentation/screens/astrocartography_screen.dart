@@ -69,6 +69,91 @@ const _destinations = [
   _Destination(translationKey: 'home',   emoji: '🌙', color: AppColors.accentGlow),
 ];
 
+// ─── Line type guide data ─────────────────────────────────────────────────────
+
+class _LineTypeInfo {
+  final String symbol;
+  final String nameKey;
+  final String descKey;
+  final Color color;
+
+  const _LineTypeInfo({
+    required this.symbol,
+    required this.nameKey,
+    required this.descKey,
+    required this.color,
+  });
+
+  String get name => nameKey.tr();
+  String get desc => descKey.tr();
+}
+
+const _lineTypes = [
+  _LineTypeInfo(symbol: 'AC', nameKey: 'astro_lt_ac_name', descKey: 'astro_lt_ac_desc', color: AppColors.auraAmber),
+  _LineTypeInfo(symbol: 'DC', nameKey: 'astro_lt_dc_name', descKey: 'astro_lt_dc_desc', color: AppColors.auraRose),
+  _LineTypeInfo(symbol: 'MC', nameKey: 'astro_lt_mc_name', descKey: 'astro_lt_mc_desc', color: AppColors.auraEmerald),
+  _LineTypeInfo(symbol: 'IC', nameKey: 'astro_lt_ic_name', descKey: 'astro_lt_ic_desc', color: AppColors.accentGlow),
+];
+
+// ─── Power cities data ────────────────────────────────────────────────────────
+
+class _City {
+  final String emoji;
+  final String translationKey;
+  final Color color;
+
+  const _City({
+    required this.emoji,
+    required this.translationKey,
+    required this.color,
+  });
+
+  String get name    => 'astro_city_${translationKey}_name'.tr();
+  String get country => 'astro_city_${translationKey}_country'.tr();
+  String get line    => 'astro_city_${translationKey}_line'.tr();
+  String get reason  => 'astro_city_${translationKey}_reason'.tr();
+}
+
+const _cities = [
+  _City(emoji: '☀️', translationKey: 'athens',    color: AppColors.auraAmber),
+  _City(emoji: '♀',  translationKey: 'lisbon',    color: AppColors.auraRose),
+  _City(emoji: '♃',  translationKey: 'tokyo',     color: AppColors.auraEmerald),
+  _City(emoji: '🌙', translationKey: 'reykjavik', color: AppColors.accentGlow),
+  _City(emoji: '♅',  translationKey: 'sydney',    color: AppColors.auraTeal),
+  _City(emoji: '♆',  translationKey: 'bali',      color: AppColors.auraViolet),
+  _City(emoji: '♂',  translationKey: 'marrakech', color: Color(0xFFEF4444)),
+  _City(emoji: '♄',  translationKey: 'edinburgh', color: AppColors.auraIndigo),
+];
+
+// ─── Parans data ──────────────────────────────────────────────────────────────
+
+class _Paran {
+  final String emoji1;
+  final String emoji2;
+  final String translationKey;
+  final Color color1;
+  final Color color2;
+
+  const _Paran({
+    required this.emoji1,
+    required this.emoji2,
+    required this.translationKey,
+    required this.color1,
+    required this.color2,
+  });
+
+  String get city    => 'astro_paran_${translationKey}_city'.tr();
+  String get country => 'astro_paran_${translationKey}_country'.tr();
+  String get theme   => 'astro_paran_${translationKey}_theme'.tr();
+  String get meaning => 'astro_paran_${translationKey}_meaning'.tr();
+}
+
+const _parans = [
+  _Paran(emoji1: '♃', emoji2: '♀',  translationKey: 'barcelona', color1: AppColors.auraEmerald, color2: AppColors.auraRose),
+  _Paran(emoji1: '☀️', emoji2: '🌙', translationKey: 'capetown',  color1: AppColors.auraAmber,   color2: AppColors.accentGlow),
+  _Paran(emoji1: '♅', emoji2: '♄',  translationKey: 'seoul',     color1: AppColors.auraTeal,    color2: AppColors.auraIndigo),
+];
+
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 class AstrocartographyScreen extends ConsumerStatefulWidget {
@@ -162,6 +247,10 @@ class _AstrocartographyScreenState
                           onEarnMore: () => context.push('/stardust'),
                         ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.08)
                       else ...[
+                        const _LineTypesGuide()
+                            .animate()
+                            .fadeIn(delay: 80.ms),
+                        const SizedBox(height: 20),
                         _SectionLabel(
                           title: 'astro_planetary_lines'.tr(),
                           subtitle: 'astro_planetary_lines_sub'.tr(),
@@ -199,6 +288,18 @@ class _AstrocartographyScreenState
                         const _DestinyCompass()
                             .animate()
                             .fadeIn(delay: 200.ms),
+                        const SizedBox(height: 20),
+                        const _TopCitiesSection()
+                            .animate()
+                            .fadeIn(delay: 220.ms),
+                        const SizedBox(height: 20),
+                        const _ParansSection()
+                            .animate()
+                            .fadeIn(delay: 240.ms),
+                        const SizedBox(height: 20),
+                        _CurrentLocationSection(birthCity: profile?.birthCity)
+                            .animate()
+                            .fadeIn(delay: 260.ms),
                       ],
                     ],
                   ),
@@ -999,6 +1100,554 @@ class _DestinationCard extends StatelessWidget {
                 Text(dest.why,
                     style: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.textSecondary, height: 1.5)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Line Types Guide ─────────────────────────────────────────────────────────
+
+class _LineTypesGuide extends StatefulWidget {
+  const _LineTypesGuide();
+
+  @override
+  State<_LineTypesGuide> createState() => _LineTypesGuideState();
+}
+
+class _LineTypesGuideState extends State<_LineTypesGuide> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return CosmicCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            onTap: () => setState(() => _expanded = !_expanded),
+            behavior: HitTestBehavior.opaque,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('astro_line_types_title'.tr(),
+                          style: AppTextStyles.titleMedium
+                              .copyWith(color: Colors.white)),
+                      const SizedBox(height: 2),
+                      Text('astro_line_types_sub'.tr(),
+                          style: AppTextStyles.bodySmall),
+                    ],
+                  ),
+                ),
+                Icon(
+                  _expanded
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down,
+                  color: AppColors.textTertiary,
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+          if (_expanded) ...[
+            const SizedBox(height: 16),
+            const Divider(color: AppColors.cardBorder, height: 1),
+            const SizedBox(height: 14),
+            ..._lineTypes.map((lt) => Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: lt.color.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                          border:
+                              Border.all(color: lt.color.withValues(alpha: 0.3)),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(lt.symbol,
+                            style: AppTextStyles.labelSmall.copyWith(
+                                color: lt.color,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 11)),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(lt.name,
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                    color: lt.color,
+                                    fontWeight: FontWeight.w600)),
+                            const SizedBox(height: 4),
+                            Text(lt.desc,
+                                style: AppTextStyles.bodySmall.copyWith(
+                                    color: AppColors.textSecondary,
+                                    height: 1.55)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.textTertiary.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline,
+                      color: AppColors.textTertiary, size: 13),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text('astro_lt_note'.tr(),
+                        style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.textTertiary,
+                            fontSize: 11,
+                            height: 1.5)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Top Cities Section ───────────────────────────────────────────────────────
+
+class _TopCitiesSection extends StatelessWidget {
+  const _TopCitiesSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionLabel(
+          title: 'astro_cities_title'.tr(),
+          subtitle: 'astro_cities_sub'.tr(),
+        ),
+        const SizedBox(height: 12),
+        ..._cities.map((city) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _CityCard(city: city),
+            )),
+      ],
+    );
+  }
+}
+
+class _CityCard extends StatelessWidget {
+  final _City city;
+  const _CityCard({required this.city});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            city.color.withValues(alpha: 0.12),
+            city.color.withValues(alpha: 0.03),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: city.color.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: city.color.withValues(alpha: 0.12),
+              border: Border.all(color: city.color.withValues(alpha: 0.3)),
+            ),
+            alignment: Alignment.center,
+            child: Text(city.emoji, style: const TextStyle(fontSize: 20)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(city.name,
+                        style: AppTextStyles.titleMedium
+                            .copyWith(color: Colors.white, fontSize: 15)),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text('· ${city.country}',
+                          style: AppTextStyles.bodySmall
+                              .copyWith(color: AppColors.textTertiary),
+                          overflow: TextOverflow.ellipsis),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: city.color.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                            color: city.color.withValues(alpha: 0.35)),
+                      ),
+                      child: Text(city.line,
+                          style: AppTextStyles.labelSmall.copyWith(
+                              color: city.color,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(city.reason,
+                    style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.textSecondary, height: 1.55)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Parans Section ───────────────────────────────────────────────────────────
+
+class _ParansSection extends StatelessWidget {
+  const _ParansSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionLabel(
+          title: 'astro_parans_title'.tr(),
+          subtitle: 'astro_parans_sub'.tr(),
+        ),
+        const SizedBox(height: 12),
+        ..._parans.map((p) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _ParanCard(paran: p),
+            )),
+        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppColors.auraViolet.withValues(alpha: 0.07),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+                color: AppColors.auraViolet.withValues(alpha: 0.20)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('✦',
+                  style: TextStyle(
+                      color: AppColors.auraViolet, fontSize: 11)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('astro_parans_note'.tr(),
+                    style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.auraViolet.withValues(alpha: 0.85),
+                        fontSize: 11,
+                        height: 1.5)),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ParanCard extends StatelessWidget {
+  final _Paran paran;
+  const _ParanCard({required this.paran});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            paran.color1.withValues(alpha: 0.10),
+            paran.color2.withValues(alpha: 0.06),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: paran.color1.withValues(alpha: 0.28)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: paran.color1.withValues(alpha: 0.12),
+                  borderRadius: const BorderRadius.horizontal(
+                      left: Radius.circular(20)),
+                  border:
+                      Border.all(color: paran.color1.withValues(alpha: 0.3)),
+                ),
+                child: Text(paran.emoji1,
+                    style: const TextStyle(fontSize: 16)),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: paran.color2.withValues(alpha: 0.12),
+                  borderRadius: const BorderRadius.horizontal(
+                      right: Radius.circular(20)),
+                  border:
+                      Border.all(color: paran.color2.withValues(alpha: 0.3)),
+                ),
+                child: Text(paran.emoji2,
+                    style: const TextStyle(fontSize: 16)),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(paran.theme,
+                        style: AppTextStyles.titleMedium.copyWith(
+                            color: Colors.white, fontSize: 14)),
+                    Text('${paran.city} · ${paran.country}',
+                        style: AppTextStyles.bodySmall
+                            .copyWith(color: AppColors.textTertiary)),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.10)),
+                ),
+                child: Text('PARAN',
+                    style: AppTextStyles.labelSmall.copyWith(
+                        color: AppColors.textTertiary,
+                        fontSize: 8,
+                        letterSpacing: 1.2)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Divider(
+              color: paran.color1.withValues(alpha: 0.15), height: 1),
+          const SizedBox(height: 12),
+          Text(paran.meaning,
+              style: AppTextStyles.bodyMedium.copyWith(
+                  color: Colors.white.withValues(alpha: 0.80),
+                  height: 1.65)),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Current Location Section ─────────────────────────────────────────────────
+
+class _CurrentLocationSection extends StatelessWidget {
+  final String? birthCity;
+  const _CurrentLocationSection({this.birthCity});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionLabel(
+          title: 'astro_current_title'.tr(),
+          subtitle: 'astro_current_sub'.tr(),
+        ),
+        const SizedBox(height: 12),
+        CosmicCard(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF0E1A38), Color(0xFF0A0E20)],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                const Text('🏠', style: TextStyle(fontSize: 20)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    birthCity != null
+                        ? 'astro_current_born_in'
+                            .tr(namedArgs: {'city': birthCity!})
+                        : 'astro_current_no_city'.tr(),
+                    style: AppTextStyles.titleMedium
+                        .copyWith(color: Colors.white),
+                  ),
+                ),
+              ]),
+              const SizedBox(height: 14),
+              const Divider(color: AppColors.cardBorder, height: 1),
+              const SizedBox(height: 14),
+              Text('astro_current_para1'.tr(),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                      color: Colors.white.withValues(alpha: 0.80),
+                      height: 1.65)),
+              const SizedBox(height: 12),
+              Text('astro_current_para2'.tr(),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                      color: Colors.white.withValues(alpha: 0.80),
+                      height: 1.65)),
+              const SizedBox(height: 12),
+              Text('astro_current_para3'.tr(),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                      color: Colors.white.withValues(alpha: 0.80),
+                      height: 1.65)),
+              const SizedBox(height: 20),
+              Text('astro_current_activation_title'.tr(),
+                  style: AppTextStyles.labelSmall.copyWith(
+                      color: AppColors.textSecondary, letterSpacing: 1.0)),
+              const SizedBox(height: 2),
+              Text('astro_current_activation_sub'.tr(),
+                  style: AppTextStyles.bodySmall
+                      .copyWith(color: AppColors.textTertiary, fontSize: 11)),
+              const SizedBox(height: 12),
+              _ActivationZoneRow(
+                range: 'astro_current_zone_1'.tr(),
+                label: 'astro_current_zone_1_label'.tr(),
+                strength: 1.0,
+                color: AppColors.auraAmber,
+              ),
+              _ActivationZoneRow(
+                range: 'astro_current_zone_2'.tr(),
+                label: 'astro_current_zone_2_label'.tr(),
+                strength: 0.65,
+                color: AppColors.auraEmerald,
+              ),
+              _ActivationZoneRow(
+                range: 'astro_current_zone_3'.tr(),
+                label: 'astro_current_zone_3_label'.tr(),
+                strength: 0.35,
+                color: AppColors.accentGlow,
+              ),
+              _ActivationZoneRow(
+                range: 'astro_current_zone_4'.tr(),
+                label: 'astro_current_zone_4_label'.tr(),
+                strength: 0.08,
+                color: AppColors.auraViolet,
+                isLast: true,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.accentGlow.withValues(alpha: 0.07),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColors.accentGlow.withValues(alpha: 0.20)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('🌍', style: TextStyle(fontSize: 14)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text('astro_current_tip'.tr(),
+                          style: AppTextStyles.bodySmall.copyWith(
+                              color:
+                                  AppColors.accentGlow.withValues(alpha: 0.85),
+                              height: 1.5)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ActivationZoneRow extends StatelessWidget {
+  final String range;
+  final String label;
+  final double strength;
+  final Color color;
+  final bool isLast;
+
+  const _ActivationZoneRow({
+    required this.range,
+    required this.label,
+    required this.strength,
+    required this.color,
+    this.isLast = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 10),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 96,
+            child: Text(range,
+                style: AppTextStyles.bodySmall
+                    .copyWith(color: AppColors.textTertiary, fontSize: 11)),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(3),
+                  child: LinearProgressIndicator(
+                    value: strength,
+                    backgroundColor: AppColors.cardBorder,
+                    valueColor: AlwaysStoppedAnimation<Color>(color),
+                    minHeight: 5,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(label,
+                    style: AppTextStyles.labelSmall
+                        .copyWith(color: color, fontSize: 10)),
               ],
             ),
           ),

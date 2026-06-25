@@ -61,6 +61,80 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Result<void>> signInWithEmail(String email, String password) async {
+    try {
+      await _client.auth.signInWithPassword(email: email, password: password);
+      return Result.success(null);
+    } catch (e) {
+      return Result.failure(AuthFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Result<bool>> signUpWithEmail(String email, String password, String name) async {
+    try {
+      final displayName = name.trim().isEmpty ? email.split('@').first : name.trim();
+      final emailRedirectTo = kIsWeb
+          ? '${Uri.base.origin}/confirm-email'
+          : 'io.cosmira.app://confirm-callback';
+      final response = await _client.auth.signUp(
+        email: email,
+        password: password,
+        emailRedirectTo: emailRedirectTo,
+        data: {
+          'full_name': displayName,
+          'display_name': displayName,
+        },
+      );
+      // user == null → outright rejection (very rare).
+      if (response.user == null) {
+        return Result.failure(const AuthFailure(
+          'Could not create account. Please try again later.',
+        ));
+      }
+      // identities == [] → Supabase's email-enumeration protection: the email
+      // is already registered and confirmed. Return the localised error key so
+      // the UI shows "Email already in use" instead of the confirm-email screen.
+      if (response.user!.identities?.isEmpty == true) {
+        return Result.failure(const AuthFailure('auth_err_email_exists'));
+      }
+      // session == null (with a valid user) means email confirmation is required.
+      return Result.success(response.session == null);
+    } catch (e) {
+      return Result.failure(AuthFailure(_mapAuthError(e)));
+    }
+  }
+
+  @override
+  Future<Result<void>> resendConfirmationEmail(String email) async {
+    try {
+      await _client.auth.resend(type: OtpType.signup, email: email);
+      return Result.success(null);
+    } catch (e) {
+      return Result.failure(AuthFailure(_mapAuthError(e)));
+    }
+  }
+
+  static String _mapAuthError(Object e) {
+    if (e is AuthApiException) {
+      switch (e.code) {
+        case 'over_email_send_rate_limit':
+          return 'auth_err_rate_limit';
+        case 'email_exists':
+        case 'user_already_exists':
+          return 'auth_err_email_exists';
+        case 'invalid_credentials':
+          return 'auth_err_invalid_credentials';
+        case 'weak_password':
+          return 'auth_err_weak_password';
+        default:
+          return e.message;
+      }
+    }
+    return e.toString();
+  }
+
+  @override
   Future<Result<void>> signOut() async {
     try {
       await _client.auth.signOut();

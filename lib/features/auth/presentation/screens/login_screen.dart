@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -56,6 +57,13 @@ class LoginScreen extends ConsumerWidget {
                           ref.read(authControllerProvider.notifier).signInWithGoogle(),
                       isPrimary: false,
                     ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.3),
+                    const SizedBox(height: 16),
+                    _SignInButton(
+                      label: context.tr('login_email'),
+                      icon: Icons.email_outlined,
+                      onPressed: () => _showEmailAuthSheet(context, ref),
+                      isPrimary: false,
+                    ).animate().fadeIn(delay: 900.ms).slideY(begin: 0.3),
                     const SizedBox(height: 24),
                     if (authState.isLoading)
                       const CircularProgressIndicator(color: AppColors.accentGlow),
@@ -76,6 +84,15 @@ class LoginScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+void _showEmailAuthSheet(BuildContext context, WidgetRef ref) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => const _EmailAuthSheet(),
+  );
 }
 
 // Apple Sign-In is only available on iOS natively; on web it requires a paid
@@ -262,6 +279,346 @@ class _LanguageToggle extends ConsumerWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Email auth bottom sheet ──────────────────────────────────────────────────
+
+class _EmailAuthSheet extends ConsumerStatefulWidget {
+  const _EmailAuthSheet();
+
+  @override
+  ConsumerState<_EmailAuthSheet> createState() => _EmailAuthSheetState();
+}
+
+class _EmailAuthSheetState extends ConsumerState<_EmailAuthSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
+  final _confirmCtrl = TextEditingController();
+
+  bool _isSignUp = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirm = true;
+  String? _errorMessage;
+  bool _loading = false;
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _emailCtrl.dispose();
+    _passwordCtrl.dispose();
+    _confirmCtrl.dispose();
+    super.dispose();
+  }
+
+  String _localiseError(BuildContext context, String key) {
+    const keys = {
+      'auth_err_rate_limit',
+      'auth_err_email_exists',
+      'auth_err_invalid_credentials',
+      'auth_err_weak_password',
+    };
+    return keys.contains(key) ? context.tr(key) : key;
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() { _errorMessage = null; _loading = true; });
+
+    try {
+      if (_isSignUp) {
+        final needsConfirmation = await ref
+            .read(authControllerProvider.notifier)
+            .signUpWithEmail(_emailCtrl.text.trim(), _passwordCtrl.text, _nameCtrl.text.trim());
+        if (!mounted) return;
+        final authState = ref.read(authControllerProvider);
+        if (authState.hasError) {
+          setState(() => _errorMessage = _localiseError(context, authState.error.toString()));
+        } else if (needsConfirmation) {
+          final email = _emailCtrl.text.trim();
+          final router = GoRouter.of(context);
+          Navigator.of(context).pop();
+          router.go('/confirm-email', extra: email);
+        } else {
+          // Signed in immediately — pop the sheet so GoRouter's redirect
+          // doesn't leave a blocking transparent overlay on the home screen.
+          Navigator.of(context).pop();
+        }
+      } else {
+        await ref
+            .read(authControllerProvider.notifier)
+            .signInWithEmail(_emailCtrl.text.trim(), _passwordCtrl.text);
+        if (!mounted) return;
+        final authState = ref.read(authControllerProvider);
+        if (authState.hasError) {
+          setState(() => _errorMessage = _localiseError(context, authState.error.toString()));
+        } else {
+          // Pop explicitly before GoRouter redirects — an un-dismissed modal
+          // bottom sheet can leave a transparent overlay that blocks all touches
+          // on the home screen, making it appear frozen.
+          Navigator.of(context).pop();
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F1223),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      padding: EdgeInsets.fromLTRB(24, 20, 24, 24 + bottomInset),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Sign In / Sign Up toggle
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  _Tab(
+                    label: context.tr('login_email_tab_signin'),
+                    selected: !_isSignUp,
+                    onTap: () => setState(() { _isSignUp = false; _errorMessage = null; }),
+                  ),
+                  _Tab(
+                    label: context.tr('login_email_tab_signup'),
+                    selected: _isSignUp,
+                    onTap: () => setState(() { _isSignUp = true; _errorMessage = null; }),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Name field — sign-up only
+            if (_isSignUp) ...[
+              TextFormField(
+                controller: _nameCtrl,
+                keyboardType: TextInputType.name,
+                textCapitalization: TextCapitalization.words,
+                autofillHints: const [AutofillHints.name],
+                style: AppTextStyles.bodyMedium,
+                decoration: _inputDecoration(
+                  context.tr('login_name_field'),
+                  context.tr('login_name_hint'),
+                  Icons.person_outline,
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) {
+                    return context.tr('login_name_required');
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+            // Email field
+            TextFormField(
+              controller: _emailCtrl,
+              keyboardType: TextInputType.emailAddress,
+              autofillHints: const [AutofillHints.email],
+              style: AppTextStyles.bodyMedium,
+              decoration: _inputDecoration(
+                context.tr('login_email_field'),
+                context.tr('login_email_hint'),
+                Icons.email_outlined,
+              ),
+              validator: (v) {
+                if (v == null || v.trim().isEmpty || !v.contains('@')) {
+                  return context.tr('login_email_invalid');
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            // Password field
+            TextFormField(
+              controller: _passwordCtrl,
+              obscureText: _obscurePassword,
+              autofillHints: _isSignUp
+                  ? const [AutofillHints.newPassword]
+                  : const [AutofillHints.password],
+              style: AppTextStyles.bodyMedium,
+              decoration: _inputDecoration(
+                context.tr('login_password_field'),
+                context.tr('login_password_hint'),
+                Icons.lock_outline,
+              ).copyWith(
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    color: AppColors.textTertiary,
+                    size: 20,
+                  ),
+                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                ),
+              ),
+              validator: (v) {
+                if (v == null || v.length < 6) {
+                  return context.tr('login_password_short');
+                }
+                return null;
+              },
+            ),
+            if (_isSignUp) ...[
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _confirmCtrl,
+                obscureText: _obscureConfirm,
+                autofillHints: const [AutofillHints.newPassword],
+                style: AppTextStyles.bodyMedium,
+                decoration: _inputDecoration(
+                  context.tr('login_confirm_password'),
+                  context.tr('login_confirm_password_hint'),
+                  Icons.lock_outline,
+                ).copyWith(
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      color: AppColors.textTertiary,
+                      size: 20,
+                    ),
+                    onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                  ),
+                ),
+                validator: (v) {
+                  if (v != _passwordCtrl.text) {
+                    return context.tr('login_passwords_mismatch');
+                  }
+                  return null;
+                },
+              ),
+            ],
+            if (_errorMessage != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                _errorMessage!,
+                style: AppTextStyles.bodySmall.copyWith(color: Colors.redAccent),
+                textAlign: TextAlign.center,
+              ),
+            ],
+            const SizedBox(height: 24),
+            SizedBox(
+              height: 52,
+              child: ElevatedButton(
+                onPressed: _loading ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accentGlow,
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: _loading
+                    ? const SizedBox(
+                        width: 20, height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                      )
+                    : Text(
+                        _isSignUp
+                            ? context.tr('login_signup_btn')
+                            : context.tr('login_signin_btn'),
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String label, String hint, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      prefixIcon: Icon(icon, color: AppColors.textTertiary, size: 20),
+      labelStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.textTertiary),
+      hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.textTertiary),
+      filled: true,
+      fillColor: Colors.white.withValues(alpha: 0.06),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: AppColors.accentGlow.withValues(alpha: 0.6)),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.redAccent),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.redAccent),
+      ),
+    );
+  }
+}
+
+class _Tab extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _Tab({required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.accentGlow.withValues(alpha: 0.15) : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: selected
+                ? Border.all(color: AppColors.accentGlow.withValues(alpha: 0.4))
+                : null,
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: AppTextStyles.labelSmall.copyWith(
+              color: selected ? AppColors.accentGlow : AppColors.textTertiary,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+            ),
+          ),
         ),
       ),
     );
