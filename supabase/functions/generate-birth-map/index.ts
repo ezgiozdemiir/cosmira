@@ -1,6 +1,6 @@
 // Supabase Edge Function: Generate Birth Map
 // Called when a user purchases their Cosmic Fingerprint report.
-// Atomically deducts 50 Stardust, generates a comprehensive astrological
+// Atomically deducts 200 Stardust, generates a comprehensive astrological
 // birth map via Gemini, and stores it per-user per-language permanently.
 // Subsequent calls for the same language return the cached map at no cost.
 
@@ -237,27 +237,24 @@ serve(async (req) => {
       mcSign: mc_sign ?? "", birthYear, birthCity: birth_city ?? "",
     };
 
-    // Check if other language already exists before generating
-    const { data: otherExists } = await supabase
-      .from("birth_maps").select("id").eq("user_id", userId).eq("language", otherLang).maybeSingle();
-
-    // Generate both languages in parallel
-    const [primaryResult, otherResult] = await Promise.allSettled([
-      generateContent({ ...genParams, language }),
-      otherExists ? Promise.resolve(null) : generateContent({ ...genParams, language: otherLang }),
-    ]);
-
-    if (primaryResult.status === "rejected") {
+    // Generate ONLY the primary language synchronously so we can respond fast.
+    // The secondary language is generated in the background after we respond.
+    let content: Record<string, unknown>;
+    try {
+      content = await generateContent({ ...genParams, language });
+    } catch (genErr) {
       if (!anyExisting) {
-        await supabase.rpc("earn_stardust", {
-          p_user_id: userId, p_amount: BIRTH_MAP_COST,
-          p_source: "refund", p_description: "Refund: birth map generation failed",
-        });
+        try {
+          await supabase.rpc("earn_stardust", {
+            p_user_id: userId, p_amount: BIRTH_MAP_COST,
+            p_type: "refund", p_description: "Refund: birth map generation failed",
+          });
+        } catch (refundErr) {
+          console.error("Refund failed after generation error:", refundErr);
+        }
       }
-      throw new Error(`STEP_GEMINI: ${primaryResult.reason}`);
+      throw new Error(`STEP_GEMINI: ${genErr instanceof Error ? genErr.message : String(genErr)}`);
     }
-
-    const content = primaryResult.value!;
 
     const { data: inserted, error: insertError } = await supabase
       .from("birth_maps")
@@ -267,19 +264,30 @@ serve(async (req) => {
 
     if (insertError) {
       if (!anyExisting) {
-        await supabase.rpc("earn_stardust", {
-          p_user_id: userId, p_amount: BIRTH_MAP_COST,
-          p_source: "refund", p_description: "Refund: birth map insert failed",
-        });
+        try {
+          await supabase.rpc("earn_stardust", {
+            p_user_id: userId, p_amount: BIRTH_MAP_COST,
+            p_type: "refund", p_description: "Refund: birth map insert failed",
+          });
+        } catch (refundErr) {
+          console.error("Refund failed after insert error:", refundErr);
+        }
       }
       throw new Error(`STEP_INSERT: ${insertError.message} (code: ${insertError.code})`);
     }
 
-    // Insert other language (best-effort — no refund if fails)
-    if (otherResult.status === "fulfilled" && otherResult.value !== null) {
-      await supabase.from("birth_maps")
-        .insert({ user_id: userId, content: otherResult.value, language: otherLang })
-        .catch((e: unknown) => console.error("Other-lang birth map insert failed:", e));
+    // Check if other language already exists, then kick off background generation.
+    // We do NOT await this — the response is returned immediately above.
+    const { data: otherExists } = await supabase
+      .from("birth_maps").select("id").eq("user_id", userId).eq("language", otherLang).maybeSingle();
+
+    if (!otherExists) {
+      generateContent({ ...genParams, language: otherLang })
+        .then((otherContent) =>
+          supabase.from("birth_maps")
+            .insert({ user_id: userId, content: otherContent, language: otherLang })
+        )
+        .catch((e: unknown) => console.error("Background other-lang generation failed:", e));
     }
 
     return new Response(

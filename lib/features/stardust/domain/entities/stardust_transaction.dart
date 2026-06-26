@@ -19,10 +19,9 @@ class StardustTransaction extends Equatable {
     required this.createdAt,
   });
 
-  bool get isEarning => type == 'earn';
+  bool get isEarning => type == 'reward' || type == 'purchase' || type == 'bonus';
   bool get isSpending => type == 'spend';
-  bool get isRefund =>
-      source.contains('refund') || description.toLowerCase().contains('refund');
+  bool get isRefund => type == 'refund';
   bool get isPositive => isEarning || isRefund;
 
   @override

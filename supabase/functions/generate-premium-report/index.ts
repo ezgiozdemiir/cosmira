@@ -114,31 +114,48 @@ serve(async (req) => {
       });
     }
 
+    const refund = async (reason: string) => {
+      try {
+        await supabase.rpc("earn_stardust", {
+          p_user_id: user_id, p_amount: cost,
+          p_type: "refund", p_description: `Refund: ${reason}`,
+        });
+      } catch (refundErr) {
+        console.error("Refund failed:", refundErr);
+      }
+    };
+
     // 3. Generate with OpenAI
     const systemPrompt = REPORT_PROMPTS[report_type] || REPORT_PROMPTS.yearly_destiny;
     const userPrompt = `Input data:\n${JSON.stringify(input_data, null, 2)}\n\nReturn ONLY valid JSON.`;
 
-    const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.7,
-        max_tokens: 2000,
-        response_format: { type: "json_object" },
-      }),
-    });
+    let openaiData: Record<string, unknown>;
+    try {
+      const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0.7,
+          max_tokens: 2000,
+          response_format: { type: "json_object" },
+        }),
+      });
+      openaiData = await openaiResponse.json();
+    } catch (aiErr) {
+      await refund(`${report_type} generation failed`);
+      throw aiErr;
+    }
 
-    const openaiData = await openaiResponse.json();
-    const content = JSON.parse(openaiData.choices[0].message.content);
-    const usage = openaiData.usage;
+    const content = JSON.parse((openaiData.choices as {message:{content:string}}[])[0].message.content);
+    const usage = openaiData.usage as {prompt_tokens:number; completion_tokens:number};
 
     // Estimate cost (gpt-4o-mini pricing)
     const inputCost = (usage.prompt_tokens / 1_000_000) * 0.15;
@@ -167,7 +184,10 @@ serve(async (req) => {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      await refund(`${report_type} insert failed`);
+      throw error;
+    }
 
     return new Response(JSON.stringify({ cached: false, report }), {
       headers: { "Content-Type": "application/json" },

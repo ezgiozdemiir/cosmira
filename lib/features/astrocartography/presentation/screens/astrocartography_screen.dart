@@ -449,9 +449,18 @@ class _UnlockGate extends StatelessWidget {
                   Text('astro_full_report'.tr(),
                       style: AppTextStyles.titleMedium
                           .copyWith(color: Colors.white)),
-                  Text('astro_one_time'.tr(),
-                      style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.auraAmber.withValues(alpha: 0.85))),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('astro_one_time'.tr(),
+                          style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.auraAmber.withValues(alpha: 0.85))),
+                      const SizedBox(width: 3),
+                      Icon(Icons.auto_awesome,
+                          color: AppColors.auraAmber.withValues(alpha: 0.85),
+                          size: 11),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -489,9 +498,6 @@ class _UnlockGate extends StatelessWidget {
           const SizedBox(height: 20),
 
           Row(children: [
-            const Icon(Icons.auto_awesome,
-                color: AppColors.auraAmber, size: 15),
-            const SizedBox(width: 6),
             Text('astro_balance'.tr(),
                 style: AppTextStyles.bodySmall
                     .copyWith(color: AppColors.textSecondary)),
@@ -499,6 +505,10 @@ class _UnlockGate extends StatelessWidget {
                 style: AppTextStyles.bodySmall.copyWith(
                     color: canAfford ? AppColors.auraAmber : AppColors.error,
                     fontWeight: FontWeight.w600)),
+            const SizedBox(width: 4),
+            Icon(Icons.auto_awesome,
+                color: canAfford ? AppColors.auraAmber : AppColors.error,
+                size: 12),
             if (!canAfford) ...[
               const Spacer(),
               GestureDetector(
@@ -537,18 +547,31 @@ class _UnlockGate extends StatelessWidget {
                         height: 18,
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white))
-                    : Text(
-                        canAfford
-                            ? 'astro_unlock_btn'.tr()
-                            : 'astro_not_enough'.tr(),
-                        style: AppTextStyles.titleMedium.copyWith(
-                          color: canAfford
-                              ? Colors.black
-                              : AppColors.textTertiary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                    : canAfford
+                        ? Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'astro_unlock_btn'.tr(),
+                                style: AppTextStyles.titleMedium.copyWith(
+                                  color: Colors.black,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              const Icon(Icons.auto_awesome,
+                                  color: Colors.black, size: 14),
+                            ],
+                          )
+                        : Text(
+                            'astro_not_enough'.tr(),
+                            style: AppTextStyles.titleMedium.copyWith(
+                              color: AppColors.textTertiary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
               ),
             ),
           ),

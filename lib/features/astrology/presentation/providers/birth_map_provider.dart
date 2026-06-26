@@ -5,6 +5,7 @@ import '../../../../config/di.dart';
 import '../../../../core/providers/language_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../home/presentation/providers/home_provider.dart';
+import '../../../stardust/presentation/providers/stardust_provider.dart';
 import '../../domain/entities/birth_map.dart';
 import '../../domain/repositories/astrology_repository.dart';
 import 'astrology_provider.dart';
@@ -111,10 +112,20 @@ class BirthMapPurchaseNotifier
       },
       failure: (f) {
         final raw = f.toString();
-        final msg = raw.contains('insufficient_stardust')
+        final isInsufficient = raw.contains('insufficient_stardust');
+        final msg = isInsufficient
             ? 'Not enough Stardust. Visit the store to top up.'
             : 'Something went wrong. Please try again.';
         state = BirthMapPurchaseState(error: msg);
+        // If it's not an insufficient-stardust error, stardust may have been
+        // deducted and the birth map may have been inserted server-side even
+        // though the response failed. Refresh so the UI reflects actual state.
+        if (!isInsufficient) {
+          _ref.invalidate(stardustBalanceProvider);
+          _ref.invalidate(stardustTransactionsProvider);
+          _ref.invalidate(birthMapProvider);
+          _ref.invalidate(birthMapExistsProvider);
+        }
         return false;
       },
     );

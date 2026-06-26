@@ -813,11 +813,11 @@ class _BirthMapEntryCard extends ConsumerWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.auto_awesome, color: AppColors.auraAmber, size: 16),
-            const SizedBox(width: 8),
             Text('natal_birth_map_cost'.tr(),
                 style: AppTextStyles.labelLarge
                     .copyWith(color: AppColors.auraAmber)),
+            const SizedBox(width: 8),
+            const Icon(Icons.auto_awesome, color: AppColors.auraAmber, size: 16),
           ],
         ),
       );

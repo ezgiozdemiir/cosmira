@@ -447,12 +447,14 @@ class _MorePartnersProCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 16),
               Text('compat_more_partners_title'.tr(),
                   style: AppTextStyles.titleMedium),
               const SizedBox(height: 12),
               _fakePartnerRow('💜', 'compat_more_partners_hint_1'.tr()),
               const SizedBox(height: 10),
               _fakePartnerRow('💙', 'compat_more_partners_hint_2'.tr()),
+              const SizedBox(height: 16),
             ],
           ),
         ),
@@ -466,6 +468,7 @@ class _MorePartnersProCard extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
@@ -485,7 +488,8 @@ class _MorePartnersProCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Text(
                     'compat_more_partners_pro_sub'.tr(),
-                    style: AppTextStyles.bodySmall,
+                    style: AppTextStyles.bodySmall.copyWith(
+                        color: Colors.white),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -504,6 +508,7 @@ class _MorePartnersProCard extends StatelessWidget {
                             .copyWith(color: Colors.white)),
                   ),
                 ),
+                const SizedBox(height: 16),
               ],
             ),
           ),

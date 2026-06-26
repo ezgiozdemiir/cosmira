@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../config/di.dart';
+import '../../../home/presentation/providers/home_provider.dart';
 import '../../../stardust/domain/repositories/stardust_repository.dart';
 import '../../../stardust/presentation/providers/stardust_provider.dart';
 
@@ -21,8 +22,9 @@ class AstrocartographyNotifier
     extends StateNotifier<AstrocartographyState> {
   final StardustRepository _repo;
   final String _userId;
+  final Ref _ref;
 
-  AstrocartographyNotifier(this._repo, this._userId)
+  AstrocartographyNotifier(this._repo, this._userId, this._ref)
       : super(const AstrocartographyState()) {
     _checkUnlock();
   }
@@ -57,6 +59,8 @@ class AstrocartographyNotifier
       success: (_) {
         state = const AstrocartographyState(
             status: AstrocartographyStatus.unlocked);
+        _ref.invalidate(stardustBalanceProvider);
+        _ref.invalidate(stardustTransactionsProvider);
         return null;
       },
       failure: (f) {
@@ -77,5 +81,6 @@ final astrocartographyProvider = StateNotifierProvider.autoDispose<
   return AstrocartographyNotifier(
     ref.watch(stardustRepositoryProvider),
     user?.id ?? '',
+    ref,
   );
 });
