@@ -5,15 +5,13 @@ import 'package:equatable/equatable.dart';
 abstract final class Gender {
   static const female = 'female';
   static const male = 'male';
-  static const nonBinary = 'non_binary';
   static const preferNotToSay = 'prefer_not_to_say';
 
-  static const values = [female, male, nonBinary, preferNotToSay];
+  static const values = [female, male, preferNotToSay];
 
   static String label(String value) => switch (value) {
         female => 'Female',
         male => 'Male',
-        nonBinary => 'Non-binary',
         _ => 'Prefer not to say',
       };
 }

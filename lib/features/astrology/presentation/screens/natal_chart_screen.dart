@@ -185,7 +185,11 @@ class NatalChartScreen extends ConsumerWidget {
                       ],
 
                       if (profile.isPremium)
-                        _HouseInsightsSection(delay: 520.ms),
+                        _HouseInsightsSection(delay: 520.ms)
+                      else
+                        const _HouseInsightsLockedCard()
+                            .animate()
+                            .fadeIn(delay: 520.ms),
 
                       _InsightSection(
                         title: 'natal_today'.tr(),
@@ -544,6 +548,145 @@ class _HouseInsightCard extends StatelessWidget {
                 Text(
                   detail.interpretation,
                   style: AppTextStyles.bodySmall.copyWith(height: 1.6),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// House Insights — Pro locked card
+// ---------------------------------------------------------------------------
+
+class _HouseInsightsLockedCard extends StatelessWidget {
+  const _HouseInsightsLockedCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('natal_house_interpretations'.tr(),
+              style: AppTextStyles.titleMedium),
+          const SizedBox(height: 12),
+          Stack(
+            children: [
+              // Blurred preview of two fake house cards
+              Column(
+                children: [
+                  _fakehouseCard('♐', '1. Ev', 'Kimlik & Dış Görünüş'),
+                  const SizedBox(height: 10),
+                  _fakehouseCard('♑', '2. Ev', 'Değerler & Maddi Güç'),
+                  const SizedBox(height: 10),
+                  _fakehouseCard('♒', '3. Ev', 'İletişim & Zihin'),
+                ],
+              ),
+              // Frosted overlay + lock
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.midnight.withValues(alpha: 0.82),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.auraViolet.withValues(alpha: 0.15),
+                            border: Border.all(
+                                color:
+                                    AppColors.auraViolet.withValues(alpha: 0.4)),
+                          ),
+                          child: const Icon(Icons.lock_outline,
+                              color: AppColors.auraViolet, size: 28),
+                        ),
+                        const SizedBox(height: 14),
+                        Text('natal_houses_pro_feature'.tr(),
+                            style: AppTextStyles.titleMedium),
+                        const SizedBox(height: 6),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Text(
+                            'natal_houses_pro_sub'.tr(),
+                            style: AppTextStyles.bodySmall,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        GestureDetector(
+                          onTap: () => context.push('/paywall'),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 10),
+                            decoration: BoxDecoration(
+                              gradient: AppColors.premiumGradient,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text('natal_houses_pro_cta'.tr(),
+                                style: AppTextStyles.labelLarge
+                                    .copyWith(color: Colors.white)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _fakehouseCard(String emoji, String house, String theme) {
+    return CosmicCard(
+      child: Row(
+        children: [
+          Column(
+            children: [
+              Text(emoji, style: const TextStyle(fontSize: 28)),
+              const SizedBox(height: 4),
+              Text(house,
+                  style: AppTextStyles.labelSmall
+                      .copyWith(color: AppColors.accentGlow)),
+            ],
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(theme,
+                    style: AppTextStyles.labelLarge
+                        .copyWith(color: AppColors.accentGlow)),
+                const SizedBox(height: 6),
+                Container(
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: AppColors.textTertiary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Container(
+                  height: 10,
+                  width: 180,
+                  decoration: BoxDecoration(
+                    color: AppColors.textTertiary.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
                 ),
               ],
             ),

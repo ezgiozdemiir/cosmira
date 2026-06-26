@@ -9,14 +9,21 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/cosmic_card.dart';
 import '../../../../core/widgets/cosmic_button.dart';
 import '../../../../core/extensions/string_extensions.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/compatibility_provider.dart';
 
 class CompatibilityScreen extends ConsumerWidget {
   const CompatibilityScreen({super.key});
 
+  static const _freeLimit = 2;
+  static const _premiumLimit = 10;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final partners = ref.watch(partnersProvider);
+    final isPremium =
+        ref.watch(userProfileProvider).valueOrNull?.isPremium ?? false;
+    final limit = isPremium ? _premiumLimit : _freeLimit;
 
     return SafeArea(
       child: CustomScrollView(
@@ -43,7 +50,7 @@ class CompatibilityScreen extends ConsumerWidget {
                     ),
                   ),
                   partners.maybeWhen(
-                    data: (list) => list.isNotEmpty
+                    data: (list) => list.isNotEmpty && list.length < limit
                         ? IconButton.filled(
                             onPressed: () => _showAddSheet(context),
                             icon: const Icon(Icons.add),
@@ -150,6 +157,20 @@ class CompatibilityScreen extends ConsumerWidget {
             error: (_, __) => SliverToBoxAdapter(
               child: Center(child: Text('compat_error'.tr())),
             ),
+          ),
+          // Pro upsell card — shown when free user has reached the partner limit
+          partners.maybeWhen(
+            data: (list) => !isPremium && list.length >= limit
+                ? SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                      child: _MorePartnersProCard()
+                          .animate()
+                          .fadeIn(delay: (list.length * 100).ms),
+                    ),
+                  )
+                : const SliverToBoxAdapter(child: SizedBox.shrink()),
+            orElse: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
@@ -410,4 +431,114 @@ class _AddPartnerSheetState extends ConsumerState<_AddPartnerSheet> {
           borderSide: const BorderSide(color: AppColors.auraRose),
         ),
       );
+}
+
+// ---------------------------------------------------------------------------
+// Pro upsell card — more partners
+// ---------------------------------------------------------------------------
+
+class _MorePartnersProCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        // Blurred fake partner rows
+        CosmicCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('compat_more_partners_title'.tr(),
+                  style: AppTextStyles.titleMedium),
+              const SizedBox(height: 12),
+              _fakePartnerRow('💜', 'compat_more_partners_hint_1'.tr()),
+              const SizedBox(height: 10),
+              _fakePartnerRow('💙', 'compat_more_partners_hint_2'.tr()),
+            ],
+          ),
+        ),
+        // Frosted overlay + lock
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.midnight.withValues(alpha: 0.80),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.auraRose.withValues(alpha: 0.15),
+                    border: Border.all(
+                        color: AppColors.auraRose.withValues(alpha: 0.4)),
+                  ),
+                  child: const Icon(Icons.lock_outline,
+                      color: AppColors.auraRose, size: 28),
+                ),
+                const SizedBox(height: 14),
+                Text('compat_more_partners_pro'.tr(),
+                    style: AppTextStyles.titleMedium),
+                const SizedBox(height: 6),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(
+                    'compat_more_partners_pro_sub'.tr(),
+                    style: AppTextStyles.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                GestureDetector(
+                  onTap: () => context.push('/paywall'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 10),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.premiumGradient,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text('compat_more_partners_cta'.tr(),
+                        style: AppTextStyles.labelLarge
+                            .copyWith(color: Colors.white)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _fakePartnerRow(String emoji, String name) {
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 24,
+          backgroundColor: AppColors.auraRose.withValues(alpha: 0.15),
+          child: Text(emoji, style: const TextStyle(fontSize: 22)),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name, style: AppTextStyles.titleMedium),
+              Container(
+                margin: const EdgeInsets.only(top: 5),
+                height: 10,
+                width: 120,
+                decoration: BoxDecoration(
+                  color: AppColors.textTertiary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }

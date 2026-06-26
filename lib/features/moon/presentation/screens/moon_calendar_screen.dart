@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import 'package:go_router/go_router.dart';
+
 import '../../../../core/extensions/string_extensions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/cosmic_card.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/entities/moon_phase.dart';
 import '../providers/moon_provider.dart';
 
@@ -22,6 +25,8 @@ class MoonCalendarScreen extends ConsumerWidget {
     final selectedPhase = ref.watch(selectedDayMoonPhaseProvider);
     final monthPhases = ref.watch(localMonthlyPhasesProvider);
     final selectedMonth = ref.watch(selectedMonthProvider);
+    final isPremium =
+        ref.watch(userProfileProvider).valueOrNull?.isPremium ?? false;
 
     final isToday = _isSameDay(selectedDay, DateTime.now());
     final displayPhase = isToday ? today : selectedPhase;
@@ -115,6 +120,12 @@ class MoonCalendarScreen extends ConsumerWidget {
                         ],
                       ),
                     ),
+                  const SizedBox(height: 16),
+                  if (!isPremium)
+                    const _MoonImpactProCard()
+                        .animate()
+                        .fadeIn(delay: 300.ms)
+                        .slideY(begin: 0.06),
                 ],
               ),
             ),
@@ -485,4 +496,150 @@ class _RitualCard extends StatelessWidget {
       ),
     ).animate().fadeIn(delay: 150.ms).slideY(begin: 0.06, duration: 350.ms);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Moon Impact Analysis — Pro locked card
+// ---------------------------------------------------------------------------
+
+class _MoonImpactProCard extends StatelessWidget {
+  const _MoonImpactProCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        // Blurred preview of the pro content
+        CosmicCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('moon_pro_title'.tr(), style: AppTextStyles.titleMedium),
+              const SizedBox(height: 12),
+              Container(
+                height: 12,
+                decoration: BoxDecoration(
+                  color: AppColors.textTertiary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                height: 12,
+                width: 220,
+                decoration: BoxDecoration(
+                  color: AppColors.textTertiary.withValues(alpha: 0.07),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                height: 12,
+                decoration: BoxDecoration(
+                  color: AppColors.textTertiary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                height: 12,
+                width: 180,
+                decoration: BoxDecoration(
+                  color: AppColors.textTertiary.withValues(alpha: 0.07),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  _fakeChip('🏠  3. Ev'),
+                  const SizedBox(width: 8),
+                  _fakeChip('♄  Satürn'),
+                  const SizedBox(width: 8),
+                  _fakeChip('💜  Duygu'),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  _fakeChip('🌙  Ay Etkisi'),
+                  const SizedBox(width: 8),
+                  _fakeChip('✨  Enerji'),
+                ],
+              ),
+            ],
+          ),
+        ),
+        // Frosted overlay + lock
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.midnight.withValues(alpha: 0.80),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.auraIndigo.withValues(alpha: 0.15),
+                    border: Border.all(
+                        color: AppColors.auraIndigo.withValues(alpha: 0.4)),
+                  ),
+                  child: const Icon(Icons.lock_outline,
+                      color: AppColors.auraIndigo, size: 28),
+                ),
+                const SizedBox(height: 14),
+                Text('moon_pro_feature'.tr(),
+                    style: AppTextStyles.titleMedium),
+                const SizedBox(height: 4),
+                Text('moon_pro_title'.tr(),
+                    style: AppTextStyles.labelLarge
+                        .copyWith(color: AppColors.auraIndigo)),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(
+                    'moon_pro_sub'.tr(),
+                    style: AppTextStyles.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                GestureDetector(
+                  onTap: () => context.push('/paywall'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 10),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.premiumGradient,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text('moon_pro_cta'.tr(),
+                        style: AppTextStyles.labelLarge
+                            .copyWith(color: Colors.white)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _fakeChip(String label) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.auraIndigo.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+              color: AppColors.auraIndigo.withValues(alpha: 0.2)),
+        ),
+        child: Text(label,
+            style: AppTextStyles.labelSmall
+                .copyWith(color: AppColors.auraIndigo)),
+      );
 }

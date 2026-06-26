@@ -73,7 +73,7 @@ class HomeScreen extends ConsumerWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: _buildMainCard(context, ref, profile),
+              child: _buildMainCard(context, ref, profileAsync),
             ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 20)),
@@ -99,29 +99,31 @@ class HomeScreen extends ConsumerWidget {
   Widget _buildMainCard(
     BuildContext context,
     WidgetRef ref,
-    UserProfile? profile,
+    AsyncValue<UserProfile?> profileAsync,
   ) {
-    if (!(profile?.onboardingComplete ?? false)) {
-      return CosmicCard(
-        onTap: () => context.push('/onboarding'),
-        child: Column(
-          children: [
-            const Icon(Icons.stars, color: AppColors.accentGlow, size: 40),
-            const SizedBox(height: 12),
-            Text(
-              'home_complete_birth_details'.tr(),
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodyMedium,
+    return profileAsync.when(
+      loading: () => const ShimmerLoading(height: 120, width: double.infinity),
+      error: (_, __) => _DailyTextCard().animate().fadeIn(delay: 300.ms).slideY(begin: 0.08),
+      data: (profile) {
+        if (!(profile?.onboardingComplete ?? false)) {
+          return CosmicCard(
+            onTap: () => context.push('/onboarding'),
+            child: Column(
+              children: [
+                const Icon(Icons.stars, color: AppColors.accentGlow, size: 40),
+                const SizedBox(height: 12),
+                Text(
+                  'home_complete_birth_details'.tr(),
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.bodyMedium,
+                ),
+              ],
             ),
-          ],
-        ),
-      );
-    }
-
-    return _DailyTextCard()
-        .animate()
-        .fadeIn(delay: 300.ms)
-        .slideY(begin: 0.08);
+          );
+        }
+        return _DailyTextCard().animate().fadeIn(delay: 300.ms).slideY(begin: 0.08);
+      },
+    );
   }
 }
 
