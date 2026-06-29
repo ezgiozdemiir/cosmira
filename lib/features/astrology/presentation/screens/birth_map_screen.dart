@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 import 'package:easy_localization/easy_localization.dart';
 
 import 'package:flutter/material.dart';
@@ -1153,6 +1155,10 @@ class _ExportBarState extends State<_ExportBar> {
   }
 
   Future<void> _exportStory() async {
+    if (kIsWeb || Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+      _showStoryPreview();
+      return;
+    }
     setState(() => _exportingStory = true);
     try {
       final controller = ScreenshotController();
@@ -1171,6 +1177,42 @@ class _ExportBarState extends State<_ExportBar> {
     } finally {
       if (mounted) setState(() => _exportingStory = false);
     }
+  }
+
+  void _showStoryPreview() {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: _StoryCard(map: widget.map, profile: widget.profile),
+            ),
+            Positioned(
+              top: -14,
+              right: -14,
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.cardBorder),
+                  ),
+                  child: const Icon(Icons.close, size: 16, color: Colors.white70),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -1214,8 +1256,13 @@ class _ExportButton extends StatelessWidget {
                 children: [
                   Icon(icon, color: color, size: 18),
                   const SizedBox(width: 8),
-                  Text(label,
-                      style: AppTextStyles.labelLarge.copyWith(color: color)),
+                  Flexible(
+                    child: Text(
+                      label,
+                      style: AppTextStyles.labelLarge.copyWith(color: color),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
       ),
