@@ -186,9 +186,11 @@ class AuthRepositoryImpl implements AuthRepository {
         createdAt: profile.createdAt,
       );
 
+      final payload = model.toJson()..remove('id');
       final data = await _client
           .from('profiles')
-          .upsert(model.toJson())
+          .update(payload)
+          .eq('id', model.id)
           .select()
           .single();
 

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "746202682120",
+    "project_id": "cosmira-5b2b4",
+    "storage_bucket": "cosmira-5b2b4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:746202682120:android:305c19bca6f3af9f9d52bd",
+        "android_client_info": {
+          "package_name": "com.example.cosmira"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA44v3esLYuqN8eJ7-7hAz0vak3z9HDgKc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

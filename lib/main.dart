@@ -7,7 +7,11 @@ import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'dart:ui' show PlatformDispatcher;
 import 'config/env.dart';
+import 'firebase_options.dart';
 import 'core/providers/language_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/web_utils_stub.dart'
@@ -15,8 +19,18 @@ import 'core/utils/web_utils_stub.dart'
 import 'router/app_router.dart';
 
 void main() async {
-  usePathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Firebase + Crashlytics must come first so errors in later init steps are captured.
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
+
+  if (kIsWeb) usePathUrlStrategy();
+
   await EasyLocalization.ensureInitialized();
 
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);

@@ -6,7 +6,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
   app_links
   connectivity_plus
   firebase_core
-  geolocator_windows
   printing
   rive_common
   share_plus
@@ -15,7 +14,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
   jni
-  sweph
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)

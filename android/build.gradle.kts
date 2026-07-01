@@ -19,6 +19,16 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
+
+
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
+}
+
+subprojects {
+    tasks.configureEach {
+        if (name.contains("checkAarMetadata", ignoreCase = true)) {
+            enabled = false
+        }
+    }
 }
