@@ -111,7 +111,7 @@ class ProfileScreen extends ConsumerWidget {
                   _ProfileMenuItem(
                     icon: Icons.help_outline,
                     label: 'profile_help'.tr(),
-                    onTap: () {},
+                    onTap: () => context.push('/help'),
                   ),
                   const SizedBox(height: 16),
                   TextButton(

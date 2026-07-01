@@ -1,11 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:share_plus/share_plus.dart';
-
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/cosmic_card.dart';
@@ -13,9 +10,6 @@ import '../../../../core/extensions/date_extensions.dart';
 import '../../../../config/di.dart' show currentUserProvider;
 import '../../../home/presentation/providers/home_provider.dart';
 import '../providers/stardust_provider.dart';
-
-String _referralCode(String userId) =>
-    userId.replaceAll('-', '').substring(0, 8).toUpperCase();
 
 class StardustStoreScreen extends ConsumerWidget {
   const StardustStoreScreen({super.key});
@@ -80,7 +74,11 @@ class StardustStoreScreen extends ConsumerWidget {
                           style: AppTextStyles.headlineSmall),
                       const SizedBox(height: 12),
                       const _DailyCheckInTile(),
-                      const _InviteTile(),
+                      const SizedBox(height: 24),
+                      Text('stardust_buy'.tr(),
+                          style: AppTextStyles.headlineSmall),
+                      const SizedBox(height: 12),
+                      const _BundleGrid(),
                       const SizedBox(height: 24),
                       Text('stardust_history'.tr(),
                           style: AppTextStyles.headlineSmall),
@@ -90,9 +88,25 @@ class StardustStoreScreen extends ConsumerWidget {
                 ),
               ),
               transactions.when(
-                data: (list) => SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
+                data: (list) {
+                  if (list.isEmpty) {
+                    return SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 16, horizontal: 20),
+                        child: Center(
+                          child: Text(
+                            'stardust_no_transactions'.tr(),
+                            style: AppTextStyles.bodyMedium
+                                .copyWith(color: AppColors.textSecondary),
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  return SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
                       final tx = list[index];
                       final isPositive = tx.isPositive;
                       final txColor =
@@ -127,7 +141,8 @@ class StardustStoreScreen extends ConsumerWidget {
                     },
                     childCount: list.length,
                   ),
-                ),
+                );
+                },
                 loading: () => const SliverToBoxAdapter(
                   child: Center(child: CircularProgressIndicator()),
                 ),
@@ -173,10 +188,41 @@ class _DailyCheckInTileState extends ConsumerState<_DailyCheckInTile> {
         if (claimed) {
           ref.invalidate(stardustTransactionsProvider);
           ref.invalidate(stardustBalanceProvider);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('stardust_daily_success'.tr()),
-              backgroundColor: AppColors.success,
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              backgroundColor: AppColors.card,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+              title: Text(
+                'stardust_daily_popup_title'.tr(),
+                textAlign: TextAlign.center,
+                style: AppTextStyles.titleLarge,
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.auto_awesome,
+                      color: AppColors.auraAmber, size: 52),
+                  const SizedBox(height: 12),
+                  Text(
+                    'stardust_daily_popup_body'.tr(),
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodyMedium,
+                  ),
+                ],
+              ),
+              actionsAlignment: MainAxisAlignment.center,
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(
+                    'stardust_daily_popup_cta'.tr(),
+                    style: AppTextStyles.labelLarge
+                        .copyWith(color: AppColors.accentGlow),
+                  ),
+                ),
+              ],
             ),
           );
         } else {
@@ -262,109 +308,98 @@ class _DailyCheckInTileState extends ConsumerState<_DailyCheckInTile> {
   }
 }
 
-// ── Invite tile ────────────────────────────────────────────────────────────────
+// ── Stardust bundle grid ───────────────────────────────────────────────────────
 
-class _InviteTile extends ConsumerWidget {
-  const _InviteTile();
+class _BundleGrid extends StatelessWidget {
+  const _BundleGrid();
+
+  static const _bundles = [
+    (amount: 50,  price: '₺29',  label: 'Starter'),
+    (amount: 100, price: '₺49',  label: 'Explorer'),
+    (amount: 200, price: '₺89',  label: 'Seeker'),
+    (amount: 500, price: '₺199', label: 'Cosmic'),
+  ];
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final userId = ref.watch(currentUserProvider)?.id;
-    if (userId == null) return const SizedBox.shrink();
+  Widget build(BuildContext context) {
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 1.4,
+      children: _bundles
+          .map((b) => _BundleTile(amount: b.amount, price: b.price, label: b.label))
+          .toList(),
+    );
+  }
+}
 
-    final code = _referralCode(userId);
+class _BundleTile extends StatelessWidget {
+  final int amount;
+  final String price;
+  final String label;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+  const _BundleTile({required this.amount, required this.price, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: AppColors.card,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text('stardust_bundle_soon_title'.tr(),
+              textAlign: TextAlign.center,
+              style: AppTextStyles.titleLarge),
+          content: Text('stardust_bundle_soon_body'.tr(),
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodyMedium),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('OK',
+                  style: AppTextStyles.labelLarge
+                      .copyWith(color: AppColors.accentGlow)),
+            ),
+          ],
+        ),
+      ),
       child: CosmicCard(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.share, color: AppColors.accentGlow, size: 28),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('stardust_invite'.tr(),
-                          style: AppTextStyles.titleMedium),
-                      Text('stardust_invite_sub'.tr(),
-                          style: AppTextStyles.bodySmall),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.auraAmber.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '+10',
-                    style: AppTextStyles.labelLarge
-                        .copyWith(color: AppColors.auraAmber),
-                  ),
+                const Icon(Icons.auto_awesome,
+                    color: AppColors.auraAmber, size: 18),
+                const SizedBox(width: 6),
+                Text(
+                  '$amount',
+                  style: AppTextStyles.displayMedium
+                      .copyWith(color: AppColors.auraAmber, fontSize: 24),
                 ),
               ],
             ),
-            const SizedBox(height: 14),
-            // Referral code display
+            const SizedBox(height: 4),
+            Text(label,
+                style: AppTextStyles.labelSmall
+                    .copyWith(color: AppColors.textSecondary)),
+            const SizedBox(height: 8),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.accentGlow.withValues(alpha: 0.08),
+                gradient: AppColors.premiumGradient,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: AppColors.accentGlow.withValues(alpha: 0.25)),
               ),
-              child: Row(
-                children: [
-                  const Icon(Icons.auto_awesome,
-                      color: AppColors.accentGlow, size: 16),
-                  const SizedBox(width: 10),
-                  Text(
-                    'stardust_referral_code'.tr(),
-                    style: AppTextStyles.bodySmall
-                        .copyWith(color: AppColors.textSecondary),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    code,
-                    style: AppTextStyles.titleMedium.copyWith(
-                        color: Colors.white, letterSpacing: 2),
-                  ),
-                  const Spacer(),
-                  // Copy button
-                  GestureDetector(
-                    onTap: () {
-                      Clipboard.setData(ClipboardData(text: code));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text('stardust_code_copied'.tr()),
-                            duration: const Duration(seconds: 1)),
-                      );
-                    },
-                    child: const Icon(Icons.copy,
-                        color: AppColors.textSecondary, size: 18),
-                  ),
-                  const SizedBox(width: 12),
-                  // Share button
-                  GestureDetector(
-                    onTap: () {
-                      Share.share(
-                        'stardust_share_text'.tr(namedArgs: {'code': code}),
-                      );
-                    },
-                    child: const Icon(Icons.ios_share,
-                        color: AppColors.accentGlow, size: 18),
-                  ),
-                ],
-              ),
+              child: Text(price,
+                  style: AppTextStyles.labelLarge
+                      .copyWith(color: Colors.white)),
             ),
           ],
         ),

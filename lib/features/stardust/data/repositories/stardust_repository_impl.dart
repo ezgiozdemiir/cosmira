@@ -56,7 +56,7 @@ class StardustRepositoryImpl implements StardustRepository {
       final result = await _client.rpc('earn_stardust', params: {
         'p_user_id': userId,
         'p_amount': amount,
-        'p_source': source,
+        'p_type': source,
         'p_description': description,
       });
 

@@ -15,6 +15,8 @@ final authStateProvider = StreamProvider<AuthState>((ref) {
 });
 
 final userProfileProvider = StreamProvider<UserProfile?>((ref) {
+  // Re-run whenever auth state changes so we always stream the current user's profile.
+  ref.watch(authStateProvider);
   return ref.watch(authRepositoryProvider).watchProfile();
 });
 
@@ -74,5 +76,7 @@ class AuthController extends AsyncNotifier<void> {
 
   Future<void> signOut() async {
     await ref.read(authRepositoryProvider).signOut();
+    // Invalidate cached providers so the next user sees their own data.
+    ref.invalidate(currentUserProvider);
   }
 }

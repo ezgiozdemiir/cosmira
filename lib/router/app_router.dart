@@ -25,6 +25,9 @@ import '../features/astrocartography/presentation/screens/astrocartography_scree
 import '../features/notifications/presentation/screens/notifications_screen.dart';
 import '../features/settings/presentation/screens/settings_screen.dart';
 import '../features/numerology/presentation/screens/numerology_screen.dart';
+import '../features/help/presentation/screens/help_screen.dart';
+import '../features/legal/presentation/screens/legal_screen.dart';
+import '../features/legal/legal_documents.dart';
 import '../core/widgets/shell_scaffold.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -191,6 +194,23 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/numerology',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const NumerologyScreen(),
+      ),
+      GoRoute(
+        path: '/help',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const HelpScreen(),
+      ),
+      GoRoute(
+        path: '/terms',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) =>
+            const LegalScreen(docType: LegalDocType.terms),
+      ),
+      GoRoute(
+        path: '/privacy',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) =>
+            const LegalScreen(docType: LegalDocType.privacy),
       ),
       GoRoute(
         path: '/compatibility/partner',

@@ -507,7 +507,9 @@ class _MoonImpactProCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 270),
+      child: Stack(
       children: [
         // Blurred preview of the pro content
         CosmicCard(
@@ -577,6 +579,7 @@ class _MoonImpactProCard extends StatelessWidget {
               color: AppColors.midnight.withValues(alpha: 0.80),
               borderRadius: BorderRadius.circular(16),
             ),
+            padding: const EdgeInsets.symmetric(vertical: 24),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -627,6 +630,7 @@ class _MoonImpactProCard extends StatelessWidget {
           ),
         ),
       ],
+      ),
     );
   }
 

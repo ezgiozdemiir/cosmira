@@ -73,31 +73,34 @@ class PaywallScreen extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 32),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _PlanOption(
-                              label: 'paywall_monthly'.tr(),
-                              price: 'paywall_price_monthly'.tr(),
-                              isSelected: selectedPlan == 'monthly',
-                              onTap: () => ref
-                                  .read(selectedPlanProvider.notifier)
-                                  .state = 'monthly',
+                      IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: _PlanOption(
+                                label: 'paywall_monthly'.tr(),
+                                price: 'paywall_price_monthly'.tr(),
+                                isSelected: selectedPlan == 'monthly',
+                                onTap: () => ref
+                                    .read(selectedPlanProvider.notifier)
+                                    .state = 'monthly',
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _PlanOption(
-                              label: 'paywall_yearly'.tr(),
-                              price: 'paywall_price_yearly'.tr(),
-                              badge: 'paywall_save'.tr(),
-                              isSelected: selectedPlan == 'yearly',
-                              onTap: () => ref
-                                  .read(selectedPlanProvider.notifier)
-                                  .state = 'yearly',
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _PlanOption(
+                                label: 'paywall_yearly'.tr(),
+                                price: 'paywall_price_yearly'.tr(),
+                                badge: 'paywall_save'.tr(),
+                                isSelected: selectedPlan == 'yearly',
+                                onTap: () => ref
+                                    .read(selectedPlanProvider.notifier)
+                                    .state = 'yearly',
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 32),
                       SizedBox(
@@ -114,25 +117,11 @@ class PaywallScreen extends ConsumerWidget {
                         style: AppTextStyles.bodySmall,
                       ),
                       const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          TextButton(
-                            onPressed: () {},
-                            child: Text('paywall_restore'.tr(),
-                                style: AppTextStyles.bodySmall
-                                    .copyWith(color: AppColors.textSecondary)),
-                          ),
-                          Text(' • ',
-                              style: AppTextStyles.bodySmall
-                                  .copyWith(color: AppColors.textTertiary)),
-                          TextButton(
-                            onPressed: () {},
-                            child: Text('paywall_terms'.tr(),
-                                style: AppTextStyles.bodySmall
-                                    .copyWith(color: AppColors.textSecondary)),
-                          ),
-                        ],
+                      TextButton(
+                        onPressed: () => context.push('/terms'),
+                        child: Text('paywall_terms'.tr(),
+                            style: AppTextStyles.bodySmall
+                                .copyWith(color: AppColors.textSecondary)),
                       ),
                       const SizedBox(height: 24),
                     ],

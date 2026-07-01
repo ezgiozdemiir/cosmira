@@ -140,7 +140,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     }
 
     final updated = UserProfileModel(
-      id: profile?.id ?? userId,
+      id: userId,
       displayName: profile?.displayName,
       firstName: _firstName.trim(),
       lastName: _lastName.trim(),
@@ -214,6 +214,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       PersonalInfoForm(
+                        key: ValueKey(profile?.id),
                         initialFirstName: profile?.firstName,
                         initialLastName: profile?.lastName,
                         initialGender: profile?.gender,

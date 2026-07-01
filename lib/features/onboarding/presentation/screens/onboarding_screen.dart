@@ -154,7 +154,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
 
     final updated = UserProfileModel(
-      id: profile?.id ?? userId,
+      id: userId,
       displayName: profile?.displayName,
       firstName: _firstName.trim(),
       lastName: _lastName.trim(),

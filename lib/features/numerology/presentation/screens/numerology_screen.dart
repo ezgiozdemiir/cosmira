@@ -1608,7 +1608,9 @@ class _FamilyProLockedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 260),
+      child: Stack(
       children: [
         CosmicCard(
           child: Column(
@@ -1644,6 +1646,7 @@ class _FamilyProLockedCard extends StatelessWidget {
               color: AppColors.midnight.withValues(alpha: 0.75),
               borderRadius: BorderRadius.circular(16),
             ),
+            padding: const EdgeInsets.symmetric(vertical: 16),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -1658,7 +1661,7 @@ class _FamilyProLockedCard extends StatelessWidget {
                   child: const Icon(Icons.lock_outline,
                       color: AppColors.auraViolet, size: 28),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 12),
                 Text('num_family_pro_feature'.tr(),
                     style: AppTextStyles.titleMedium),
                 const SizedBox(height: 6),
@@ -1670,11 +1673,27 @@ class _FamilyProLockedCard extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                 ),
+                const SizedBox(height: 14),
+                GestureDetector(
+                  onTap: () => context.push('/paywall'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 10),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.premiumGradient,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text('moon_pro_cta'.tr(),
+                        style: AppTextStyles.labelLarge
+                            .copyWith(color: Colors.white)),
+                  ),
+                ),
               ],
             ),
           ),
         ),
       ],
+      ),
     );
   }
 }

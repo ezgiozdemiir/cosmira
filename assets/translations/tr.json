@@ -357,6 +357,7 @@
   "profile_share": "Cosmira'yı Paylaş",
   "profile_settings": "Ayarlar",
   "profile_help": "Yardım & Destek",
+  "help_title": "Yardım & Destek",
   "profile_sign_out": "Çıkış Yap",
   "profile_sun": "Güneş",
   "profile_moon": "Ay",
@@ -480,12 +481,12 @@
   "paywall_title": "Cosmira Premium",
   "paywall_subtitle": "Tam kozmik potansiyelinizi açın",
   "paywall_monthly": "Aylık",
-  "paywall_price_monthly": "₺299 / ay",
+  "paywall_price_monthly": "₺199 / ay",
   "paywall_yearly": "Yıllık",
-  "paywall_price_yearly": "₺1.799 / yıl",
-  "paywall_save": "%50 Tasarruf",
+  "paywall_price_yearly": "₺999 / yıl",
+  "paywall_save": "%58 Tasarruf",
   "paywall_trial": "7 Günlük Ücretsiz Denemeyi Başlat",
-  "paywall_trial_sub": "Ardından ₺299/ay. İstediğiniz zaman iptal edin.",
+  "paywall_trial_sub": "Ardından ₺199/ay. İstediğiniz zaman iptal edin.",
   "paywall_restore": "Satın Almaları Geri Yükle",
   "paywall_terms": "Kullanım Koşulları",
 
@@ -593,6 +594,12 @@
   "stardust_daily_claimed": "Bugün zaten alındı",
   "stardust_daily_success": "Günlük giriş ödülü alındı! +1 Stardust",
   "stardust_daily_already": "Bugünkü ödülünüzü zaten aldınız",
+  "stardust_daily_popup_title": "+1 Stardust Kazandın!",
+  "stardust_daily_popup_body": "Çizgini sürdür ve daha fazla Stardust kazan için her gün giriş yap!",
+  "stardust_daily_popup_cta": "Harika!",
+  "stardust_buy": "Yıldız Tozu Satın Al",
+  "stardust_bundle_soon_title": "Çok Yakında",
+  "stardust_bundle_soon_body": "Uygulama içi Yıldız Tozu satın alma özelliği çok yakında geliyor!",
   "stardust_referral_code": "Kodunuz",
   "stardust_code_copied": "Kod panoya kopyalandı",
   "stardust_share_text": "Cosmira'da kozmik kendinizi keşfedin! Kayıt olurken {code} referans kodumu girin, ikimiz de ödüllendiriliyoruz.",
@@ -765,5 +772,7 @@
   "confirm_email_resend": "E-postayı Tekrar Gönder",
   "confirm_email_resent": "E-posta Gönderildi!",
   "confirm_email_spam": "Bulamıyor musunuz? Spam klasörünüzü kontrol edin.",
-  "confirm_email_back": "Girişe Dön"
+  "confirm_email_back": "Girişe Dön",
+
+  "stardust_no_transactions": "Henüz işlem kaydı bulunmuyor."
 }

@@ -51,9 +51,11 @@ class SettingsScreen extends ConsumerWidget {
                   title: 'settings_account'.tr(),
                   children: [
                     _ActionTile(
-                        title: 'settings_privacy_policy'.tr(), onTap: () {}),
+                        title: 'settings_privacy_policy'.tr(),
+                        onTap: () => context.push('/privacy')),
                     _ActionTile(
-                        title: 'settings_terms_of_service'.tr(), onTap: () {}),
+                        title: 'settings_terms_of_service'.tr(),
+                        onTap: () => context.push('/terms')),
                     _ActionTile(
                       title: 'settings_delete_account'.tr(),
                       onTap: () {},

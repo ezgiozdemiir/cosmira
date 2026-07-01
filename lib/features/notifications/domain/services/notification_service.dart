@@ -191,6 +191,34 @@ class NotificationService {
       return;
     }
 
+    // Welcome notification — fires once for every new user.
+    if (!existingKeys.contains('welcome')) {
+      await _insert(
+        userId: userId,
+        type: 'welcome',
+        title: languageCode == 'tr' ? '🌟 Cosmira\'ya Hoş Geldin!' : '🌟 Welcome to Cosmira!',
+        body: languageCode == 'tr'
+            ? 'Kozmik yolculuğun başlıyor. Her gün giriş yaparak Yıldız Tozu kazan ve özelliklerini aç!'
+            : 'Your cosmic journey begins. Sign in every day to earn Stardust and unlock features!',
+        eventKey: 'welcome',
+      );
+      existingKeys.add('welcome');
+    }
+
+    // Daily login hint — fires once to teach the user about the daily check-in reward.
+    if (!existingKeys.contains('daily_login_hint')) {
+      await _insert(
+        userId: userId,
+        type: 'stardust',
+        title: languageCode == 'tr' ? '⭐ Günlük Yıldız Tozu Kazan' : '⭐ Earn Daily Stardust',
+        body: languageCode == 'tr'
+            ? 'Her gün Yıldız Tozu Mağazası\'nı ziyaret ederek +1 Yıldız Tozu kazan. Çizgini koru, daha fazla kazan!'
+            : 'Visit the Stardust Store every day to claim +1 Stardust. Keep your streak going!',
+        eventKey: 'daily_login_hint',
+      );
+      existingKeys.add('daily_login_hint');
+    }
+
     if (cosmicEventsEnabled) {
       for (final event in _events) {
         if (existingKeys.contains(event.key)) continue;

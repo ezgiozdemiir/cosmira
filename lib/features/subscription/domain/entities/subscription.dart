@@ -71,8 +71,6 @@ class SubscriptionPlan {
       'Deep compatibility reports',
       'Yearly destiny report',
       'Astrocartography',
-      'No ads',
-      '100 bonus Stardust/month',
       'Priority AI insights',
     ],
   );

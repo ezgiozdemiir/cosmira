@@ -154,8 +154,9 @@ class AuthRepositoryImpl implements AuthRepository {
           .from('profiles')
           .select()
           .eq('id', userId)
-          .single();
+          .maybeSingle();
 
+      if (data == null) return Result.failure(const AuthFailure('Profile not found'));
       return Result.success(UserProfileModel.fromJson(data));
     } catch (e) {
       return Result.failure(ServerFailure(e.toString()));
@@ -165,8 +166,19 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Result<UserProfile>> updateProfile(UserProfile profile) async {
     try {
+      // Refresh the session first — throws AuthException if the account was
+      // deleted or the session is otherwise invalid, which prevents the FK
+      // violation that would occur when inserting with a stale UUID.
+      await _client.auth.refreshSession();
+
+      // Always read the user ID from the live session, never trust the
+      // caller-supplied profile.id (which could be stale after account
+      // deletion + re-sign-up).
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) return Result.failure(const AuthFailure('Not logged in'));
+
       final model = UserProfileModel(
-        id: profile.id,
+        id: userId,
         displayName: profile.displayName,
         firstName: profile.firstName,
         lastName: profile.lastName,
@@ -186,15 +198,19 @@ class AuthRepositoryImpl implements AuthRepository {
         createdAt: profile.createdAt,
       );
 
-      final payload = model.toJson()..remove('id');
+      // upsert: inserts if no row exists yet (new users), updates otherwise.
       final data = await _client
           .from('profiles')
-          .update(payload)
-          .eq('id', model.id)
+          .upsert(model.toJson())
           .select()
           .single();
 
       return Result.success(UserProfileModel.fromJson(data));
+    } on AuthException catch (e) {
+      // Session is invalid (account deleted, token expired, etc.)
+      // Sign out so the router redirects to login with a clean state.
+      await _client.auth.signOut();
+      return Result.failure(AuthFailure(e.message));
     } catch (e) {
       return Result.failure(ServerFailure(e.toString()));
     }

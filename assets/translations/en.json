@@ -357,6 +357,7 @@
   "profile_share": "Share Cosmira",
   "profile_settings": "Settings",
   "profile_help": "Help & Support",
+  "help_title": "Help & Support",
   "profile_sign_out": "Sign Out",
   "profile_sun": "Sun",
   "profile_moon": "Moon",
@@ -480,12 +481,12 @@
   "paywall_title": "Cosmira Premium",
   "paywall_subtitle": "Unlock your full cosmic potential",
   "paywall_monthly": "Monthly",
-  "paywall_price_monthly": "$9.99 / month",
+  "paywall_price_monthly": "₺199 / month",
   "paywall_yearly": "Yearly",
-  "paywall_price_yearly": "$59.99 / year",
-  "paywall_save": "Save 50%",
+  "paywall_price_yearly": "₺999 / year",
+  "paywall_save": "Save 58%",
   "paywall_trial": "Start 7-Day Free Trial",
-  "paywall_trial_sub": "Then $9.99/month. Cancel anytime.",
+  "paywall_trial_sub": "Then ₺199/month. Cancel anytime.",
   "paywall_restore": "Restore Purchases",
   "paywall_terms": "Terms of Service",
 
@@ -593,6 +594,12 @@
   "stardust_daily_claimed": "Already claimed today",
   "stardust_daily_success": "Daily check-in reward claimed! +1 Stardust",
   "stardust_daily_already": "You've already claimed your reward today",
+  "stardust_daily_popup_title": "You earned +1 Stardust!",
+  "stardust_daily_popup_body": "Sign in every day to keep your streak and earn more Stardust!",
+  "stardust_daily_popup_cta": "Awesome!",
+  "stardust_buy": "Buy Stardust",
+  "stardust_bundle_soon_title": "Coming Soon",
+  "stardust_bundle_soon_body": "In-app Stardust purchases are coming soon. Stay tuned!",
   "stardust_referral_code": "Your code",
   "stardust_code_copied": "Code copied to clipboard",
   "stardust_share_text": "Join me on Cosmira — discover your cosmic self! Use my referral code {code} when you sign up and we both get rewarded.",
@@ -765,5 +772,7 @@
   "confirm_email_resend": "Resend Email",
   "confirm_email_resent": "Email Sent!",
   "confirm_email_spam": "Can't find it? Check your spam folder.",
-  "confirm_email_back": "Back to Login"
+  "confirm_email_back": "Back to Login",
+
+  "stardust_no_transactions": "There is no transaction record yet."
 }

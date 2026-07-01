@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import 'package:go_router/go_router.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/cosmic_button.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/entities/breathwork_session.dart';
 import '../providers/breathwork_provider.dart';
 import '../widgets/breathing_circle.dart';
@@ -58,9 +61,16 @@ class BreathworkScreen extends ConsumerWidget {
                                   return Padding(
                                     padding: const EdgeInsets.only(right: 12),
                                     child: GestureDetector(
-                                      onTap: () => ref
-                                          .read(selectedPatternProvider.notifier)
-                                          .state = pattern,
+                                      onTap: () {
+                                        if (pattern.isPremium) {
+                                          final isPremium = ref.read(userProfileProvider).valueOrNull?.isPremium ?? false;
+                                          if (!isPremium) {
+                                            context.push('/paywall');
+                                            return;
+                                          }
+                                        }
+                                        ref.read(selectedPatternProvider.notifier).state = pattern;
+                                      },
                                       child: AnimatedContainer(
                                         duration:
                                             const Duration(milliseconds: 200),
@@ -205,6 +215,13 @@ class BreathworkScreen extends ConsumerWidget {
                   if (bState.isActive) {
                     notifier.stop();
                   } else {
+                    if (selectedPattern.isPremium) {
+                      final isPremium = ref.read(userProfileProvider).valueOrNull?.isPremium ?? false;
+                      if (!isPremium) {
+                        context.push('/paywall');
+                        return;
+                      }
+                    }
                     notifier.start();
                   }
                 },
