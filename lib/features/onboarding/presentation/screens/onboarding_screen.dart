@@ -12,7 +12,6 @@ import '../../../../core/widgets/gradient_scaffold.dart';
 import '../../../astrology/presentation/providers/astrology_provider.dart';
 import '../../../auth/data/models/user_profile_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../stardust/presentation/providers/stardust_provider.dart';
 import '../widgets/birth_data_form.dart';
 import '../widgets/personal_info_form.dart';
 
@@ -35,13 +34,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   DateTime? _birthDate;
   TimeOfDay? _birthTime;
   String _birthCity = '';
-  String _referralCode = '';
-  final _referralCtrl = TextEditingController();
 
   @override
   void dispose() {
     _pageController.dispose();
-    _referralCtrl.dispose();
     super.dispose();
   }
 
@@ -185,15 +181,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
     result.when(
       success: (_) async {
-        // Claim referral reward if a code was entered
-        final code = _referralCode.trim().toUpperCase();
-        if (code.isNotEmpty) {
-          await ref.read(stardustRepositoryProvider).claimReferral(
-                referralCode: code,
-                newUserId: userId,
-              );
-        }
-
         ref.invalidate(userProfileProvider);
         if (mounted) context.go('/');
       },
@@ -244,40 +231,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             _birthTime = time;
                             _birthCity = city;
                           },
-                        ),
-                        const SizedBox(height: 32),
-                        Text('onboarding_referral_label'.tr(),
-                            style: AppTextStyles.bodySmall.copyWith(
-                                color: AppColors.textSecondary)),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: _referralCtrl,
-                          textCapitalization: TextCapitalization.characters,
-                          style: AppTextStyles.bodyMedium.copyWith(
-                              color: Colors.white, letterSpacing: 2),
-                          decoration: InputDecoration(
-                            hintText: 'onboarding_referral_hint'.tr(),
-                            hintStyle: AppTextStyles.bodySmall.copyWith(
-                                color: AppColors.textTertiary),
-                            prefixIcon: const Icon(Icons.auto_awesome,
-                                color: AppColors.accentGlow, size: 18),
-                            filled: true,
-                            fillColor:
-                                AppColors.accentGlow.withValues(alpha: 0.06),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                  color: AppColors.accentGlow
-                                      .withValues(alpha: 0.25)),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                  color: AppColors.accentGlow
-                                      .withValues(alpha: 0.2)),
-                            ),
-                          ),
-                          onChanged: (v) => _referralCode = v,
                         ),
                       ],
                     ),

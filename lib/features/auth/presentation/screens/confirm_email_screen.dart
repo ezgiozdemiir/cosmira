@@ -17,7 +17,8 @@ import '../providers/auth_provider.dart';
 
 class ConfirmEmailScreen extends ConsumerStatefulWidget {
   final String email;
-  const ConfirmEmailScreen({super.key, required this.email});
+  final String? password;
+  const ConfirmEmailScreen({super.key, required this.email, this.password});
 
   @override
   ConsumerState<ConfirmEmailScreen> createState() => _ConfirmEmailScreenState();
@@ -140,10 +141,36 @@ class _ConfirmEmailScreenState extends ConsumerState<ConfirmEmailScreen> {
       return;
     }
 
-    // Mobile: session is refreshable in-process.
-    try {
-      await Supabase.instance.client.auth.refreshSession();
-    } catch (_) {}
+    // Mobile: no session exists yet, so refreshSession() can't work. Instead,
+    // try signing in — if the email was confirmed on any device, this succeeds
+    // and the auth state listener above navigates to home automatically.
+    final password = widget.password;
+    if (password != null && password.isNotEmpty) {
+      try {
+        await Supabase.instance.client.auth.signInWithPassword(
+          email: widget.email,
+          password: password,
+        );
+        // Auth state listener handles navigation; nothing more to do here.
+        return;
+      } on AuthApiException catch (e) {
+        if (!mounted) return;
+        setState(() => _checking = false);
+        final isNotConfirmed = e.code == 'email_not_confirmed' ||
+            (e.message.toLowerCase().contains('not confirmed'));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(isNotConfirmed
+                ? context.tr('confirm_email_not_yet')
+                : e.message),
+            backgroundColor: AppColors.softIndigo,
+          ),
+        );
+        return;
+      } catch (_) {}
+    }
+
+    // Fallback: check if a session already exists in this process.
     if (!mounted) return;
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {

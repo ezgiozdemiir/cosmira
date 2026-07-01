@@ -341,9 +341,10 @@ class _EmailAuthSheetState extends ConsumerState<_EmailAuthSheet> {
           setState(() => _errorMessage = _localiseError(context, authState.error.toString()));
         } else if (needsConfirmation) {
           final email = _emailCtrl.text.trim();
+          final password = _passwordCtrl.text;
           final router = GoRouter.of(context);
           Navigator.of(context).pop();
-          router.go('/confirm-email', extra: email);
+          router.go('/confirm-email', extra: {'email': email, 'password': password});
         } else {
           // Signed in immediately — pop the sheet so GoRouter's redirect
           // doesn't leave a blocking transparent overlay on the home screen.

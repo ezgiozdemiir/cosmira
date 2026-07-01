@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/di.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
@@ -102,9 +101,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/confirm-email',
-        builder: (context, state) => ConfirmEmailScreen(
-          email: state.extra as String? ?? '',
-        ),
+        builder: (context, state) {
+          final extra = state.extra;
+          final String email;
+          String? password;
+          if (extra is Map) {
+            email = extra['email'] as String? ?? '';
+            password = extra['password'] as String?;
+          } else {
+            email = extra as String? ?? '';
+          }
+          return ConfirmEmailScreen(email: email, password: password);
+        },
       ),
       GoRoute(
         path: '/onboarding',
