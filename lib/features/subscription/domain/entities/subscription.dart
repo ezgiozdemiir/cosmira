@@ -55,6 +55,7 @@ class SubscriptionPlan {
       'Moon calendar',
       '2 compatibility partners',
       'Basic natal chart',
+      '2 birth info changes',
     ],
   );
 
@@ -62,8 +63,8 @@ class SubscriptionPlan {
     id: 'premium',
     name: 'Astral',
     description: 'Unlock the full cosmos',
-    monthlyPrice: 9.99,
-    yearlyPrice: 59.99,
+    monthlyPrice: 120,
+    yearlyPrice: 999,
     features: [
       'Everything in Celestial',
       'Unlimited breathwork',
@@ -72,6 +73,7 @@ class SubscriptionPlan {
       'Yearly destiny report',
       'Astrocartography',
       'Priority AI insights',
+      '5 birth info changes',
     ],
   );
 }

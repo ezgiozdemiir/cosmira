@@ -19,6 +19,7 @@ class UserProfileModel extends UserProfile {
     super.mcSign,
     super.subscriptionTier,
     super.onboardingComplete,
+    super.birthDataVersion,
     required super.createdAt,
   });
 
@@ -43,6 +44,7 @@ class UserProfileModel extends UserProfile {
       mcSign: json['mc_sign'] as String?,
       subscriptionTier: json['subscription_tier'] as String? ?? 'free',
       onboardingComplete: json['onboarding_complete'] as bool? ?? false,
+      birthDataVersion: (json['birth_data_version'] as num?)?.toInt() ?? 0,
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }

@@ -11,6 +11,9 @@ import '../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../features/home/presentation/screens/home_screen.dart';
 import '../features/astrology/presentation/screens/natal_chart_screen.dart';
 import '../features/astrology/presentation/screens/birth_map_screen.dart';
+import '../features/astrology/presentation/screens/birth_map_history_screen.dart';
+import '../features/astrocartography/domain/entities/astrocartography_unlock.dart';
+import '../features/astrocartography/presentation/screens/astrocartography_history_screen.dart';
 import '../features/compatibility/domain/entities/compatibility_partner.dart';
 import '../features/compatibility/presentation/screens/compatibility_detail_screen.dart';
 import '../features/astrology/presentation/screens/daily_horoscope_screen.dart';
@@ -28,6 +31,10 @@ import '../features/numerology/presentation/screens/numerology_screen.dart';
 import '../features/help/presentation/screens/help_screen.dart';
 import '../features/legal/presentation/screens/legal_screen.dart';
 import '../features/legal/legal_documents.dart';
+import '../features/loved_ones/domain/entities/loved_one.dart';
+import '../features/loved_ones/presentation/screens/loved_one_birth_map_screen.dart';
+import '../features/loved_ones/presentation/screens/loved_one_detail_screen.dart';
+import '../features/loved_ones/presentation/screens/loved_ones_list_screen.dart';
 import '../core/widgets/shell_scaffold.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -138,10 +145,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const DailyHoroscopeScreen(),
           ),
           GoRoute(
-            path: '/compatibility',
-            builder: (context, state) => const CompatibilityScreen(),
-          ),
-          GoRoute(
             path: '/breathwork',
             builder: (context, state) => const BreathworkScreen(),
           ),
@@ -186,9 +189,37 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const BirthMapScreen(),
       ),
       GoRoute(
+        path: '/birth-map/history',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const BirthMapHistoryScreen(),
+      ),
+      GoRoute(
+        path: '/birth-map/history/:version',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => BirthMapScreen(
+          historicalVersion: int.tryParse(state.pathParameters['version'] ?? ''),
+        ),
+      ),
+      GoRoute(
         path: '/astrocartography',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const AstrocartographyScreen(),
+      ),
+      GoRoute(
+        path: '/astrocartography/history',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AstrocartographyHistoryScreen(),
+      ),
+      GoRoute(
+        path: '/astrocartography/history/entry',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final unlock = state.extra as AstrocartographyUnlock?;
+          return AstrocartographyScreen(
+            historicalBirthCity: unlock?.birthCity,
+            isHistorical: true,
+          );
+        },
       ),
       GoRoute(
         path: '/numerology',
@@ -213,6 +244,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             const LegalScreen(docType: LegalDocType.privacy),
       ),
       GoRoute(
+        path: '/compatibility',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CompatibilityScreen(),
+      ),
+      GoRoute(
         path: '/compatibility/partner',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
@@ -223,6 +259,58 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             );
           }
           return CompatibilityDetailScreen(partner: partner);
+        },
+      ),
+      GoRoute(
+        path: '/loved-ones',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const LovedOnesScreen(),
+      ),
+      GoRoute(
+        path: '/loved-ones/detail',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final lovedOne = state.extra as LovedOne?;
+          if (lovedOne == null) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          return LovedOneDetailScreen(lovedOne: lovedOne);
+        },
+      ),
+      GoRoute(
+        path: '/loved-ones/birth-map',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final lovedOne = state.extra as LovedOne?;
+          if (lovedOne == null) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          return LovedOneBirthMapScreen(lovedOne: lovedOne);
+        },
+      ),
+      GoRoute(
+        path: '/loved-ones/astrocartography',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final lovedOne = state.extra as LovedOne?;
+          if (lovedOne == null) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          return AstrocartographyScreen(
+            lovedOneId: lovedOne.id,
+            lovedOneName: lovedOne.name,
+            lovedOneBirthDate: lovedOne.birthDate,
+            lovedOneBirthTime: lovedOne.birthTime,
+            lovedOneBirthLat: lovedOne.birthLat,
+            lovedOneBirthLng: lovedOne.birthLng,
+            historicalBirthCity: lovedOne.birthCity,
+          );
         },
       ),
     ],

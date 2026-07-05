@@ -295,35 +295,39 @@ class _SecondaryRow extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF12102A),
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: color, size: 20),
-                const SizedBox(width: 8),
-                Text(label,
-                    style: AppTextStyles.labelLarge
-                        .copyWith(color: AppColors.textSecondary)),
-                const Spacer(),
-                Text('$number',
-                    style: AppTextStyles.headlineLarge
-                        .copyWith(color: color, fontWeight: FontWeight.w700)),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Text('num_${number}_keyword'.tr(),
-                style: AppTextStyles.titleMedium.copyWith(color: Colors.white)),
-            const SizedBox(height: 8),
-            Text('num_${number}_desc'.tr(),
-                style: AppTextStyles.bodyMedium
-                    .copyWith(color: AppColors.textSecondary, height: 1.6)),
-          ],
+      builder: (context) => SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+              24, 24, 24, 32 + MediaQuery.of(context).viewInsets.bottom),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: color, size: 20),
+                  const SizedBox(width: 8),
+                  Text(label,
+                      style: AppTextStyles.labelLarge
+                          .copyWith(color: AppColors.textSecondary)),
+                  const Spacer(),
+                  Text('$number',
+                      style: AppTextStyles.headlineLarge
+                          .copyWith(color: color, fontWeight: FontWeight.w700)),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text('num_${number}_keyword'.tr(),
+                  style: AppTextStyles.titleMedium.copyWith(color: Colors.white)),
+              const SizedBox(height: 8),
+              Text('num_${number}_desc'.tr(),
+                  style: AppTextStyles.bodyMedium
+                      .copyWith(color: AppColors.textSecondary, height: 1.6)),
+            ],
+          ),
         ),
       ),
     );

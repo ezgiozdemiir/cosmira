@@ -11,6 +11,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/cosmic_card.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/entities/moon_phase.dart';
+import '../../domain/moon_transit_calculator.dart';
 import '../providers/moon_provider.dart';
 
 String _monthName(int month) => 'month_$month'.tr();
@@ -25,18 +26,41 @@ class MoonCalendarScreen extends ConsumerWidget {
     final selectedPhase = ref.watch(selectedDayMoonPhaseProvider);
     final monthPhases = ref.watch(localMonthlyPhasesProvider);
     final selectedMonth = ref.watch(selectedMonthProvider);
-    final isPremium =
-        ref.watch(userProfileProvider).valueOrNull?.isPremium ?? false;
+    final profile = ref.watch(userProfileProvider).valueOrNull;
+    final isPremium = profile?.isPremium ?? false;
 
     final isToday = _isSameDay(selectedDay, DateTime.now());
     final displayPhase = isToday ? today : selectedPhase;
+
+    final moonTransit = profile?.risingSign != null
+        ? MoonTransitCalculator.compute(
+            transitMoonSign: today.zodiacSign,
+            sunSign: profile?.sunSign,
+            moonSign: profile?.moonSign,
+            risingSign: profile?.risingSign,
+          )
+        : null;
 
     return SafeArea(
       child: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              padding: const EdgeInsets.fromLTRB(4, 8, 20, 0),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => context.go('/'),
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white70, size: 20),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -121,8 +145,13 @@ class MoonCalendarScreen extends ConsumerWidget {
                       ),
                     ),
                   const SizedBox(height: 16),
-                  if (!isPremium)
-                    const _MoonImpactProCard()
+                  if (isPremium && moonTransit != null)
+                    _MoonImpactCard(transit: moonTransit)
+                        .animate()
+                        .fadeIn(delay: 300.ms)
+                        .slideY(begin: 0.06)
+                  else if (!isPremium)
+                    _MoonImpactProCard(transit: moonTransit)
                         .animate()
                         .fadeIn(delay: 300.ms)
                         .slideY(begin: 0.06),
@@ -502,16 +531,123 @@ class _RitualCard extends StatelessWidget {
 // Moon Impact Analysis — Pro locked card
 // ---------------------------------------------------------------------------
 
-class _MoonImpactProCard extends StatelessWidget {
-  const _MoonImpactProCard();
+String _aspectLabel(NatalAspectType type) => switch (type) {
+      NatalAspectType.conjunction => 'moon_aspect_conjunction'.tr(),
+      NatalAspectType.semisextile => 'moon_aspect_semisextile'.tr(),
+      NatalAspectType.sextile => 'moon_aspect_sextile'.tr(),
+      NatalAspectType.square => 'moon_aspect_square'.tr(),
+      NatalAspectType.trine => 'moon_aspect_trine'.tr(),
+      NatalAspectType.quincunx => 'moon_aspect_quincunx'.tr(),
+      NatalAspectType.opposition => 'moon_aspect_opposition'.tr(),
+    };
+
+String _natalPointLabel(String key) => switch (key) {
+      'sun' => 'moon_natal_sun'.tr(),
+      'moon' => 'moon_natal_moon'.tr(),
+      'rising' => 'moon_natal_rising'.tr(),
+      _ => key,
+    };
+
+String _houseZoneLabel(int house) => 'moon_house_zone_$house'.tr();
+
+// ---------------------------------------------------------------------------
+// Moon Impact Analysis — unlocked, real (Premium)
+// ---------------------------------------------------------------------------
+
+class _MoonImpactCard extends StatelessWidget {
+  final MoonTransit transit;
+  const _MoonImpactCard({required this.transit});
 
   @override
   Widget build(BuildContext context) {
+    final zone = _houseZoneLabel(transit.house);
+    final aspect = transit.aspect;
+
+    return CosmicCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.auto_awesome, color: AppColors.auraIndigo, size: 18),
+              const SizedBox(width: 8),
+              Text('moon_pro_title'.tr(), style: AppTextStyles.titleMedium),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'moon_impact_house_sentence'.tr(namedArgs: {
+              'house': transit.house.toString(),
+              'zone': zone,
+            }),
+            style: AppTextStyles.bodyMedium,
+          ),
+          if (aspect != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              'moon_impact_aspect_sentence'.tr(namedArgs: {
+                'aspect': _aspectLabel(aspect.type),
+                'planet': _natalPointLabel(aspect.natalPoint),
+              }),
+              style: AppTextStyles.bodyMedium,
+            ),
+          ],
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _fakeChip('🏠  ${'natal_house_n'.tr(namedArgs: {'n': transit.house.toString()})}'),
+              const SizedBox(width: 8),
+              _fakeChip(zone),
+              if (aspect != null) ...[
+                const SizedBox(width: 8),
+                _fakeChip('${_aspectLabel(aspect.type)} · ${_natalPointLabel(aspect.natalPoint)}'),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _fakeChip(String label) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.auraIndigo.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+              color: AppColors.auraIndigo.withValues(alpha: 0.2)),
+        ),
+        child: Text(label,
+            style: AppTextStyles.labelSmall
+                .copyWith(color: AppColors.auraIndigo)),
+      );
+}
+
+// ---------------------------------------------------------------------------
+// Moon Impact Analysis — Pro locked card
+// ---------------------------------------------------------------------------
+
+class _MoonImpactProCard extends StatelessWidget {
+  final MoonTransit? transit;
+  const _MoonImpactProCard({required this.transit});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = transit;
+    final houseChip = t != null
+        ? '🏠  ${'natal_house_n'.tr(namedArgs: {'n': t.house.toString()})}'
+        : '🏠  —';
+    final zoneChip = t != null ? _houseZoneLabel(t.house) : '—';
+    final aspectChip = t?.aspect != null
+        ? '${_aspectLabel(t!.aspect!.type)} · ${_natalPointLabel(t.aspect!.natalPoint)}'
+        : '🌙  ${t != null ? t.moonSign.zodiacName : '—'}';
+
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 270),
       child: Stack(
       children: [
-        // Blurred preview of the pro content
+        // Blurred preview of the pro content — now built from the user's
+        // own real house/zone/aspect, just obscured behind the paywall.
         CosmicCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -554,19 +690,15 @@ class _MoonImpactProCard extends StatelessWidget {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  _fakeChip('🏠  3. Ev'),
+                  _fakeChip(houseChip),
                   const SizedBox(width: 8),
-                  _fakeChip('♄  Satürn'),
-                  const SizedBox(width: 8),
-                  _fakeChip('💜  Duygu'),
+                  _fakeChip(aspectChip),
                 ],
               ),
               const SizedBox(height: 10),
               Row(
                 children: [
-                  _fakeChip('🌙  Ay Etkisi'),
-                  const SizedBox(width: 8),
-                  _fakeChip('✨  Enerji'),
+                  _fakeChip(zoneChip),
                 ],
               ),
             ],

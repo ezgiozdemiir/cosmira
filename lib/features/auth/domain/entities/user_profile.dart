@@ -34,6 +34,7 @@ class UserProfile extends Equatable {
   final String? mcSign;
   final String subscriptionTier;
   final bool onboardingComplete;
+  final int birthDataVersion;
   final DateTime createdAt;
 
   const UserProfile({
@@ -54,12 +55,17 @@ class UserProfile extends Equatable {
     this.mcSign,
     this.subscriptionTier = 'free',
     this.onboardingComplete = false,
+    this.birthDataVersion = 0,
     required this.createdAt,
   });
 
   bool get isPremium => subscriptionTier != 'free';
   bool get hasBirthData => birthDate != null && birthTime != null && birthCity != null;
   String get fullName => [firstName, lastName].whereType<String>().join(' ').trim();
+
+  /// Lifetime cap on birth-data edits: 2 for free accounts, 5 for pro.
+  int get birthDataEditLimit => isPremium ? 5 : 2;
+  int get birthDataEditsRemaining => (birthDataEditLimit - birthDataVersion).clamp(0, birthDataEditLimit);
 
   @override
   List<Object?> get props => [id, firstName, lastName, subscriptionTier, onboardingComplete];

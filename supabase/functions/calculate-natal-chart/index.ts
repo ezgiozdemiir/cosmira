@@ -12,6 +12,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import * as Astronomy from "https://esm.sh/astronomy-engine@2";
 import { DateTime } from "https://esm.sh/luxon@3";
+import { ascendantLongitude, midheavenLongitude, normalizeDeg } from "../_shared/astro-math.ts";
+import { geocodeCity } from "../_shared/geocode.ts";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -25,8 +27,7 @@ const ZODIAC_SIGNS = [
 ];
 
 function signFromLongitude(lonDeg: number): string {
-  const normalized = ((lonDeg % 360) + 360) % 360;
-  return ZODIAC_SIGNS[Math.floor(normalized / 30)];
+  return ZODIAC_SIGNS[Math.floor(normalizeDeg(lonDeg) / 30)];
 }
 
 function sunEclipticLongitude(date: Date): number {
@@ -36,71 +37,6 @@ function sunEclipticLongitude(date: Date): number {
 function moonEclipticLongitude(date: Date): number {
   const vec = Astronomy.GeoMoon(date);
   return Astronomy.Ecliptic(vec).elon;
-}
-
-function ramcAndObliquity(date: Date, longitudeDeg: number) {
-  const time = Astronomy.MakeTime(date);
-  const gastHours = Astronomy.SiderealTime(time); // Greenwich Apparent Sidereal Time, hours [0,24)
-  const gastDeg = gastHours * 15;
-  let ramc = gastDeg + longitudeDeg; // Right Ascension of the Meridian
-  ramc = ((ramc % 360) + 360) % 360;
-
-  const tilt = Astronomy.e_tilt(time);
-  const eps = (tilt.tobl * Math.PI) / 180;
-  return { ramcRad: (ramc * Math.PI) / 180, eps };
-}
-
-// Ascendant = the ecliptic degree currently rising on the eastern horizon.
-// Validated numerically: at the instant of sunrise, this formula's result
-// matches the Sun's own ecliptic longitude to within ~1-2 degrees (the
-// residual is fully explained by refraction + solar disk radius used by
-// rise/set calculations, not a formula error).
-function ascendantLongitude(date: Date, latitudeDeg: number, longitudeDeg: number): number {
-  const { ramcRad, eps } = ramcAndObliquity(date, longitudeDeg);
-  const latRad = (latitudeDeg * Math.PI) / 180;
-
-  const y = Math.cos(ramcRad);
-  const x = -(Math.sin(ramcRad) * Math.cos(eps) + Math.tan(latRad) * Math.sin(eps));
-  let asc = (Math.atan2(y, x) * 180) / Math.PI;
-  asc = ((asc % 360) + 360) % 360;
-  return asc;
-}
-
-// Midheaven (MC) = the ecliptic degree currently crossing the local
-// meridian. Validated numerically: at the instant of local solar noon
-// (the Sun's culmination), this formula matches the Sun's own ecliptic
-// longitude to within 0.001 degrees across multiple latitudes/seasons.
-function midheavenLongitude(date: Date, longitudeDeg: number): number {
-  const { ramcRad, eps } = ramcAndObliquity(date, longitudeDeg);
-  let mc = (Math.atan2(Math.sin(ramcRad), Math.cos(ramcRad) * Math.cos(eps)) * 180) / Math.PI;
-  mc = ((mc % 360) + 360) % 360;
-  return mc;
-}
-
-interface GeocodeResult {
-  latitude: number;
-  longitude: number;
-  timezone: string;
-  resolvedName: string;
-}
-
-async function geocodeCity(city: string): Promise<GeocodeResult> {
-  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`;
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Geocoding request failed with status ${response.status}`);
-  }
-  const data = await response.json();
-  const result = data.results?.[0];
-  if (!result) {
-    throw new Error(`CITY_NOT_FOUND`);
-  }
-  return {
-    latitude: result.latitude,
-    longitude: result.longitude,
-    timezone: result.timezone,
-    resolvedName: [result.name, result.country].filter(Boolean).join(", "),
-  };
 }
 
 serve(async (req) => {

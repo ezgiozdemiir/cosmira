@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,13 +11,16 @@ import '../../domain/entities/birth_map.dart';
 import '../../domain/repositories/astrology_repository.dart';
 import 'astrology_provider.dart';
 
-/// Returns true if the user has purchased a birth map in ANY language.
+/// Returns true if the user has purchased a birth map for their CURRENT
+/// birth data (in any language). Editing birth data bumps the version, so
+/// this correctly goes back to false until the user pays again.
 final birthMapExistsProvider = FutureProvider<bool>((ref) async {
   final user = ref.watch(currentUserProvider);
   if (user == null) return false;
+  final profile = ref.watch(userProfileProvider).valueOrNull;
   final result = await ref
       .watch(astrologyRepositoryProvider)
-      .hasBirthMap(user.id);
+      .hasBirthMap(user.id, birthDataVersion: profile?.birthDataVersion ?? 0);
   return result.when(success: (d) => d, failure: (_) => false);
 });
 
@@ -28,18 +32,20 @@ final birthMapProvider = FutureProvider<BirthMap?>((ref) async {
   if (user == null) return null;
   final language = ref.watch(languageCodeProvider);
   final repo = ref.watch(astrologyRepositoryProvider);
+  final profile = ref.read(userProfileProvider).valueOrNull;
+  final birthDataVersion = profile?.birthDataVersion ?? 0;
 
-  final result = await repo.getBirthMap(user.id, language: language);
+  final result = await repo.getBirthMap(user.id, language: language, birthDataVersion: birthDataVersion);
   final existing = result.when(success: (d) => d, failure: (_) => null);
   if (existing != null) return existing;
 
-  // No version for this language yet — check if user has paid (any language)
-  final paidResult = await repo.hasBirthMap(user.id);
+  // No version for this language yet — check if user has paid for this
+  // birth-data version (any language)
+  final paidResult = await repo.hasBirthMap(user.id, birthDataVersion: birthDataVersion);
   final hasPaid = paidResult.when(success: (d) => d, failure: (_) => false);
   if (!hasPaid) return null;
 
   // User already paid — generate the missing language for free
-  final profile = ref.read(userProfileProvider).valueOrNull;
   if (profile == null) return null;
 
   final genResult = await repo.generateBirthMap(
@@ -52,6 +58,36 @@ final birthMapProvider = FutureProvider<BirthMap?>((ref) async {
     language: language,
   );
   return genResult.when(success: (d) => d, failure: (_) => null);
+});
+
+/// One entry per birth-data version ever purchased, newest first — feeds the
+/// Birth Map history list.
+final birthMapHistoryProvider = FutureProvider<List<BirthMap>>((ref) async {
+  final user = ref.watch(currentUserProvider);
+  if (user == null) return [];
+  final result =
+      await ref.watch(astrologyRepositoryProvider).getBirthMapHistory(user.id);
+  return result.when(success: (d) => d, failure: (_) => []);
+});
+
+/// Read-only lookup of a specific past birth-data version's report, for the
+/// history screen. Falls back to any available language for that version.
+final birthMapAtVersionProvider =
+    FutureProvider.family<BirthMap?, int>((ref, version) async {
+  final user = ref.watch(currentUserProvider);
+  if (user == null) return null;
+  final language = ref.watch(languageCodeProvider);
+  final repo = ref.watch(astrologyRepositoryProvider);
+
+  final result = await repo.getBirthMap(user.id, language: language, birthDataVersion: version);
+  final existing = result.when(success: (d) => d, failure: (_) => null);
+  if (existing != null) return existing;
+
+  final history = await ref.watch(birthMapHistoryProvider.future);
+  for (final map in history) {
+    if (map.birthDataVersion == version) return map;
+  }
+  return null;
 });
 
 // ---------------------------------------------------------------------------
@@ -103,29 +139,47 @@ class BirthMapPurchaseNotifier
     );
 
     return result.when(
-      success: (_) {
+      success: (_) async {
         state = const BirthMapPurchaseState();
         _ref.invalidate(birthMapProvider);
         _ref.invalidate(birthMapExistsProvider);
         _ref.invalidate(stardustBalanceProvider);
         return true;
       },
-      failure: (f) {
+      failure: (f) async {
         final raw = f.toString();
         final isInsufficient = raw.contains('insufficient_stardust');
-        final msg = isInsufficient
-            ? 'Not enough Stardust. Visit the store to top up.'
-            : 'Something went wrong. Please try again.';
-        state = BirthMapPurchaseState(error: msg);
-        // If it's not an insufficient-stardust error, stardust may have been
-        // deducted and the birth map may have been inserted server-side even
-        // though the response failed. Refresh so the UI reflects actual state.
-        if (!isInsufficient) {
-          _ref.invalidate(stardustBalanceProvider);
-          _ref.invalidate(stardustTransactionsProvider);
-          _ref.invalidate(birthMapProvider);
-          _ref.invalidate(birthMapExistsProvider);
+        if (isInsufficient) {
+          state = BirthMapPurchaseState(error: 'bm_purchase_insufficient'.tr());
+          return false;
         }
+
+        // A client-side error here (dropped connection, slow response, a
+        // parsing hiccup) doesn't necessarily mean the server-side purchase
+        // failed — spend_stardust + generation + insert may have completed
+        // fine and only the client's view of the response failed. Check
+        // actual server state before showing a scary error for something
+        // that may have actually succeeded.
+        final user = _ref.read(currentUserProvider);
+        final version = _ref.read(userProfileProvider).valueOrNull?.birthDataVersion ?? 0;
+        if (user != null) {
+          final existsResult = await _repo.hasBirthMap(user.id, birthDataVersion: version);
+          final actuallySucceeded = existsResult.when(success: (d) => d, failure: (_) => false);
+          if (actuallySucceeded) {
+            state = const BirthMapPurchaseState();
+            _ref.invalidate(birthMapProvider);
+            _ref.invalidate(birthMapExistsProvider);
+            _ref.invalidate(stardustBalanceProvider);
+            _ref.invalidate(stardustTransactionsProvider);
+            return true;
+          }
+        }
+
+        state = BirthMapPurchaseState(error: 'bm_purchase_error'.tr());
+        _ref.invalidate(stardustBalanceProvider);
+        _ref.invalidate(stardustTransactionsProvider);
+        _ref.invalidate(birthMapProvider);
+        _ref.invalidate(birthMapExistsProvider);
         return false;
       },
     );

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 
@@ -8,6 +7,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -20,16 +20,25 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/cosmic_card.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
+import '../../../../core/widgets/star_field.dart';
+import '../../../../core/widgets/viral_story_card.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/entities/birth_map.dart';
 import '../providers/birth_map_provider.dart';
 
 class BirthMapScreen extends ConsumerWidget {
-  const BirthMapScreen({super.key});
+  /// When set, shows the report from this past birth-data version instead of
+  /// the current one — reached from the Report History screen. Read-only:
+  /// no purchase gate, no export-bar changes.
+  final int? historicalVersion;
+
+  const BirthMapScreen({super.key, this.historicalVersion});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final mapAsync = ref.watch(birthMapProvider);
+    final mapAsync = historicalVersion != null
+        ? ref.watch(birthMapAtVersionProvider(historicalVersion!))
+        : ref.watch(birthMapProvider);
     final profile = ref.watch(userProfileProvider).valueOrNull;
 
     return Scaffold(
@@ -40,8 +49,12 @@ class BirthMapScreen extends ConsumerWidget {
           loading: () => _CosmicLoadingView(),
           error: (_, __) => _buildError(context),
           data: (map) => map == null
-              ? _buildNotPurchased(context)
-              : _BirthMapContent(map: map, profile: profile),
+              ? _buildNotPurchased(context, profile?.birthDataVersion ?? 0)
+              : BirthMapContent(
+                  map: map,
+                  profile: profile,
+                  isHistorical: historicalVersion != null,
+                ),
         ),
       ),
     );
@@ -66,7 +79,7 @@ class BirthMapScreen extends ConsumerWidget {
         ),
       );
 
-  Widget _buildNotPurchased(BuildContext context) => SafeArea(
+  Widget _buildNotPurchased(BuildContext context, int birthDataVersion) => SafeArea(
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -84,6 +97,18 @@ class BirthMapScreen extends ConsumerWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
+                // Editing birth data starts a new version with no report yet —
+                // this is the only entry point back to previously purchased
+                // reports once that happens (the History icon normally lives
+                // in the header above, which isn't rendered here).
+                if (birthDataVersion > 0) ...[
+                  TextButton.icon(
+                    onPressed: () => context.push('/birth-map/history'),
+                    icon: const Icon(Icons.history_rounded, size: 18),
+                    label: Text('bm_view_history'.tr()),
+                  ),
+                  const SizedBox(height: 4),
+                ],
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
                   child: Text('bm_go_back'.tr()),
@@ -129,11 +154,23 @@ class _CosmicLoadingView extends StatelessWidget {
 // Main scrollable content
 // ---------------------------------------------------------------------------
 
-class _BirthMapContent extends ConsumerWidget {
+class BirthMapContent extends ConsumerWidget {
   final BirthMap map;
   final dynamic profile;
+  final bool isHistorical;
 
-  const _BirthMapContent({required this.map, required this.profile});
+  /// Set when rendering a Loved One's report (e.g. "Alex") instead of the
+  /// current user's own — personalizes the export copy ("I made Alex a
+  /// Cosmic Fingerprint" instead of "Your Cosmic Fingerprint").
+  final String? subjectName;
+
+  const BirthMapContent({
+    super.key,
+    required this.map,
+    required this.profile,
+    this.isHistorical = false,
+    this.subjectName,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -150,6 +187,7 @@ class _BirthMapContent extends ConsumerWidget {
             moonSign: moonSign,
             risingSign: risingSign,
             mcSign: mcSign,
+            isHistorical: isHistorical,
           ),
         ),
         SliverToBoxAdapter(
@@ -158,6 +196,8 @@ class _BirthMapContent extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (isHistorical) _HistoricalBanner(date: map.createdAt),
+
                 // Cosmic Fingerprint
                 if (map.cosmicFingerprint != null)
                   _FingerprintCard(text: map.cosmicFingerprint!)
@@ -236,7 +276,7 @@ class _BirthMapContent extends ConsumerWidget {
                       .fadeIn(delay: 900.ms),
 
                 // Export
-                _ExportBar(map: map, profile: profile)
+                _ExportBar(map: map, profile: profile, subjectName: subjectName)
                     .animate()
                     .fadeIn(delay: 1000.ms),
 
@@ -259,12 +299,14 @@ class _CosmicHeader extends StatelessWidget {
   final String moonSign;
   final String risingSign;
   final String mcSign;
+  final bool isHistorical;
 
   const _CosmicHeader({
     required this.sunSign,
     required this.moonSign,
     required this.risingSign,
     required this.mcSign,
+    this.isHistorical = false,
   });
 
   @override
@@ -289,19 +331,28 @@ class _CosmicHeader extends StatelessWidget {
             ),
           ),
           // Star field
-          const _StarField(),
+          const StarField(),
           // Content
           SafeArea(
             child: Column(
               children: [
                 // Back button row
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white70, size: 20),
-                  ),
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white70, size: 20),
+                    ),
+                    const Spacer(),
+                    if (!isHistorical)
+                      IconButton(
+                        onPressed: () => context.push('/birth-map/history'),
+                        icon: const Icon(Icons.history_rounded,
+                            color: Colors.white70, size: 22),
+                        tooltip: 'bm_history'.tr(),
+                      ),
+                  ],
                 ),
                 const Spacer(),
                 Text(
@@ -349,6 +400,41 @@ class _CosmicHeader extends StatelessWidget {
   }
 }
 
+class _HistoricalBanner extends StatelessWidget {
+  final DateTime date;
+  const _HistoricalBanner({required this.date});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.auraAmber.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.auraAmber.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.history_rounded, color: AppColors.auraAmber, size: 16),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'bm_viewing_past'.tr(namedArgs: {
+                  'date': '${date.day}/${date.month}/${date.year}',
+                }),
+                style: AppTextStyles.bodySmall
+                    .copyWith(color: AppColors.auraAmber.withValues(alpha: 0.9)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _HeaderSign extends StatelessWidget {
   final String emoji;
   final String label;
@@ -370,38 +456,6 @@ class _HeaderSign extends StatelessWidget {
             style: AppTextStyles.labelSmall.copyWith(color: Colors.white38)),
       ],
     );
-  }
-}
-
-/// Deterministic star field using fixed seed positions.
-class _StarField extends StatelessWidget {
-  const _StarField();
-
-  @override
-  Widget build(BuildContext context) {
-    final rng = math.Random(42);
-    return LayoutBuilder(builder: (context, constraints) {
-      return Stack(
-        children: List.generate(30, (i) {
-          final x = rng.nextDouble() * constraints.maxWidth;
-          final y = rng.nextDouble() * constraints.maxHeight;
-          final size = rng.nextDouble() * 2.5 + 0.8;
-          final opacity = rng.nextDouble() * 0.5 + 0.1;
-          return Positioned(
-            left: x,
-            top: y,
-            child: Container(
-              width: size,
-              height: size,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: opacity),
-                shape: BoxShape.circle,
-              ),
-            ),
-          );
-        }),
-      );
-    });
   }
 }
 
@@ -929,8 +983,9 @@ class _WisdomCard extends StatelessWidget {
 class _ExportBar extends StatefulWidget {
   final BirthMap map;
   final dynamic profile;
+  final String? subjectName;
 
-  const _ExportBar({required this.map, required this.profile});
+  const _ExportBar({required this.map, required this.profile, this.subjectName});
 
   @override
   State<_ExportBar> createState() => _ExportBarState();
@@ -1154,6 +1209,25 @@ class _ExportBarState extends State<_ExportBar> {
     return doc;
   }
 
+  Widget _buildStoryCard() {
+    final sunSign = (widget.profile?.sunSign as String?) ?? '';
+    final moonSign = (widget.profile?.moonSign as String?) ?? '';
+    final risingSign = (widget.profile?.risingSign as String?) ?? '';
+    final headline = widget.subjectName != null
+        ? 'bm_story_title_gift'.tr(namedArgs: {'name': widget.subjectName!})
+        : 'bm_story_title'.tr();
+    return ViralStoryCard(
+      eyebrow: '✦  C O S M I R A  ✦',
+      headline: headline,
+      stats: [
+        StoryStat(emoji: sunSign.zodiacEmoji, value: sunSign.zodiacName, label: 'natal_sun'.tr()),
+        StoryStat(emoji: moonSign.zodiacEmoji, value: moonSign.zodiacName, label: 'natal_moon'.tr()),
+        StoryStat(emoji: risingSign.zodiacEmoji, value: risingSign.zodiacName, label: 'natal_rising'.tr()),
+      ],
+      quotableLine: storyHook(widget.map.cosmicFingerprint ?? ''),
+    );
+  }
+
   Future<void> _exportStory() async {
     if (kIsWeb || Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
       _showStoryPreview();
@@ -1163,7 +1237,7 @@ class _ExportBarState extends State<_ExportBar> {
     try {
       final controller = ScreenshotController();
       final imageBytes = await controller.captureFromWidget(
-        _StoryCard(map: widget.map, profile: widget.profile),
+        _buildStoryCard(),
         pixelRatio: 3.0,
         targetSize: const Size(360, 640),
       );
@@ -1190,7 +1264,7 @@ class _ExportBarState extends State<_ExportBar> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(20),
-              child: _StoryCard(map: widget.map, profile: widget.profile),
+              child: _buildStoryCard(),
             ),
             Positioned(
               top: -14,
@@ -1266,150 +1340,6 @@ class _ExportButton extends StatelessWidget {
                 ],
               ),
       ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Instagram Story card (9:16 captured off-screen)
-// ---------------------------------------------------------------------------
-
-class _StoryCard extends StatelessWidget {
-  final BirthMap map;
-  final dynamic profile;
-
-  const _StoryCard({required this.map, required this.profile});
-
-  @override
-  Widget build(BuildContext context) {
-    final sunSign = profile?.sunSign ?? '';
-    final moonSign = profile?.moonSign ?? '';
-    final risingSign = profile?.risingSign ?? '';
-    final fingerprint = map.cosmicFingerprint ?? '';
-    final excerpt = fingerprint.length > 220
-        ? '${fingerprint.substring(0, 220)}…'
-        : fingerprint;
-
-    return SizedBox(
-      width: 360,
-      height: 640,
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF1A0A3A), Color(0xFF0B1026), Color(0xFF000000)],
-          ),
-        ),
-        child: Stack(
-          children: [
-            const _StarField(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const Spacer(),
-                  Text(
-                    '✦  C O S M I R A  ✦',
-                    style: TextStyle(
-                      fontFamily: 'Satoshi',
-                      fontSize: 10,
-                      letterSpacing: 4,
-                      color: AppColors.auraAmber.withValues(alpha: 0.8),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'bm_story_title'.tr(),
-                    style: AppTextStyles.headlineMedium
-                        .copyWith(color: Colors.white),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _StorySign(emoji: sunSign.zodiacEmoji,
-                          label: 'natal_sun'.tr(), sign: sunSign.zodiacName),
-                      const SizedBox(width: 24),
-                      _StorySign(emoji: moonSign.zodiacEmoji,
-                          label: 'natal_moon'.tr(), sign: moonSign.zodiacName),
-                      const SizedBox(width: 24),
-                      _StorySign(emoji: risingSign.zodiacEmoji,
-                          label: 'natal_rising'.tr(), sign: risingSign.zodiacName),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.1)),
-                    ),
-                    child: Text(
-                      excerpt,
-                      style: TextStyle(
-                        fontFamily: 'Satoshi',
-                        fontSize: 12,
-                        height: 1.7,
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontStyle: FontStyle.italic,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    'cosmira.app',
-                    style: TextStyle(
-                      fontFamily: 'Satoshi',
-                      fontSize: 11,
-                      letterSpacing: 2,
-                      color: Colors.white.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StorySign extends StatelessWidget {
-  final String emoji;
-  final String label;
-  final String sign;
-
-  const _StorySign(
-      {required this.emoji, required this.label, required this.sign});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(emoji, style: const TextStyle(fontSize: 28)),
-        const SizedBox(height: 4),
-        Text(sign,
-            style: const TextStyle(
-                fontFamily: 'Satoshi',
-                fontSize: 12,
-                color: Colors.white,
-                fontWeight: FontWeight.w500)),
-        Text(label,
-            style: TextStyle(
-                fontFamily: 'Satoshi',
-                fontSize: 10,
-                color: Colors.white.withValues(alpha: 0.4))),
-      ],
     );
   }
 }

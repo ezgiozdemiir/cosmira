@@ -20,12 +20,21 @@ final stardustTransactionsProvider =
 });
 
 /// True if the user already has a daily_login transaction for today.
+///
+/// The server (`claim_daily_checkin` RPC) gates eligibility on Postgres'
+/// `CURRENT_DATE`, and the database's session timezone is UTC — so "today"
+/// here must also be computed in UTC. Comparing against local time would
+/// mismatch for anyone several hours off UTC (e.g. Turkey, UTC+3): the tile
+/// would show as still unclaimed after already checking in, and tapping it
+/// again would be rejected by the server as "already claimed".
 final hasCheckedInTodayProvider = FutureProvider<bool>((ref) async {
   final transactions = await ref.watch(stardustTransactionsProvider.future);
-  final today = DateTime.now();
-  return transactions.any((tx) =>
-      tx.source == 'daily_login' &&
-      tx.createdAt.year == today.year &&
-      tx.createdAt.month == today.month &&
-      tx.createdAt.day == today.day);
+  final todayUtc = DateTime.now().toUtc();
+  return transactions.any((tx) {
+    final utc = tx.createdAt.toUtc();
+    return tx.source == 'daily_login' &&
+        utc.year == todayUtc.year &&
+        utc.month == todayUtc.month &&
+        utc.day == todayUtc.day;
+  });
 });

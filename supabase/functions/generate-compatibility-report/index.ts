@@ -82,7 +82,7 @@ serve(async (req) => {
     // Fetch partner
     const { data: partner, error: partnerErr } = await supabase
       .from("compatibility_partners")
-      .select("name, sun_sign, birth_date, relationship")
+      .select("name, sun_sign, moon_sign, rising_sign, birth_date, relationship")
       .eq("id", partner_id)
       .eq("user_id", user.id)
       .single();
@@ -96,7 +96,10 @@ serve(async (req) => {
       : null;
 
     const identity = `You (Sun: ${profile.sun_sign ?? "unknown"}${profile.moon_sign ? `, Moon: ${profile.moon_sign}` : ""}${profile.rising_sign ? `, Rising: ${profile.rising_sign}` : ""}${userAge ? `, ~${userAge} years old` : ""})`;
-    const partnerIdentity = `${partner.name} (Sun: ${partner.sun_sign}${partnerAge ? `, ~${partnerAge} years old` : ""}, relationship: ${partner.relationship})`;
+    // Older partners saved before Moon/Rising were captured only have a Sun
+    // sign on file — degrade gracefully rather than sending "undefined".
+    const partnerChart = `Sun: ${partner.sun_sign}${partner.moon_sign ? `, Moon: ${partner.moon_sign}` : ""}${partner.rising_sign ? `, Rising: ${partner.rising_sign}` : ""}`;
+    const partnerIdentity = `${partner.name} (${partnerChart}${partnerAge ? `, ~${partnerAge} years old` : ""}, relationship: ${partner.relationship})`;
 
     const buildPrompt = (lang: string) =>
       `You are a master astrologer for the luxury app Cosmira. Generate a deeply personalised, premium compatibility report.

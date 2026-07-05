@@ -115,13 +115,28 @@ function promptFor(
     };
   }
 
-  // premium + yearly
+  // premium + yearly — the fullest tier: a genuine Yearly Destiny Report,
+  // not just a compact card. Quarters get real windows, not exact dates,
+  // since this is placement-based (not transit-computed) content.
   return {
-    system: `You are a luxury astrology AI for the app Cosmira. Write a yearly forecast for ${identity}, for the year ${key}, synthesizing all three placements.`,
+    system: `You are a luxury astrology AI for the app Cosmira. Write a comprehensive Yearly Destiny Report for ${identity}, for the year ${key}, synthesizing all three placements across every area of life.`,
     schema: `{
   "theme": "short phrase naming the year's overall theme",
   "forecast": "4-5 elegant sentences forecasting the year",
-  "quarterly_highlights": ["4 short phrases, one per quarter"],
+  "quarterly_forecasts": [
+    {"quarter": "Q1", "theme": "short phrase", "opportunities": "1 sentence", "challenges": "1 sentence"},
+    {"quarter": "Q2", "theme": "short phrase", "opportunities": "1 sentence", "challenges": "1 sentence"},
+    {"quarter": "Q3", "theme": "short phrase", "opportunities": "1 sentence", "challenges": "1 sentence"},
+    {"quarter": "Q4", "theme": "short phrase", "opportunities": "1 sentence", "challenges": "1 sentence"}
+  ],
+  "career_outlook": "2-3 elegant sentences on career and purpose this year",
+  "love_forecast": "2-3 elegant sentences on relationships and love this year",
+  "health_energy": "2-3 elegant sentences on wellbeing and energy this year",
+  "key_dates": [
+    {"month": "short month name", "significance": "1 short sentence on why this window matters"},
+    {"month": "short month name", "significance": "1 short sentence on why this window matters"},
+    {"month": "short month name", "significance": "1 short sentence on why this window matters"}
+  ],
   "cosmic_advice": "1 elegant closing sentence"
 }`,
   };
@@ -155,7 +170,9 @@ Return ONLY valid JSON, no markdown.${language === "tr" ? "\n\nIMPORTANT: Respon
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.8,
-          maxOutputTokens: 600,
+          // The full Yearly Destiny Report (premium+yearly) has far more
+          // fields than every other tier/period combo — give it real room.
+          maxOutputTokens: tier === "premium" && period === "yearly" ? 1500 : 600,
           responseMimeType: "application/json",
           thinkingConfig: { thinkingBudget: 0 },
         },

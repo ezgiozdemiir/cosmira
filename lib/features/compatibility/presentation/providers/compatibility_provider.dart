@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../config/di.dart';
 import '../../../../core/providers/language_provider.dart';
 import '../../../../core/utils/zodiac_utils.dart';
+import '../../../astrology/presentation/providers/astrology_provider.dart';
 import '../../data/repositories/compatibility_repository_impl.dart';
 import '../../domain/entities/compatibility_partner.dart';
 import '../../domain/repositories/compatibility_repository.dart';
@@ -41,6 +42,7 @@ class AddPartnerNotifier extends StateNotifier<AsyncValue<void>> {
     required DateTime birthDate,
     required String relationship,
     String? birthCity,
+    String? birthTime,
   }) async {
     state = const AsyncValue.loading();
 
@@ -50,14 +52,52 @@ class AddPartnerNotifier extends StateNotifier<AsyncValue<void>> {
       return false;
     }
 
+    final trimmedCity =
+        birthCity?.trim().isEmpty == true ? null : birthCity?.trim();
+
+    // A real Moon/Rising sign needs birth time + city (see astro-math.ts —
+    // Ascendant requires precise UTC instant + latitude/longitude). Without
+    // both, fall back to the sun-sign-only date lookup, same as before.
+    var sunSign = sunSignFromDate(birthDate);
+    String? moonSign;
+    String? risingSign;
+    double? birthLat;
+    double? birthLng;
+
+    if (trimmedCity != null && birthTime != null) {
+      final bigThree = await _ref.read(astrologyRepositoryProvider).calculateBigThree(
+            birthDate: birthDate,
+            birthTime: birthTime,
+            birthCity: trimmedCity,
+          );
+      bigThree.when(
+        success: (r) {
+          sunSign = r.sunSign;
+          moonSign = r.moonSign;
+          risingSign = r.risingSign;
+          birthLat = r.birthLat;
+          birthLng = r.birthLng;
+        },
+        failure: (_) {
+          // Keep the sun-sign-only fallback rather than blocking the save —
+          // a partner is still useful with just a Sun sign.
+        },
+      );
+    }
+
     final partner = CompatibilityPartner(
       id: '',
       userId: user.id,
       name: name.trim(),
       birthDate: birthDate,
-      sunSign: sunSignFromDate(birthDate),
+      birthTime: birthTime,
+      sunSign: sunSign,
+      moonSign: moonSign,
+      risingSign: risingSign,
       relationship: relationship,
-      birthCity: birthCity?.trim().isEmpty == true ? null : birthCity?.trim(),
+      birthCity: trimmedCity,
+      birthLat: birthLat,
+      birthLng: birthLng,
       createdAt: DateTime.now(),
     );
 

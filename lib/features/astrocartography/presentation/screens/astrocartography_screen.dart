@@ -1,15 +1,27 @@
+import 'dart:io';
+
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:screenshot/screenshot.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/haptic_utils.dart';
 import '../../../../core/widgets/cosmic_card.dart';
+import '../../../../core/widgets/viral_story_card.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../home/presentation/providers/home_provider.dart';
+import '../../domain/entities/astrocartography_lines.dart';
+import '../../domain/entities/power_city.dart';
 import '../providers/astrocartography_provider.dart';
 
 // ─── Planet line definitions ──────────────────────────────────────────────────
@@ -130,9 +142,11 @@ const _cities = [
 class _Paran {
   final String emoji1;
   final String emoji2;
-  final String translationKey;
+  final String translationKey; // fallback static-content key
   final Color color1;
   final Color color2;
+  final String planetKeyA; // real _Line.translationKey, e.g. 'jupiter'
+  final String planetKeyB;
 
   const _Paran({
     required this.emoji1,
@@ -140,6 +154,8 @@ class _Paran {
     required this.translationKey,
     required this.color1,
     required this.color2,
+    required this.planetKeyA,
+    required this.planetKeyB,
   });
 
   String get city    => 'astro_paran_${translationKey}_city'.tr();
@@ -149,15 +165,43 @@ class _Paran {
 }
 
 const _parans = [
-  _Paran(emoji1: '♃', emoji2: '♀',  translationKey: 'barcelona', color1: AppColors.auraEmerald, color2: AppColors.auraRose),
-  _Paran(emoji1: '☀️', emoji2: '🌙', translationKey: 'capetown',  color1: AppColors.auraAmber,   color2: AppColors.accentGlow),
-  _Paran(emoji1: '♅', emoji2: '♄',  translationKey: 'seoul',     color1: AppColors.auraTeal,    color2: AppColors.auraIndigo),
+  _Paran(emoji1: '♃', emoji2: '♀',  translationKey: 'barcelona', color1: AppColors.auraEmerald, color2: AppColors.auraRose,   planetKeyA: 'jupiter', planetKeyB: 'venus'),
+  _Paran(emoji1: '☀️', emoji2: '🌙', translationKey: 'capetown',  color1: AppColors.auraAmber,   color2: AppColors.accentGlow, planetKeyA: 'sun',     planetKeyB: 'moon'),
+  _Paran(emoji1: '♅', emoji2: '♄',  translationKey: 'seoul',     color1: AppColors.auraTeal,    color2: AppColors.auraIndigo, planetKeyA: 'uranus',  planetKeyB: 'saturn'),
 ];
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 class AstrocartographyScreen extends ConsumerStatefulWidget {
-  const AstrocartographyScreen({super.key});
+  /// When set, shows the report as it was for a past unlocked birth-data
+  /// version instead of the current one — reached from the Unlock History
+  /// screen. Read-only: bypasses the unlock gate entirely.
+  final String? historicalBirthCity;
+  final bool isHistorical;
+
+  /// When set, this screen unlocks/renders Astrocartography for a saved
+  /// Loved One instead of the current user — [lovedOneName] is used for
+  /// personalized copy (PDF/story headline), and [lovedOneBirthDate]/
+  /// [lovedOneBirthTime] feed the real astrocartography line calculation
+  /// (their birth city comes via [historicalBirthCity]).
+  final String? lovedOneId;
+  final String? lovedOneName;
+  final DateTime? lovedOneBirthDate;
+  final String? lovedOneBirthTime;
+  final double? lovedOneBirthLat;
+  final double? lovedOneBirthLng;
+
+  const AstrocartographyScreen({
+    super.key,
+    this.historicalBirthCity,
+    this.isHistorical = false,
+    this.lovedOneId,
+    this.lovedOneName,
+    this.lovedOneBirthDate,
+    this.lovedOneBirthTime,
+    this.lovedOneBirthLat,
+    this.lovedOneBirthLng,
+  });
 
   @override
   ConsumerState<AstrocartographyScreen> createState() =>
@@ -167,12 +211,16 @@ class AstrocartographyScreen extends ConsumerStatefulWidget {
 class _AstrocartographyScreenState
     extends ConsumerState<AstrocartographyScreen> {
   bool _unlocking = false;
+  bool _exportingPdf = false;
+  bool _exportingStory = false;
   int? _expandedIndex;
 
   Future<void> _handleUnlock() async {
     setState(() => _unlocking = true);
     HapticUtils.medium();
-    final error = await ref.read(astrocartographyProvider.notifier).unlock();
+    final error = await ref
+        .read(astrocartographyProvider(widget.lovedOneId).notifier)
+        .unlock();
     if (mounted) setState(() => _unlocking = false);
     if (error != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -185,13 +233,304 @@ class _AstrocartographyScreenState
     }
   }
 
+  Future<void> _exportPdf(String? birthCity, AstrocartographyLines? lines) async {
+    setState(() => _exportingPdf = true);
+    try {
+      final regular = await PdfGoogleFonts.nunitoRegular();
+      final bold = await PdfGoogleFonts.nunitoBold();
+      final doc = _buildPdf(regular: regular, bold: bold, birthCity: birthCity, lines: lines);
+      final bytes = await doc.save();
+      await Printing.sharePdf(bytes: bytes, filename: 'Cosmira_Astrocartography.pdf');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('astro_pdf_error'.tr())),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _exportingPdf = false);
+    }
+  }
+
+  Widget _buildStoryCard(String? birthCity, AstrocartographyLines? lines) {
+    final computedTop = lines != null ? topCitiesFor(lines, count: 3) : null;
+    final headline = widget.lovedOneName != null
+        ? 'astro_story_title_gift'.tr(namedArgs: {'name': widget.lovedOneName!})
+        : 'astro_story_title'.tr();
+
+    List<StoryStat> stats;
+    String quotable;
+    if (computedTop != null && computedTop.isNotEmpty) {
+      stats = [
+        for (final m in computedTop)
+          StoryStat(
+            emoji: _lineFor(m.planetKey)?.emoji ?? '✦',
+            value: m.match.city.name,
+            label: m.match.city.country,
+          ),
+      ];
+      final top = computedTop.first;
+      final topLine = _lineFor(top.planetKey);
+      quotable = storyHook(topLine != null
+          ? 'astro_city_match_reason'.tr(namedArgs: {
+              'city': top.match.city.name,
+              'country': top.match.city.country,
+              'planet': topLine.planet,
+              'symbol': _lineTypeSymbol(top.match.lineType),
+              'theme': topLine.theme,
+              'bestFor': topLine.bestFor,
+            })
+          : top.match.city.name);
+    } else {
+      final topCities = _cities.take(3).toList();
+      stats = [
+        for (final c in topCities)
+          StoryStat(emoji: c.emoji, value: c.name, label: c.country),
+      ];
+      quotable = storyHook(_cities.first.reason);
+    }
+
+    return ViralStoryCard(
+      eyebrow: '✦  C O S M I R A  ✦',
+      headline: headline,
+      accentColor: const Color(0xFF0EA5E9),
+      stats: stats,
+      quotableLine: quotable,
+    );
+  }
+
+  Future<void> _exportStory(String? birthCity, AstrocartographyLines? lines) async {
+    if (kIsWeb || Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+      _showStoryPreview(birthCity, lines);
+      return;
+    }
+    setState(() => _exportingStory = true);
+    try {
+      final controller = ScreenshotController();
+      final imageBytes = await controller.captureFromWidget(
+        _buildStoryCard(birthCity, lines),
+        pixelRatio: 3.0,
+        targetSize: const Size(360, 640),
+      );
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/cosmira_astro_story.png');
+      await file.writeAsBytes(imageBytes);
+      await Share.shareXFiles(
+        [XFile(file.path, mimeType: 'image/png')],
+        text: 'My Power Places ✦ cosmira.app',
+      );
+    } finally {
+      if (mounted) setState(() => _exportingStory = false);
+    }
+  }
+
+  void _showStoryPreview(String? birthCity, AstrocartographyLines? lines) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: _buildStoryCard(birthCity, lines),
+            ),
+            Positioned(
+              top: -14,
+              right: -14,
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.cardBorder),
+                  ),
+                  child: const Icon(Icons.close, size: 16, color: Colors.white70),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  pw.Document _buildPdf({
+    required pw.Font regular,
+    required pw.Font bold,
+    required String? birthCity,
+    required AstrocartographyLines? lines,
+  }) {
+    final doc = pw.Document();
+    final headerStyle = pw.TextStyle(font: bold, fontSize: 22);
+    final sectionStyle = pw.TextStyle(font: bold, fontSize: 14);
+    final bodyStyle = pw.TextStyle(font: regular, fontSize: 11);
+    final accentColor = PdfColor.fromInt(0xFFFBBF24);
+
+    pw.Widget section(String title, List<pw.Widget> children) =>
+        pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+          pw.SizedBox(height: 18),
+          pw.Text(title, style: sectionStyle.copyWith(color: accentColor)),
+          pw.Divider(color: accentColor, thickness: 0.5),
+          pw.SizedBox(height: 8),
+          ...children,
+        ]);
+
+    doc.addPage(pw.MultiPage(
+      pageFormat: PdfPageFormat.a4,
+      margin: const pw.EdgeInsets.all(40),
+      footer: (ctx) => pw.Align(
+        alignment: pw.Alignment.centerRight,
+        child: pw.Text('Generated by Cosmira',
+            style: pw.TextStyle(font: regular, fontSize: 9, color: PdfColors.grey)),
+      ),
+      build: (ctx) => [
+        pw.Center(
+          child: pw.Column(children: [
+            pw.Text('COSMIRA',
+                style: pw.TextStyle(font: bold, fontSize: 11, color: accentColor)),
+            pw.SizedBox(height: 8),
+            pw.Text('astro_title'.tr(), style: headerStyle),
+            if (birthCity != null) ...[
+              pw.SizedBox(height: 4),
+              pw.Text(birthCity,
+                  style: pw.TextStyle(font: regular, fontSize: 12, color: PdfColors.grey600)),
+            ],
+            pw.SizedBox(height: 20),
+            pw.Divider(),
+          ]),
+        ),
+        section('astro_planetary_lines'.tr(), [
+          ..._lines.map((l) => pw.Padding(
+                padding: const pw.EdgeInsets.only(bottom: 6),
+                child: pw.Text('${l.planet} — ${l.lineType}: ${l.theme}', style: bodyStyle),
+              )),
+        ]),
+        section('astro_cities_title'.tr(), [
+          if (lines != null)
+            for (final m in topCitiesFor(lines))
+              if (_lineFor(m.planetKey) case final line?)
+                pw.Padding(
+                  padding: const pw.EdgeInsets.only(bottom: 6),
+                  child: pw.Text(
+                      '${m.match.city.name}, ${m.match.city.country} (${line.planet} ${_lineTypeSymbol(m.match.lineType)}) — '
+                      '${'astro_city_match_reason'.tr(namedArgs: {
+                        'city': m.match.city.name,
+                        'country': m.match.city.country,
+                        'planet': line.planet,
+                        'symbol': _lineTypeSymbol(m.match.lineType),
+                        'theme': line.theme,
+                        'bestFor': line.bestFor,
+                      })}',
+                      style: bodyStyle),
+                )
+          else
+            ..._cities.map((c) => pw.Padding(
+                  padding: const pw.EdgeInsets.only(bottom: 6),
+                  child: pw.Text('${c.name}, ${c.country} (${c.line}) — ${c.reason}', style: bodyStyle),
+                )),
+        ]),
+        section('astro_parans_title'.tr(), [
+          ..._parans.map((p) {
+            final match = lines != null
+                ? paranMatchFor(lines, planetKeyA: p.planetKeyA, planetKeyB: p.planetKeyB)
+                : null;
+            final lineA = _lineFor(p.planetKeyA);
+            final lineB = _lineFor(p.planetKeyB);
+            if (match != null && lineA != null && lineB != null) {
+              final theme = 'astro_paran_match_theme'.tr(namedArgs: {
+                'themeA': lineA.theme,
+                'themeB': lineB.theme,
+              });
+              final meaning = 'astro_paran_match_meaning'.tr(namedArgs: {
+                'planetA': lineA.planet,
+                'symbolA': _lineTypeSymbol(match.lineTypeA),
+                'planetB': lineB.planet,
+                'symbolB': _lineTypeSymbol(match.lineTypeB),
+                'city': match.city.city.name,
+                'country': match.city.city.country,
+              });
+              return pw.Padding(
+                padding: const pw.EdgeInsets.only(bottom: 6),
+                child: pw.Text(
+                    '${match.city.city.name}, ${match.city.city.country} — $theme: $meaning',
+                    style: bodyStyle),
+              );
+            }
+            return pw.Padding(
+              padding: const pw.EdgeInsets.only(bottom: 6),
+              child: pw.Text('${p.city}, ${p.country} — ${p.theme}: ${p.meaning}', style: bodyStyle),
+            );
+          }),
+        ]),
+        section('astro_destiny_compass'.tr(), [
+          ..._destinations.map((d) {
+            final match = lines != null
+                ? destinyMatchFor(lines,
+                    planetKeys: _destinyPlanetKeys[d.translationKey] ?? const [])
+                : null;
+            final line = match != null ? _lineFor(match.planetKey) : null;
+            if (match != null && line != null) {
+              final why = 'astro_dest_match_reason'.tr(namedArgs: {
+                'planet': line.planet,
+                'symbol': _lineTypeSymbol(match.match.lineType),
+                'city': match.match.city.name,
+                'country': match.match.city.country,
+                'theme': line.theme,
+              });
+              return pw.Padding(
+                padding: const pw.EdgeInsets.only(bottom: 6),
+                child: pw.Text(
+                    '${d.label} — ${match.match.city.name}, ${match.match.city.country}: $why',
+                    style: bodyStyle),
+              );
+            }
+            return pw.Padding(
+              padding: const pw.EdgeInsets.only(bottom: 6),
+              child: pw.Text('${d.label} — ${d.region}: ${d.why}', style: bodyStyle),
+            );
+          }),
+        ]),
+      ],
+    ));
+
+    return doc;
+  }
+
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(userProfileProvider).valueOrNull;
     final balance = ref.watch(stardustBalanceProvider).valueOrNull ?? 0;
-    final astroState = ref.watch(astrocartographyProvider);
-    final isUnlocked = astroState.status == AstrocartographyStatus.unlocked;
-    final isLoading  = astroState.status == AstrocartographyStatus.loading;
+    final astroState = ref.watch(astrocartographyProvider(widget.lovedOneId));
+    final isUnlocked =
+        widget.isHistorical || astroState.status == AstrocartographyStatus.unlocked;
+    final isLoading =
+        !widget.isHistorical && astroState.status == AstrocartographyStatus.loading;
+    // For a Loved One, the caller passes their birth city via
+    // historicalBirthCity too (it's already "an explicit city override"
+    // regardless of whether the reason is history or a different person).
+    final birthCity = widget.historicalBirthCity ?? profile?.birthCity;
+    final birthDate = widget.lovedOneId != null ? widget.lovedOneBirthDate : profile?.birthDate;
+    final birthTime = widget.lovedOneId != null ? widget.lovedOneBirthTime : profile?.birthTime;
+    final subjectLat = widget.lovedOneId != null ? widget.lovedOneBirthLat : profile?.birthLat;
+    final subjectLng = widget.lovedOneId != null ? widget.lovedOneBirthLng : profile?.birthLng;
+
+    // Only fetch once unlocked — no need to compute real lines for a locked
+    // paywall view.
+    final linesAsync = isUnlocked
+        ? ref.watch(astrocartographyLinesProvider((
+            lovedOneId: widget.lovedOneId,
+            birthDate: birthDate,
+            birthTime: birthTime,
+            birthCity: birthCity,
+          )))
+        : const AsyncValue<AstrocartographyLines?>.data(null);
+    final lines = linesAsync.valueOrNull;
 
     return Scaffold(
       backgroundColor: AppColors.black,
@@ -214,8 +553,18 @@ class _AstrocartographyScreenState
                       const SizedBox(width: 4),
                       const Text('🌍', style: TextStyle(fontSize: 22)),
                       const SizedBox(width: 10),
-                      Text('astro_title'.tr(),
-                          style: AppTextStyles.headlineSmall),
+                      Expanded(
+                        child: Text('astro_title'.tr(),
+                            style: AppTextStyles.headlineSmall),
+                      ),
+                      if (!widget.isHistorical && widget.lovedOneId == null)
+                        IconButton(
+                          icon: const Icon(Icons.history_rounded,
+                              color: AppColors.textPrimary),
+                          tooltip: 'astro_history'.tr(),
+                          onPressed: () =>
+                              context.push('/astrocartography/history'),
+                        ),
                     ],
                   ),
                 ),
@@ -227,7 +576,38 @@ class _AstrocartographyScreenState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _SummarySection(birthCity: profile?.birthCity)
+                      if (widget.isHistorical)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: AppColors.auraAmber.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: AppColors.auraAmber.withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.history_rounded,
+                                    color: AppColors.auraAmber, size: 16),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    birthCity != null
+                                        ? 'astro_history_city'.tr(namedArgs: {'city': birthCity})
+                                        : 'astro_history_city_unknown'.tr(),
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                        color: AppColors.auraAmber.withValues(alpha: 0.9)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                      _SummarySection(birthCity: birthCity)
                           .animate()
                           .fadeIn(delay: 100.ms)
                           .slideY(begin: 0.06),
@@ -243,6 +623,8 @@ class _AstrocartographyScreenState
                         _UnlockGate(
                           balance: balance,
                           unlocking: _unlocking,
+                          isRecharge: widget.lovedOneId == null &&
+                              (profile?.birthDataVersion ?? 0) > 0,
                           onUnlock: _handleUnlock,
                           onEarnMore: () => context.push('/stardust'),
                         ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.08)
@@ -260,7 +642,7 @@ class _AstrocartographyScreenState
                             .animate()
                             .fadeIn(delay: 100.ms),
                         const SizedBox(height: 20),
-                        const _WorldMapSection()
+                        _WorldMapSection(lines: lines)
                             .animate()
                             .fadeIn(delay: 150.ms),
                         const SizedBox(height: 20),
@@ -274,6 +656,11 @@ class _AstrocartographyScreenState
                             padding: const EdgeInsets.only(bottom: 8),
                             child: _PlanetCard(
                               line: _lines[i],
+                              closestLineTypeKey: closestLineTypeKey(
+                                lines?.forPlanet(_lines[i].translationKey),
+                                subjectLat: subjectLat,
+                                subjectLng: subjectLng,
+                              ),
                               expanded: _expandedIndex == i,
                               onTap: () => setState(() =>
                                   _expandedIndex =
@@ -285,21 +672,28 @@ class _AstrocartographyScreenState
                           );
                         }),
                         const SizedBox(height: 20),
-                        const _DestinyCompass()
+                        _DestinyCompass(lines: lines)
                             .animate()
                             .fadeIn(delay: 200.ms),
                         const SizedBox(height: 20),
-                        const _TopCitiesSection()
+                        _TopCitiesSection(lines: lines)
                             .animate()
                             .fadeIn(delay: 220.ms),
                         const SizedBox(height: 20),
-                        const _ParansSection()
+                        _ParansSection(lines: lines)
                             .animate()
                             .fadeIn(delay: 240.ms),
                         const SizedBox(height: 20),
-                        _CurrentLocationSection(birthCity: profile?.birthCity)
+                        _CurrentLocationSection(birthCity: birthCity)
                             .animate()
                             .fadeIn(delay: 260.ms),
+                        const SizedBox(height: 24),
+                        _ExportBar(
+                          exportingPdf: _exportingPdf,
+                          exportingStory: _exportingStory,
+                          onPdf: () => _exportPdf(birthCity, lines),
+                          onStory: () => _exportStory(birthCity, lines),
+                        ).animate().fadeIn(delay: 280.ms),
                       ],
                     ],
                   ),
@@ -309,6 +703,102 @@ class _AstrocartographyScreenState
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ─── Save as PDF button ───────────────────────────────────────────────────────
+
+class _ExportBar extends StatelessWidget {
+  final bool exportingPdf;
+  final bool exportingStory;
+  final VoidCallback onPdf;
+  final VoidCallback onStory;
+
+  const _ExportBar({
+    required this.exportingPdf,
+    required this.exportingStory,
+    required this.onPdf,
+    required this.onStory,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _ExportButton(
+            label: 'astro_save_pdf'.tr(),
+            icon: Icons.picture_as_pdf_rounded,
+            color: AppColors.auraViolet,
+            isLoading: exportingPdf,
+            onTap: onPdf,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _ExportButton(
+            label: 'astro_share_story'.tr(),
+            icon: Icons.share_rounded,
+            color: const Color(0xFF0EA5E9),
+            isLoading: exportingStory,
+            onTap: onStory,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ExportButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final bool isLoading;
+  final VoidCallback onTap;
+
+  const _ExportButton({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.isLoading,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: isLoading ? null : onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withValues(alpha: 0.35)),
+        ),
+        child: isLoading
+            ? Center(
+                child: SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(color: color, strokeWidth: 2),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, color: color, size: 18),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      label,
+                      style: AppTextStyles.labelLarge.copyWith(color: color),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -398,12 +888,14 @@ class _SummarySection extends StatelessWidget {
 class _UnlockGate extends StatelessWidget {
   final int balance;
   final bool unlocking;
+  final bool isRecharge;
   final VoidCallback onUnlock;
   final VoidCallback onEarnMore;
 
   const _UnlockGate({
     required this.balance,
     required this.unlocking,
+    required this.isRecharge,
     required this.onUnlock,
     required this.onEarnMore,
   });
@@ -465,6 +957,35 @@ class _UnlockGate extends StatelessWidget {
               ),
             ),
           ]),
+
+          if (isRecharge) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.auraAmber.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                    color: AppColors.auraAmber.withValues(alpha: 0.25)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline,
+                      color: AppColors.auraAmber, size: 14),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'astro_recharge_notice'.tr(),
+                      style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.auraAmber.withValues(alpha: 0.85),
+                          height: 1.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
 
           const SizedBox(height: 20),
           const Divider(color: AppColors.cardBorder, height: 1),
@@ -691,7 +1212,8 @@ class _PlanetLineTable extends StatelessWidget {
 // ─── World Map Section ────────────────────────────────────────────────────────
 
 class _WorldMapSection extends StatelessWidget {
-  const _WorldMapSection();
+  final AstrocartographyLines? lines;
+  const _WorldMapSection({required this.lines});
 
   @override
   Widget build(BuildContext context) {
@@ -714,18 +1236,21 @@ class _WorldMapSection extends StatelessWidget {
                 return Stack(
                   children: [
                     Positioned.fill(
-                      child: CustomPaint(painter: _MapGridPainter()),
+                      child: CustomPaint(painter: _MapGridPainter(lines: lines)),
                     ),
 
-                    ..._lines.map((line) {
-                      final x = line.mapX * constraints.maxWidth;
-                      final y = line.mapY * 180;
-                      return Positioned(
-                        left: x - 6,
-                        top: y - 6,
-                        child: _MapDot(color: line.color),
-                      );
-                    }),
+                    // Fallback placeholder dots while real lines are still
+                    // loading (first-ever unlock, before the cache is warm).
+                    if (lines == null)
+                      ..._lines.map((line) {
+                        final x = line.mapX * constraints.maxWidth;
+                        final y = line.mapY * 180;
+                        return Positioned(
+                          left: x - 6,
+                          top: y - 6,
+                          child: _MapDot(color: line.color),
+                        );
+                      }),
 
                     Positioned(left: 28,  top: 52,  child: _RegionLabel('astro_region_n_america'.tr())),
                     Positioned(left: 28,  top: 100, child: _RegionLabel('astro_region_s_america'.tr())),
@@ -747,7 +1272,9 @@ class _WorldMapSection extends StatelessWidget {
                       bottom: 6,
                       right: 8,
                       child: Text(
-                        'astro_interactive_coming'.tr(),
+                        lines == null
+                            ? 'astro_interactive_coming'.tr()
+                            : 'astro_lines_computed'.tr(),
                         style: AppTextStyles.bodySmall.copyWith(
                             color: AppColors.textTertiary, fontSize: 9),
                       ),
@@ -784,7 +1311,71 @@ class _WorldMapSection extends StatelessWidget {
   }
 }
 
+/// Converts a longitude normalized to [0, 360) (the edge function's
+/// canonical output) to the signed [-180, 180) form the hand-drawn
+/// continent outlines and pixel projection below use.
+double _signedLon(double lon) {
+  var n = lon % 360;
+  if (n < 0) n += 360;
+  return n > 180 ? n - 360 : n;
+}
+
+/// Shortest angular distance between two longitudes, in degrees.
+double _lonDiff(double a, double b) {
+  final d = (_signedLon(a) - _signedLon(b)).abs();
+  return d > 180 ? 360 - d : d;
+}
+
+/// Determines which of a planet's 4 real line types (AC/DC/MC/IC) passes
+/// closest to the subject's own birth coordinates — this is what makes the
+/// planet card's badge genuinely different between two different people,
+/// without needing new per-line-type copy (see migration 019 / plan notes).
+String? closestLineTypeKey(
+  PlanetLine? line, {
+  required double? subjectLat,
+  required double? subjectLng,
+}) {
+  if (line == null || subjectLat == null || subjectLng == null) return null;
+
+  var bestKey = 'mc';
+  var bestDiff = _lonDiff(line.mcLon, subjectLng);
+
+  final icDiff = _lonDiff(line.icLon, subjectLng);
+  if (icDiff < bestDiff) {
+    bestKey = 'ic';
+    bestDiff = icDiff;
+  }
+
+  (double, double)? nearestByLat(List<(double, double)> pts) {
+    if (pts.isEmpty) return null;
+    return pts.reduce(
+        (a, b) => (a.$1 - subjectLat).abs() < (b.$1 - subjectLat).abs() ? a : b);
+  }
+
+  final ac = nearestByLat(line.ac);
+  if (ac != null) {
+    final d = _lonDiff(ac.$2, subjectLng);
+    if (d < bestDiff) {
+      bestKey = 'ac';
+      bestDiff = d;
+    }
+  }
+  final dc = nearestByLat(line.dc);
+  if (dc != null) {
+    final d = _lonDiff(dc.$2, subjectLng);
+    if (d < bestDiff) {
+      bestKey = 'dc';
+      bestDiff = d;
+    }
+  }
+
+  return bestKey;
+}
+
 class _MapGridPainter extends CustomPainter {
+  final AstrocartographyLines? lines;
+  const _MapGridPainter({this.lines});
+
   @override
   void paint(Canvas canvas, Size size) {
     canvas.drawRect(
@@ -904,10 +1495,59 @@ class _MapGridPainter extends CustomPainter {
       (154,-28), (151,-34), (147,-39), (140,-38),
       (130,-34), (117,-34), (114,-34),
     ]);
+
+    // ── Real, computed planet lines (MC/IC meridians + AC/DC curves) ────────
+    final computedLines = lines;
+    if (computedLines != null) {
+      Offset signedGeo(double lon, double lat) => geo(_signedLon(lon), lat);
+
+      void drawMeridian(double lonDeg, Color color) {
+        final x = signedGeo(lonDeg, 0).dx;
+        canvas.drawLine(
+          Offset(x, 0),
+          Offset(x, size.height),
+          Paint()
+            ..color = color.withValues(alpha: 0.5)
+            ..strokeWidth = 1.2,
+        );
+      }
+
+      void drawCurve(List<(double, double)> points, Color color) {
+        if (points.isEmpty) return;
+        final path = Path();
+        double? lastSignedLon;
+        for (final (lat, lon) in points) {
+          final signed = _signedLon(lon);
+          final pt = signedGeo(lon, lat);
+          if (lastSignedLon == null || (signed - lastSignedLon).abs() > 180) {
+            path.moveTo(pt.dx, pt.dy);
+          } else {
+            path.lineTo(pt.dx, pt.dy);
+          }
+          lastSignedLon = signed;
+        }
+        canvas.drawPath(
+          path,
+          Paint()
+            ..color = color.withValues(alpha: 0.8)
+            ..strokeWidth = 1.4
+            ..style = PaintingStyle.stroke,
+        );
+      }
+
+      for (final line in _lines) {
+        final planetLine = computedLines.forPlanet(line.translationKey);
+        if (planetLine == null) continue;
+        drawMeridian(planetLine.mcLon, line.color);
+        drawMeridian(planetLine.icLon, line.color);
+        drawCurve(planetLine.ac, line.color);
+        drawCurve(planetLine.dc, line.color);
+      }
+    }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _MapGridPainter oldDelegate) => oldDelegate.lines != lines;
 }
 
 class _MapDot extends StatelessWidget {
@@ -956,10 +1596,16 @@ class _PlanetCard extends StatelessWidget {
   final bool expanded;
   final VoidCallback onTap;
 
+  /// Which of this planet's 4 real line types (ac/dc/mc/ic) passes closest
+  /// to the subject's own birth coordinates — null while lines are still
+  /// loading, in which case we fall back to [_Line.lineType]'s static copy.
+  final String? closestLineTypeKey;
+
   const _PlanetCard({
     required this.line,
     required this.expanded,
     required this.onTap,
+    this.closestLineTypeKey,
   });
 
   @override
@@ -995,7 +1641,10 @@ class _PlanetCard extends StatelessWidget {
                   Text(line.planet,
                       style: AppTextStyles.titleMedium
                           .copyWith(color: Colors.white)),
-                  Text(line.lineType,
+                  Text(
+                      closestLineTypeKey != null
+                          ? 'astro_lt_${closestLineTypeKey!}_name'.tr()
+                          : line.lineType,
                       style: AppTextStyles.bodySmall
                           .copyWith(color: line.color, fontSize: 10)),
                 ],
@@ -1050,11 +1699,23 @@ class _PlanetCard extends StatelessWidget {
 
 // ─── Destiny Compass ──────────────────────────────────────────────────────────
 
+/// Traditional astrocartography significators per Destiny Compass theme —
+/// career favors public-achievement planets on their MC; love/home favor
+/// the relationship/roots planets. See power_city.dart for the matching.
+const _destinyPlanetKeys = {
+  'career': ['sun', 'saturn', 'jupiter', 'mars'],
+  'love': ['venus', 'moon'],
+  'home': ['moon', 'venus'],
+};
+
 class _DestinyCompass extends StatelessWidget {
-  const _DestinyCompass();
+  final AstrocartographyLines? lines;
+  const _DestinyCompass({required this.lines});
 
   @override
   Widget build(BuildContext context) {
+    final computedLines = lines;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1064,18 +1725,57 @@ class _DestinyCompass extends StatelessWidget {
         Text('astro_destiny_compass_sub'.tr(),
             style: AppTextStyles.bodySmall),
         const SizedBox(height: 12),
-        ..._destinations.map((d) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _DestinationCard(dest: d),
-            )),
+        ..._destinations.map((d) {
+          final match = computedLines != null
+              ? destinyMatchFor(computedLines,
+                  planetKeys: _destinyPlanetKeys[d.translationKey] ?? const [])
+              : null;
+          final line = match != null ? _lineFor(match.planetKey) : null;
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: (match != null && line != null)
+                ? _DestinationCard(
+                    label: d.label,
+                    emoji: d.emoji,
+                    color: d.color,
+                    region: '${match.match.city.name}, ${match.match.city.country}',
+                    why: 'astro_dest_match_reason'.tr(namedArgs: {
+                      'planet': line.planet,
+                      'symbol': _lineTypeSymbol(match.match.lineType),
+                      'city': match.match.city.name,
+                      'country': match.match.city.country,
+                      'theme': line.theme,
+                    }),
+                  )
+                : _DestinationCard(
+                    label: d.label,
+                    emoji: d.emoji,
+                    color: d.color,
+                    region: d.region,
+                    why: d.why,
+                  ),
+          );
+        }),
       ],
     );
   }
 }
 
 class _DestinationCard extends StatelessWidget {
-  final _Destination dest;
-  const _DestinationCard({required this.dest});
+  final String label;
+  final String emoji;
+  final Color color;
+  final String region;
+  final String why;
+
+  const _DestinationCard({
+    required this.label,
+    required this.emoji,
+    required this.color,
+    required this.region,
+    required this.why,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1086,12 +1786,12 @@ class _DestinationCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            dest.color.withValues(alpha: 0.13),
-            dest.color.withValues(alpha: 0.04),
+            color.withValues(alpha: 0.13),
+            color.withValues(alpha: 0.04),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: dest.color.withValues(alpha: 0.28)),
+        border: Border.all(color: color.withValues(alpha: 0.28)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1101,26 +1801,26 @@ class _DestinationCard extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: dest.color.withValues(alpha: 0.12),
-              border: Border.all(color: dest.color.withValues(alpha: 0.3)),
+              color: color.withValues(alpha: 0.12),
+              border: Border.all(color: color.withValues(alpha: 0.3)),
             ),
             alignment: Alignment.center,
-            child: Text(dest.emoji, style: const TextStyle(fontSize: 18)),
+            child: Text(emoji, style: const TextStyle(fontSize: 18)),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(dest.label,
+                Text(label,
                     style: AppTextStyles.labelSmall
-                        .copyWith(color: dest.color, letterSpacing: 0.8)),
+                        .copyWith(color: color, letterSpacing: 0.8)),
                 const SizedBox(height: 3),
-                Text(dest.region,
+                Text(region,
                     style: AppTextStyles.titleMedium
                         .copyWith(color: Colors.white, fontSize: 14)),
                 const SizedBox(height: 6),
-                Text(dest.why,
+                Text(why,
                     style: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.textSecondary, height: 1.5)),
               ],
@@ -1255,11 +1955,29 @@ class _LineTypesGuideState extends State<_LineTypesGuide> {
 
 // ─── Top Cities Section ───────────────────────────────────────────────────────
 
+String _lineTypeSymbol(LineTypeKey key) => switch (key) {
+      LineTypeKey.ac => 'AC',
+      LineTypeKey.dc => 'DC',
+      LineTypeKey.mc => 'MC',
+      LineTypeKey.ic => 'IC',
+    };
+
+_Line? _lineFor(String planetKey) {
+  for (final l in _lines) {
+    if (l.translationKey == planetKey) return l;
+  }
+  return null;
+}
+
 class _TopCitiesSection extends StatelessWidget {
-  const _TopCitiesSection();
+  final AstrocartographyLines? lines;
+  const _TopCitiesSection({required this.lines});
 
   @override
   Widget build(BuildContext context) {
+    final computedLines = lines;
+    final matches = computedLines != null ? topCitiesFor(computedLines) : null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1268,18 +1986,63 @@ class _TopCitiesSection extends StatelessWidget {
           subtitle: 'astro_cities_sub'.tr(),
         ),
         const SizedBox(height: 12),
-        ..._cities.map((city) => Padding(
+        if (matches != null)
+          ...matches.map((m) {
+            final line = _lineFor(m.planetKey);
+            if (line == null) return const SizedBox.shrink();
+            final symbol = _lineTypeSymbol(m.match.lineType);
+            return Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: _CityCard(city: city),
-            )),
+              child: _CityCard(
+                emoji: line.emoji,
+                color: line.color,
+                name: m.match.city.name,
+                country: m.match.city.country,
+                badge: '${line.planet} $symbol',
+                reason: 'astro_city_match_reason'.tr(namedArgs: {
+                  'city': m.match.city.name,
+                  'country': m.match.city.country,
+                  'planet': line.planet,
+                  'symbol': symbol,
+                  'theme': line.theme,
+                  'bestFor': line.bestFor,
+                }),
+              ),
+            );
+          })
+        else
+          ..._cities.map((city) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _CityCard(
+                  emoji: city.emoji,
+                  color: city.color,
+                  name: city.name,
+                  country: city.country,
+                  badge: city.line,
+                  reason: city.reason,
+                ),
+              )),
       ],
     );
   }
 }
 
 class _CityCard extends StatelessWidget {
-  final _City city;
-  const _CityCard({required this.city});
+  final String emoji;
+  final Color color;
+  final String name;
+  final String country;
+  final String badge;
+  final String reason;
+
+  const _CityCard({
+    required this.emoji,
+    required this.color,
+    required this.name,
+    required this.country,
+    required this.badge,
+    required this.reason,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1290,12 +2053,12 @@ class _CityCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            city.color.withValues(alpha: 0.12),
-            city.color.withValues(alpha: 0.03),
+            color.withValues(alpha: 0.12),
+            color.withValues(alpha: 0.03),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: city.color.withValues(alpha: 0.25)),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1305,11 +2068,11 @@ class _CityCard extends StatelessWidget {
             height: 44,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: city.color.withValues(alpha: 0.12),
-              border: Border.all(color: city.color.withValues(alpha: 0.3)),
+              color: color.withValues(alpha: 0.12),
+              border: Border.all(color: color.withValues(alpha: 0.3)),
             ),
             alignment: Alignment.center,
-            child: Text(city.emoji, style: const TextStyle(fontSize: 20)),
+            child: Text(emoji, style: const TextStyle(fontSize: 20)),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1318,12 +2081,12 @@ class _CityCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(city.name,
+                    Text(name,
                         style: AppTextStyles.titleMedium
                             .copyWith(color: Colors.white, fontSize: 15)),
                     const SizedBox(width: 6),
                     Expanded(
-                      child: Text('· ${city.country}',
+                      child: Text('· $country',
                           style: AppTextStyles.bodySmall
                               .copyWith(color: AppColors.textTertiary),
                           overflow: TextOverflow.ellipsis),
@@ -1332,21 +2095,21 @@ class _CityCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 7, vertical: 2),
                       decoration: BoxDecoration(
-                        color: city.color.withValues(alpha: 0.15),
+                        color: color.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
-                            color: city.color.withValues(alpha: 0.35)),
+                            color: color.withValues(alpha: 0.35)),
                       ),
-                      child: Text(city.line,
+                      child: Text(badge,
                           style: AppTextStyles.labelSmall.copyWith(
-                              color: city.color,
+                              color: color,
                               fontSize: 9,
                               fontWeight: FontWeight.w700)),
                     ),
                   ],
                 ),
                 const SizedBox(height: 6),
-                Text(city.reason,
+                Text(reason,
                     style: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.textSecondary, height: 1.55)),
               ],
@@ -1361,10 +2124,13 @@ class _CityCard extends StatelessWidget {
 // ─── Parans Section ───────────────────────────────────────────────────────────
 
 class _ParansSection extends StatelessWidget {
-  const _ParansSection();
+  final AstrocartographyLines? lines;
+  const _ParansSection({required this.lines});
 
   @override
   Widget build(BuildContext context) {
+    final computedLines = lines;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1373,10 +2139,51 @@ class _ParansSection extends StatelessWidget {
           subtitle: 'astro_parans_sub'.tr(),
         ),
         const SizedBox(height: 12),
-        ..._parans.map((p) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _ParanCard(paran: p),
-            )),
+        ..._parans.map((p) {
+          final match = computedLines != null
+              ? paranMatchFor(computedLines,
+                  planetKeyA: p.planetKeyA, planetKeyB: p.planetKeyB)
+              : null;
+          final lineA = _lineFor(p.planetKeyA);
+          final lineB = _lineFor(p.planetKeyB);
+
+          final card = (match != null && lineA != null && lineB != null)
+              ? _ParanCard(
+                  emoji1: p.emoji1,
+                  emoji2: p.emoji2,
+                  color1: p.color1,
+                  color2: p.color2,
+                  theme: 'astro_paran_match_theme'.tr(namedArgs: {
+                    'themeA': lineA.theme,
+                    'themeB': lineB.theme,
+                  }),
+                  city: match.city.city.name,
+                  country: match.city.city.country,
+                  meaning: 'astro_paran_match_meaning'.tr(namedArgs: {
+                    'planetA': lineA.planet,
+                    'symbolA': _lineTypeSymbol(match.lineTypeA),
+                    'planetB': lineB.planet,
+                    'symbolB': _lineTypeSymbol(match.lineTypeB),
+                    'city': match.city.city.name,
+                    'country': match.city.city.country,
+                  }),
+                )
+              : _ParanCard(
+                  emoji1: p.emoji1,
+                  emoji2: p.emoji2,
+                  color1: p.color1,
+                  color2: p.color2,
+                  theme: p.theme,
+                  city: p.city,
+                  country: p.country,
+                  meaning: p.meaning,
+                );
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: card,
+          );
+        }),
         const SizedBox(height: 4),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -1409,8 +2216,25 @@ class _ParansSection extends StatelessWidget {
 }
 
 class _ParanCard extends StatelessWidget {
-  final _Paran paran;
-  const _ParanCard({required this.paran});
+  final String emoji1;
+  final String emoji2;
+  final Color color1;
+  final Color color2;
+  final String theme;
+  final String city;
+  final String country;
+  final String meaning;
+
+  const _ParanCard({
+    required this.emoji1,
+    required this.emoji2,
+    required this.color1,
+    required this.color2,
+    required this.theme,
+    required this.city,
+    required this.country,
+    required this.meaning,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1421,12 +2245,12 @@ class _ParanCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            paran.color1.withValues(alpha: 0.10),
-            paran.color2.withValues(alpha: 0.06),
+            color1.withValues(alpha: 0.10),
+            color2.withValues(alpha: 0.06),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: paran.color1.withValues(alpha: 0.28)),
+        border: Border.all(color: color1.withValues(alpha: 0.28)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1437,26 +2261,26 @@ class _ParanCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: paran.color1.withValues(alpha: 0.12),
+                  color: color1.withValues(alpha: 0.12),
                   borderRadius: const BorderRadius.horizontal(
                       left: Radius.circular(20)),
                   border:
-                      Border.all(color: paran.color1.withValues(alpha: 0.3)),
+                      Border.all(color: color1.withValues(alpha: 0.3)),
                 ),
-                child: Text(paran.emoji1,
+                child: Text(emoji1,
                     style: const TextStyle(fontSize: 16)),
               ),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: paran.color2.withValues(alpha: 0.12),
+                  color: color2.withValues(alpha: 0.12),
                   borderRadius: const BorderRadius.horizontal(
                       right: Radius.circular(20)),
                   border:
-                      Border.all(color: paran.color2.withValues(alpha: 0.3)),
+                      Border.all(color: color2.withValues(alpha: 0.3)),
                 ),
-                child: Text(paran.emoji2,
+                child: Text(emoji2,
                     style: const TextStyle(fontSize: 16)),
               ),
               const SizedBox(width: 10),
@@ -1464,10 +2288,10 @@ class _ParanCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(paran.theme,
+                    Text(theme,
                         style: AppTextStyles.titleMedium.copyWith(
                             color: Colors.white, fontSize: 14)),
-                    Text('${paran.city} · ${paran.country}',
+                    Text('$city · $country',
                         style: AppTextStyles.bodySmall
                             .copyWith(color: AppColors.textTertiary)),
                   ],
@@ -1492,9 +2316,9 @@ class _ParanCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Divider(
-              color: paran.color1.withValues(alpha: 0.15), height: 1),
+              color: color1.withValues(alpha: 0.15), height: 1),
           const SizedBox(height: 12),
-          Text(paran.meaning,
+          Text(meaning,
               style: AppTextStyles.bodyMedium.copyWith(
                   color: Colors.white.withValues(alpha: 0.80),
                   height: 1.65)),

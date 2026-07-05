@@ -27,6 +27,19 @@ class BreathworkScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                children: [
+                  IconButton(
+                    padding: EdgeInsets.zero,
+                    onPressed: () => context.go('/'),
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white70, size: 20),
+                  ),
+                ],
+              ),
+            ),
             AnimatedSize(
               duration: const Duration(milliseconds: 220),
               curve: Curves.easeOut,

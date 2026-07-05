@@ -9,6 +9,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/cosmic_button.dart';
 import '../../../astrology/presentation/providers/astrology_provider.dart';
 import '../../../auth/data/models/user_profile_model.dart';
+import '../../../auth/domain/entities/user_profile.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../onboarding/presentation/widgets/birth_data_form.dart';
 import '../../../onboarding/presentation/widgets/personal_info_form.dart';
@@ -46,6 +47,122 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     if ((m == 12 && d >= 22) || (m == 1 && d <= 19)) return 'capricorn';
     if ((m == 1 && d >= 20) || (m == 2 && d <= 18)) return 'aquarius';
     return 'pisces';
+  }
+
+  static String? _normalizedTime(String? t) {
+    if (t == null) return null;
+    final parts = t.split(':');
+    if (parts.length < 2) return t;
+    return '${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}';
+  }
+
+  static bool _isSameDate(DateTime? a, DateTime? b) {
+    if (a == null || b == null) return a == b;
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  Future<bool?> _showBirthChangeConfirmDialog({required int remaining, required int limit}) {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.card,
+        title: Text('edit_profile_birth_change_confirm_title'.tr(), style: AppTextStyles.titleMedium),
+        content: Text(
+          'edit_profile_birth_change_confirm_body'
+              .tr(namedArgs: {'remaining': '$remaining', 'limit': '$limit'}),
+          style: AppTextStyles.bodyMedium,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('edit_profile_birth_change_cancel'.tr(),
+                style: const TextStyle(color: AppColors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text('edit_profile_birth_change_continue'.tr(),
+                style: const TextStyle(color: AppColors.auraAmber)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<bool?> _showBirthChangeLimitDialog({required int limit, required bool isFree}) {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.card,
+        title: Text('edit_profile_birth_change_limit_title'.tr(), style: AppTextStyles.titleMedium),
+        content: Text(
+          'edit_profile_birth_change_limit_body'.tr(namedArgs: {'limit': '$limit'}),
+          style: AppTextStyles.bodyMedium,
+        ),
+        actions: [
+          if (isFree)
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text('edit_profile_birth_change_limit_upgrade'.tr(),
+                  style: const TextStyle(color: AppColors.auraAmber)),
+            ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('edit_profile_birth_change_limit_ok'.tr(),
+                style: const TextStyle(color: AppColors.textSecondary)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _persist({
+    required String userId,
+    required UserProfile? profile,
+    required DateTime? birthDate,
+    required String? birthTime,
+    required String birthCity,
+    required double? birthLat,
+    required double? birthLng,
+    required String? sunSign,
+    required String? moonSign,
+    required String? risingSign,
+    required String? mcSign,
+  }) async {
+    final updated = UserProfileModel(
+      id: userId,
+      displayName: profile?.displayName,
+      firstName: _firstName.trim(),
+      lastName: _lastName.trim(),
+      gender: _gender,
+      avatarUrl: profile?.avatarUrl,
+      birthDate: birthDate,
+      birthTime: birthTime,
+      birthCity: birthCity,
+      birthLat: birthLat,
+      birthLng: birthLng,
+      sunSign: sunSign,
+      moonSign: moonSign,
+      risingSign: risingSign,
+      mcSign: mcSign,
+      subscriptionTier: profile?.subscriptionTier ?? 'free',
+      onboardingComplete: true,
+      createdAt: profile?.createdAt ?? DateTime.now(),
+    );
+
+    final result = await ref.read(authRepositoryProvider).updateProfile(updated);
+
+    if (!mounted) return;
+    setState(() => _isSaving = false);
+
+    result.when(
+      success: (_) {
+        ref.invalidate(userProfileProvider);
+        context.pop();
+      },
+      failure: (f) => ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('edit_profile_save_error'.tr(namedArgs: {'error': f.message}))),
+      ),
+    );
   }
 
   Future<void> _save() async {
@@ -95,22 +212,81 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final userId = ref.read(currentUserProvider)?.id;
     if (userId == null) return;
 
-    setState(() => _isSaving = true);
-
     final birthTimeStr =
         '${_birthTime!.hour.toString().padLeft(2, '0')}:${_birthTime!.minute.toString().padLeft(2, '0')}';
+    final birthCityTrimmed = _birthCity.trim();
+
+    final birthChanged = profile != null &&
+        (!_isSameDate(profile.birthDate, _birthDate) ||
+            _normalizedTime(profile.birthTime) != birthTimeStr ||
+            profile.birthCity?.trim() != birthCityTrimmed);
+
+    if (!birthChanged) {
+      // Only name/gender/etc. changed — no recalculation needed, no edit consumed.
+      setState(() => _isSaving = true);
+      await _persist(
+        userId: userId,
+        profile: profile,
+        birthDate: profile?.birthDate ?? _birthDate,
+        birthTime: profile?.birthTime ?? birthTimeStr,
+        birthCity: profile?.birthCity ?? birthCityTrimmed,
+        birthLat: profile?.birthLat,
+        birthLng: profile?.birthLng,
+        sunSign: profile?.sunSign,
+        moonSign: profile?.moonSign,
+        risingSign: profile?.risingSign,
+        mcSign: profile?.mcSign,
+      );
+      return;
+    }
+
+    final remaining = profile.birthDataEditsRemaining;
+    if (remaining <= 0) {
+      final wantsUpgrade = await _showBirthChangeLimitDialog(
+        limit: profile.birthDataEditLimit,
+        isFree: !profile.isPremium,
+      );
+      if (wantsUpgrade == true && mounted) {
+        context.push('/paywall');
+        return;
+      }
+      // Save the non-birth-field changes, keeping birth data at its current value.
+      setState(() => _isSaving = true);
+      await _persist(
+        userId: userId,
+        profile: profile,
+        birthDate: profile.birthDate,
+        birthTime: profile.birthTime,
+        birthCity: profile.birthCity ?? birthCityTrimmed,
+        birthLat: profile.birthLat,
+        birthLng: profile.birthLng,
+        sunSign: profile.sunSign,
+        moonSign: profile.moonSign,
+        risingSign: profile.risingSign,
+        mcSign: profile.mcSign,
+      );
+      return;
+    }
+
+    final confirmed = await _showBirthChangeConfirmDialog(
+      remaining: remaining,
+      limit: profile.birthDataEditLimit,
+    );
+    if (confirmed != true) return;
+
+    setState(() => _isSaving = true);
 
     var sunSign = _sunSignFromDate(_birthDate!);
-    var moonSign = profile?.moonSign;
-    var risingSign = profile?.risingSign;
-    var mcSign = profile?.mcSign;
-    var birthLat = profile?.birthLat;
-    var birthLng = profile?.birthLng;
+    var moonSign = profile.moonSign;
+    var risingSign = profile.risingSign;
+    var mcSign = profile.mcSign;
+    var birthLat = profile.birthLat;
+    var birthLng = profile.birthLng;
 
     final bigThree = await ref.read(astrologyRepositoryProvider).calculateBigThree(
           birthDate: _birthDate!,
           birthTime: birthTimeStr,
-          birthCity: _birthCity.trim(),
+          birthCity: birthCityTrimmed,
         );
     bool bigThreeFailed = false;
     bigThree.when(
@@ -128,7 +304,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       },
     );
 
-    if (bigThreeFailed && mounted) {
+    if (bigThreeFailed) {
+      if (!mounted) return;
       setState(() => _isSaving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -139,40 +316,44 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       return;
     }
 
-    final updated = UserProfileModel(
-      id: userId,
-      displayName: profile?.displayName,
-      firstName: _firstName.trim(),
-      lastName: _lastName.trim(),
-      gender: _gender,
-      avatarUrl: profile?.avatarUrl,
+    final editResult = await ref.read(authRepositoryProvider).editBirthData(
+          birthDate: _birthDate!,
+          birthTime: birthTimeStr,
+          birthCity: birthCityTrimmed,
+          birthLat: birthLat,
+          birthLng: birthLng,
+          sunSign: sunSign,
+          moonSign: moonSign,
+          risingSign: risingSign,
+          mcSign: mcSign,
+        );
+
+    if (!mounted) return;
+
+    final editOk = editResult.when(
+      success: (_) => true,
+      failure: (f) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('edit_profile_save_error'.tr(namedArgs: {'error': f.message}))),
+        );
+        return false;
+      },
+    );
+    if (!editOk) return;
+
+    await _persist(
+      userId: userId,
+      profile: profile,
       birthDate: _birthDate,
       birthTime: birthTimeStr,
-      birthCity: _birthCity.trim(),
+      birthCity: birthCityTrimmed,
       birthLat: birthLat,
       birthLng: birthLng,
       sunSign: sunSign,
       moonSign: moonSign,
       risingSign: risingSign,
       mcSign: mcSign,
-      subscriptionTier: profile?.subscriptionTier ?? 'free',
-      onboardingComplete: true,
-      createdAt: profile?.createdAt ?? DateTime.now(),
-    );
-
-    final result = await ref.read(authRepositoryProvider).updateProfile(updated);
-
-    if (!mounted) return;
-    setState(() => _isSaving = false);
-
-    result.when(
-      success: (_) {
-        ref.invalidate(userProfileProvider);
-        context.pop();
-      },
-      failure: (f) => ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('edit_profile_save_error'.tr(namedArgs: {'error': f.message}))),
-      ),
     );
   }
 

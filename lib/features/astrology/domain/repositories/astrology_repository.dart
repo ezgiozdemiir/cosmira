@@ -44,9 +44,36 @@ abstract class AstrologyRepository {
     String language = 'en',
   });
 
-  Future<Result<bool>> hasBirthMap(String userId);
-  Future<Result<BirthMap?>> getBirthMap(String userId, {String language = 'en'});
+  /// [birthDataVersion] scopes the check to the birth data currently on the
+  /// user's profile — editing birth data bumps the version, so a report
+  /// generated for an older version no longer counts as "already paid" and
+  /// must be purchased again, while remaining in the database as history.
+  Future<Result<bool>> hasBirthMap(String userId, {int birthDataVersion = 0});
+  Future<Result<BirthMap?>> getBirthMap(String userId,
+      {String language = 'en', int birthDataVersion = 0});
+
+  /// One entry per birth-data version the user has ever paid for, newest
+  /// first — lets the user browse reports generated before a birth-data
+  /// edit, which are kept forever rather than deleted.
+  Future<Result<List<BirthMap>>> getBirthMapHistory(String userId);
   Future<Result<BirthMap>> generateBirthMap({
+    required String sunSign,
+    required String moonSign,
+    required String risingSign,
+    required String mcSign,
+    required String birthDate,
+    required String birthCity,
+    String language = 'en',
+  });
+
+  /// Loved-One variants: scoped by `lovedOneId` instead of
+  /// user_id+birthDataVersion, since a `loved_ones` row is immutable once
+  /// created (no version dimension to track).
+  Future<Result<bool>> hasBirthMapForLovedOne(String lovedOneId);
+  Future<Result<BirthMap?>> getBirthMapForLovedOne(String lovedOneId,
+      {String language = 'en'});
+  Future<Result<BirthMap>> generateBirthMapForLovedOne({
+    required String lovedOneId,
     required String sunSign,
     required String moonSign,
     required String risingSign,

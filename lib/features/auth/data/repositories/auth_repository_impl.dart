@@ -164,6 +164,46 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Result<int>> editBirthData({
+    required DateTime birthDate,
+    required String birthTime,
+    required String birthCity,
+    double? birthLat,
+    double? birthLng,
+    required String sunSign,
+    String? moonSign,
+    String? risingSign,
+    String? mcSign,
+  }) async {
+    try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) return Result.failure(const AuthFailure('Not logged in'));
+
+      final response = await _client.rpc('edit_birth_data', params: {
+        'p_user_id': userId,
+        'p_birth_date': birthDate.toIso8601String().split('T').first,
+        'p_birth_time': birthTime,
+        'p_birth_city': birthCity,
+        'p_birth_lat': birthLat,
+        'p_birth_lng': birthLng,
+        'p_sun_sign': sunSign,
+        'p_moon_sign': moonSign,
+        'p_rising_sign': risingSign,
+        'p_mc_sign': mcSign,
+      }) as Map<String, dynamic>;
+
+      final success = response['success'] as bool? ?? false;
+      final limit = (response['limit'] as num?)?.toInt() ?? 0;
+      if (!success) {
+        return Result.failure(EditLimitReachedFailure(used: limit, limit: limit));
+      }
+      return Result.success((response['remaining'] as num?)?.toInt() ?? 0);
+    } catch (e) {
+      return Result.failure(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Result<UserProfile>> updateProfile(UserProfile profile) async {
     try {
       // Refresh the session first — throws AuthException if the account was

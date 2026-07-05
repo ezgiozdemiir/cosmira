@@ -1,22 +1,28 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/haptic_utils.dart';
+import '../../../astrocartography/presentation/providers/astrocartography_provider.dart';
 
-class QuickActionGrid extends StatelessWidget {
+class QuickActionGrid extends ConsumerWidget {
   const QuickActionGrid({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final astroUnlocked =
+        ref.watch(astrocartographyUnlockedProvider).valueOrNull ?? false;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('explore_title'.tr(), style: AppTextStyles.headlineSmall),
         const SizedBox(height: 16),
         _AstrocartographyBanner(
+          unlocked: astroUnlocked,
           onTap: () => context.push('/astrocartography'),
         ),
         const SizedBox(height: 12),
@@ -24,7 +30,7 @@ class QuickActionGrid extends StatelessWidget {
           crossAxisCount: 2,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
-          childAspectRatio: 1.15,
+          childAspectRatio: 0.85,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           children: [
@@ -42,7 +48,7 @@ class QuickActionGrid extends StatelessWidget {
               description: 'explore_compatibility_desc'.tr(),
               buttonLabel: 'explore_compatibility_btn'.tr(),
               color: AppColors.auraRose,
-              onTap: () => context.go('/compatibility'),
+              onTap: () => context.push('/compatibility'),
             ),
             _ExploreTile(
               iconData: Icons.air,
@@ -65,6 +71,10 @@ class QuickActionGrid extends StatelessWidget {
         const SizedBox(height: 12),
         _NumerologyBanner(
           onTap: () => context.push('/numerology'),
+        ),
+        const SizedBox(height: 12),
+        _LovedOnesBanner(
+          onTap: () => context.push('/loved-ones'),
         ),
       ],
     );
@@ -230,9 +240,80 @@ class _NumerologyBanner extends StatelessWidget {
   }
 }
 
+class _LovedOnesBanner extends StatelessWidget {
+  final VoidCallback onTap;
+  const _LovedOnesBanner({required this.onTap});
+
+  static const _color = Color(0xFFF472B6);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        HapticUtils.light();
+        onTap();
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0x36F472B6), Color(0x148B5CF6)],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: _color.withValues(alpha: 0.30)),
+        ),
+        child: Row(
+          children: [
+            const Text('🎁', style: TextStyle(fontSize: 36)),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'explore_loved_ones'.tr(),
+                    style: AppTextStyles.titleMedium.copyWith(color: Colors.white),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'explore_loved_ones_desc'.tr(),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textSecondary,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: _color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _color.withValues(alpha: 0.4)),
+              ),
+              child: Text(
+                'explore_loved_ones_btn'.tr(),
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: _color,
+                  fontSize: 10,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _AstrocartographyBanner extends StatelessWidget {
   final VoidCallback onTap;
-  const _AstrocartographyBanner({required this.onTap});
+  final bool unlocked;
+  const _AstrocartographyBanner({required this.onTap, this.unlocked = false});
 
   static const _color = Color(0xFF0EA5E9);
 
@@ -274,31 +355,33 @@ class _AstrocartographyBanner extends StatelessWidget {
                       height: 1.4,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppColors.auraAmber.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color: AppColors.auraAmber.withValues(alpha: 0.3)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'explore_astrocartography_cost'.tr(),
-                          style: AppTextStyles.labelSmall.copyWith(
-                            color: AppColors.auraAmber,
-                            fontSize: 9,
+                  if (!unlocked) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.auraAmber.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                            color: AppColors.auraAmber.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'explore_astrocartography_cost'.tr(),
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: AppColors.auraAmber,
+                              fontSize: 9,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 3),
-                        const Icon(Icons.auto_awesome,
-                            color: AppColors.auraAmber, size: 9),
-                      ],
+                          const SizedBox(width: 3),
+                          const Icon(Icons.auto_awesome,
+                              color: AppColors.auraAmber, size: 9),
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -311,7 +394,9 @@ class _AstrocartographyBanner extends StatelessWidget {
                 border: Border.all(color: _color.withValues(alpha: 0.4)),
               ),
               child: Text(
-                'explore_astrocartography_btn'.tr(),
+                unlocked
+                    ? 'explore_astrocartography_view'.tr()
+                    : 'explore_astrocartography_btn'.tr(),
                 style: AppTextStyles.labelSmall.copyWith(
                   color: _color,
                   fontSize: 10,

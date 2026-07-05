@@ -40,6 +40,8 @@ class CompatibilityRepositoryImpl implements CompatibilityRepository {
         'birth_lat': partner.birthLat,
         'birth_lng': partner.birthLng,
         'sun_sign': partner.sunSign,
+        'moon_sign': partner.moonSign,
+        'rising_sign': partner.risingSign,
         'relationship': partner.relationship,
       }).select().single();
 

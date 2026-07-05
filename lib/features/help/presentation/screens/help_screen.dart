@@ -145,7 +145,7 @@ const _faqsEn = [
   ),
   _FaqItem(
     'Can I change my birth information?',
-    'Yes. Go to your Profile and tap Edit Profile to update your birth date, time, and city at any time.',
+    'Yes, from Edit Profile — but changing your birth date, time, or city recalculates your entire chart, so we limit how often it can be done to keep one account from being shared by multiple people. Free plans get 2 lifetime changes, Pro plans get 5. Each time you save a birth-info change, you\'ll see how many you have left. Any Birth Map or Astrocartography report you already generated stays saved, but generating a new one for updated birth data costs Stardust again.',
   ),
   _FaqItem(
     'How do I cancel my subscription?',
@@ -184,7 +184,7 @@ const _faqsTr = [
   ),
   _FaqItem(
     'Doğum bilgilerimi değiştirebilir miyim?',
-    'Evet. Profilinize gidin ve doğum tarihinizi, saatinizi ve şehrinizi istediğiniz zaman güncellemek için Profili Düzenle\'ye dokunun.',
+    'Evet, Profili Düzenle üzerinden — ancak doğum tarihinizi, saatinizi veya şehrinizi değiştirmek tüm haritanızı yeniden hesapladığı için, bir hesabın birden fazla kişi tarafından paylaşılmasını önlemek amacıyla bunu ne sıklıkla yapabileceğinizi sınırlandırıyoruz. Ücretsiz planlar ömür boyu 2, Pro planlar 5 değişiklik hakkı sunar. Her doğum bilgisi değişikliğini kaydettiğinizde kaç hakkınızın kaldığını görürsünüz. Daha önce oluşturduğunuz Doğum Haritası veya Astrokartografya raporları saklanmaya devam eder, ancak güncellenen doğum bilgileriyle yeni bir rapor oluşturmak tekrar Yıldız Tozu gerektirir.',
   ),
   _FaqItem(
     'Aboneliğimi nasıl iptal ederim?',

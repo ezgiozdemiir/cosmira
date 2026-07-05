@@ -314,10 +314,10 @@ class _BundleGrid extends StatelessWidget {
   const _BundleGrid();
 
   static const _bundles = [
-    (amount: 50,  price: '₺29',  label: 'Starter'),
-    (amount: 100, price: '₺49',  label: 'Explorer'),
-    (amount: 200, price: '₺89',  label: 'Seeker'),
-    (amount: 500, price: '₺199', label: 'Cosmic'),
+    (amount: 100, price: '₺79',  label: 'Starter'),
+    (amount: 200, price: '₺149', label: 'Explorer'),
+    (amount: 300, price: '₺199', label: 'Seeker'),
+    (amount: 600, price: '₺349', label: 'Cosmic'),
   ];
 
   @override

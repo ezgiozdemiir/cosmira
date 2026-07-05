@@ -5,12 +5,14 @@ class BirthMap extends Equatable {
   final String userId;
   final Map<String, dynamic> content;
   final DateTime createdAt;
+  final int birthDataVersion;
 
   const BirthMap({
     required this.id,
     required this.userId,
     required this.content,
     required this.createdAt,
+    this.birthDataVersion = 0,
   });
 
   factory BirthMap.fromJson(Map<String, dynamic> json) => BirthMap(
@@ -18,6 +20,7 @@ class BirthMap extends Equatable {
         userId: json['user_id'] as String,
         content: json['content'] as Map<String, dynamic>,
         createdAt: DateTime.parse(json['created_at'] as String),
+        birthDataVersion: (json['birth_data_version'] as num?)?.toInt() ?? 0,
       );
 
   String? get cosmicFingerprint => content['cosmic_fingerprint'] as String?;

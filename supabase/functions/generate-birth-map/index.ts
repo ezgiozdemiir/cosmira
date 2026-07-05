@@ -3,6 +3,13 @@
 // Atomically deducts 200 Stardust, generates a comprehensive astrological
 // birth map via Gemini, and stores it per-user per-language permanently.
 // Subsequent calls for the same language return the cached map at no cost.
+//
+// Also supports generating a Birth Map for a "Loved One" (see the
+// `loved_ones` table, migration 018): pass `loved_one_id` in the body and
+// the function reads/writes against `loved_one_birth_maps` (keyed by
+// loved_one_id) instead of `birth_maps` (keyed by user_id+birth_data_version).
+// loved_ones rows are immutable once created, so there's no version
+// dimension to track for them.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -168,8 +175,9 @@ serve(async (req) => {
       throw new Error(`STEP_BODY_PARSE: ${e instanceof Error ? e.message : String(e)}`);
     }
 
-    const { sun_sign, moon_sign, rising_sign, mc_sign, birth_date, birth_city } = body;
+    const { sun_sign, moon_sign, rising_sign, mc_sign, birth_date, birth_city, loved_one_id } = body;
     const language = body.language ?? "en";
+    const lovedOneId = loved_one_id || null;
 
     if (!sun_sign || !moon_sign || !rising_sign) {
       return new Response(
@@ -180,11 +188,47 @@ serve(async (req) => {
 
     const otherLang = language === "en" ? "tr" : "en";
 
-    // Return cached map if already purchased for this language — no cost
+    // The Loved-One flow scopes caching/charging to loved_one_id (rows are
+    // immutable once created — no version dimension needed). The self flow
+    // scopes to birth_data_version, read server-side so the client can't
+    // spoof it — birth data can change (see edit_birth_data RPC), and older
+    // versions are left in place as history.
+    const mapsTable = lovedOneId ? "loved_one_birth_maps" : "birth_maps";
+    let scopeFilter: Record<string, string | number>;
+
+    if (lovedOneId) {
+      const { data: lovedOne, error: lovedOneError } = await supabase
+        .from("loved_ones")
+        .select("id")
+        .eq("id", lovedOneId)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (lovedOneError) throw new Error(`STEP_LOVED_ONE_FETCH: ${lovedOneError.message}`);
+      if (!lovedOne) {
+        return new Response(
+          JSON.stringify({ error: "loved_one_not_found" }),
+          { status: 404, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+        );
+      }
+      scopeFilter = { loved_one_id: lovedOneId };
+    } else {
+      const { data: profileRow, error: profileError } = await supabase
+        .from("profiles")
+        .select("birth_data_version")
+        .eq("id", userId)
+        .single();
+
+      if (profileError) throw new Error(`STEP_PROFILE_FETCH: ${profileError.message}`);
+      scopeFilter = { user_id: userId, birth_data_version: profileRow.birth_data_version ?? 0 };
+    }
+
+    // Return cached map if already purchased for this scope and language —
+    // no cost
     const { data: existing, error: existingError } = await supabase
-      .from("birth_maps")
+      .from(mapsTable)
       .select("*")
-      .eq("user_id", userId)
+      .match(scopeFilter)
       .eq("language", language)
       .maybeSingle();
 
@@ -193,11 +237,11 @@ serve(async (req) => {
     if (existing) {
       // Also generate the other language in background if missing
       const { data: otherExists } = await supabase
-        .from("birth_maps").select("id").eq("user_id", userId).eq("language", otherLang).maybeSingle();
+        .from(mapsTable).select("id").match(scopeFilter).eq("language", otherLang).maybeSingle();
       if (!otherExists) {
         const birthYear = birth_date ? new Date(birth_date).getFullYear() : new Date().getFullYear();
         generateContent({ sunSign: sun_sign, moonSign: moon_sign, risingSign: rising_sign, mcSign: mc_sign ?? "", birthYear, birthCity: birth_city ?? "", language: otherLang })
-          .then(c => supabase.from("birth_maps").insert({ user_id: userId, content: c, language: otherLang }))
+          .then(c => supabase.from(mapsTable).insert({ user_id: userId, ...scopeFilter, content: c, language: otherLang }))
           .catch(e => console.error("Background other-lang birth map failed:", e));
       }
       return new Response(
@@ -206,16 +250,17 @@ serve(async (req) => {
       );
     }
 
-    // Check if user already has a birth map in any language (already paid)
+    // Check if this scope already has a birth map in any language (already
+    // paid for it)
     const { data: anyExisting } = await supabase
-      .from("birth_maps").select("id").eq("user_id", userId).limit(1).maybeSingle();
+      .from(mapsTable).select("id").match(scopeFilter).limit(1).maybeSingle();
 
     if (!anyExisting) {
       // First-time purchase — atomically deduct stardust
       const { data: spendOk, error: spendError } = await supabase.rpc("spend_stardust", {
         p_user_id: userId,
         p_amount: BIRTH_MAP_COST,
-        p_description: "Cosmic Fingerprint: Birth Map",
+        p_description: lovedOneId ? "Cosmic Fingerprint: Birth Map (Loved One)" : "Cosmic Fingerprint: Birth Map",
       });
 
       if (spendError) throw new Error(`STEP_SPEND: ${spendError.message}`);
@@ -226,7 +271,7 @@ serve(async (req) => {
         );
       }
     }
-    // else: user already paid — generate additional language for free
+    // else: already paid — generate additional language for free
 
     const birthYear = birth_date
       ? new Date(birth_date).getFullYear()
@@ -257,8 +302,8 @@ serve(async (req) => {
     }
 
     const { data: inserted, error: insertError } = await supabase
-      .from("birth_maps")
-      .insert({ user_id: userId, content, language })
+      .from(mapsTable)
+      .insert({ user_id: userId, ...scopeFilter, content, language })
       .select()
       .single();
 
@@ -279,13 +324,13 @@ serve(async (req) => {
     // Check if other language already exists, then kick off background generation.
     // We do NOT await this — the response is returned immediately above.
     const { data: otherExists } = await supabase
-      .from("birth_maps").select("id").eq("user_id", userId).eq("language", otherLang).maybeSingle();
+      .from(mapsTable).select("id").match(scopeFilter).eq("language", otherLang).maybeSingle();
 
     if (!otherExists) {
       generateContent({ ...genParams, language: otherLang })
         .then((otherContent) =>
-          supabase.from("birth_maps")
-            .insert({ user_id: userId, content: otherContent, language: otherLang })
+          supabase.from(mapsTable)
+            .insert({ user_id: userId, ...scopeFilter, content: otherContent, language: otherLang })
         )
         .catch((e: unknown) => console.error("Background other-lang generation failed:", e));
     }

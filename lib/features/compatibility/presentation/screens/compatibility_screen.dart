@@ -25,12 +25,30 @@ class CompatibilityScreen extends ConsumerWidget {
         ref.watch(userProfileProvider).valueOrNull?.isPremium ?? false;
     final limit = isPremium ? _premiumLimit : _freeLimit;
 
-    return SafeArea(
+    return Scaffold(
+      backgroundColor: AppColors.midnight,
+      body: Container(
+        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
+        child: SafeArea(
       child: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              padding: const EdgeInsets.fromLTRB(4, 12, 20, 0),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => context.pop(),
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white70, size: 20),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
               child: Row(
                 children: [
                   Expanded(
@@ -175,6 +193,8 @@ class CompatibilityScreen extends ConsumerWidget {
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
+        ),
+      ),
     );
   }
 
@@ -202,6 +222,7 @@ class _AddPartnerSheetState extends ConsumerState<_AddPartnerSheet> {
 
   String _relationship = 'romantic';
   DateTime? _birthDate;
+  TimeOfDay? _birthTime;
 
   List<(String, String, String)> get _relationships => [
         ('romantic', '💕', 'compat_romantic'.tr()),
@@ -239,6 +260,25 @@ class _AddPartnerSheetState extends ConsumerState<_AddPartnerSheet> {
     if (picked != null) setState(() => _birthDate = picked);
   }
 
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _birthTime ?? const TimeOfDay(hour: 12, minute: 0),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.dark(
+            primary: AppColors.auraRose,
+            onPrimary: Colors.white,
+            surface: AppColors.card,
+            onSurface: AppColors.textPrimary,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) setState(() => _birthTime = picked);
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_birthDate == null) {
@@ -248,11 +288,16 @@ class _AddPartnerSheetState extends ConsumerState<_AddPartnerSheet> {
       return;
     }
 
+    final birthTimeStr = _birthTime != null
+        ? '${_birthTime!.hour.toString().padLeft(2, '0')}:${_birthTime!.minute.toString().padLeft(2, '0')}'
+        : null;
+
     final success = await ref.read(addPartnerProvider.notifier).addPartner(
           name: _nameController.text,
           birthDate: _birthDate!,
           relationship: _relationship,
           birthCity: _cityController.text,
+          birthTime: birthTimeStr,
         );
 
     if (success && mounted) Navigator.of(context).pop();
@@ -385,6 +430,50 @@ class _AddPartnerSheetState extends ConsumerState<_AddPartnerSheet> {
                   'compat_birth_city_opt'.tr(), Icons.location_on_outlined),
               style: AppTextStyles.bodyMedium,
             ),
+            const SizedBox(height: 16),
+
+            GestureDetector(
+              onTap: _pickTime,
+              child: Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: _birthTime != null
+                        ? AppColors.auraRose
+                        : AppColors.textTertiary.withValues(alpha: 0.3),
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.access_time_outlined,
+                      size: 18,
+                      color: _birthTime != null
+                          ? AppColors.auraRose
+                          : AppColors.textTertiary,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      _birthTime != null
+                          ? _birthTime!.format(context)
+                          : 'compat_birth_time_opt'.tr(),
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: _birthTime != null
+                            ? AppColors.textPrimary
+                            : AppColors.textTertiary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text('compat_birth_time_hint'.tr(),
+                style: AppTextStyles.bodySmall
+                    .copyWith(color: AppColors.textTertiary, fontSize: 11)),
             const SizedBox(height: 24),
 
             if (error != null) ...[

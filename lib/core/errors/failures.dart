@@ -39,3 +39,15 @@ class InsufficientStardustFailure extends Failure {
 class SubscriptionRequiredFailure extends Failure {
   const SubscriptionRequiredFailure([super.message = 'Premium subscription required']);
 }
+
+class EditLimitReachedFailure extends Failure {
+  final int used;
+  final int limit;
+  const EditLimitReachedFailure({
+    required this.used,
+    required this.limit,
+  }) : super('Birth data edit limit reached');
+
+  @override
+  List<Object?> get props => [message, used, limit];
+}

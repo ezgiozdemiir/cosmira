@@ -160,12 +160,13 @@ class AstrologyRepositoryImpl implements AstrologyRepository {
   }
 
   @override
-  Future<Result<bool>> hasBirthMap(String userId) async {
+  Future<Result<bool>> hasBirthMap(String userId, {int birthDataVersion = 0}) async {
     try {
       final data = await _client
           .from('birth_maps')
           .select('id')
           .eq('user_id', userId)
+          .eq('birth_data_version', birthDataVersion)
           .limit(1)
           .maybeSingle();
       return Result.success(data != null);
@@ -175,16 +176,44 @@ class AstrologyRepositoryImpl implements AstrologyRepository {
   }
 
   @override
-  Future<Result<BirthMap?>> getBirthMap(String userId, {String language = 'en'}) async {
+  Future<Result<BirthMap?>> getBirthMap(String userId,
+      {String language = 'en', int birthDataVersion = 0}) async {
     try {
       final data = await _client
           .from('birth_maps')
           .select()
           .eq('user_id', userId)
+          .eq('birth_data_version', birthDataVersion)
           .eq('language', language)
           .maybeSingle();
       if (data == null) return Result.success(null);
       return Result.success(BirthMap.fromJson(data));
+    } catch (e) {
+      return Result.failure(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Result<List<BirthMap>>> getBirthMapHistory(String userId) async {
+    try {
+      final data = await _client
+          .from('birth_maps')
+          .select()
+          .eq('user_id', userId)
+          .order('birth_data_version', ascending: false)
+          .order('created_at', ascending: true);
+
+      final all = (data as List)
+          .map((j) => BirthMap.fromJson(j as Map<String, dynamic>))
+          .toList();
+
+      // Collapse multiple languages of the same version into one entry.
+      final seenVersions = <int>{};
+      final deduped = <BirthMap>[];
+      for (final map in all) {
+        if (seenVersions.add(map.birthDataVersion)) deduped.add(map);
+      }
+      return Result.success(deduped);
     } catch (e) {
       return Result.failure(ServerFailure(e.toString()));
     }
@@ -204,6 +233,71 @@ class AstrologyRepositoryImpl implements AstrologyRepository {
       final response = await _client.functions.invoke(
         'generate-birth-map',
         body: {
+          'sun_sign': sunSign,
+          'moon_sign': moonSign,
+          'rising_sign': risingSign,
+          'mc_sign': mcSign,
+          'birth_date': birthDate,
+          'birth_city': birthCity,
+          'language': language,
+        },
+      );
+      final data = response.data as Map<String, dynamic>;
+      return Result.success(
+          BirthMap.fromJson(data['birth_map'] as Map<String, dynamic>));
+    } catch (e) {
+      return Result.failure(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Result<bool>> hasBirthMapForLovedOne(String lovedOneId) async {
+    try {
+      final data = await _client
+          .from('loved_one_birth_maps')
+          .select('id')
+          .eq('loved_one_id', lovedOneId)
+          .limit(1)
+          .maybeSingle();
+      return Result.success(data != null);
+    } catch (e) {
+      return Result.failure(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Result<BirthMap?>> getBirthMapForLovedOne(String lovedOneId,
+      {String language = 'en'}) async {
+    try {
+      final data = await _client
+          .from('loved_one_birth_maps')
+          .select()
+          .eq('loved_one_id', lovedOneId)
+          .eq('language', language)
+          .maybeSingle();
+      if (data == null) return Result.success(null);
+      return Result.success(BirthMap.fromJson(data));
+    } catch (e) {
+      return Result.failure(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Result<BirthMap>> generateBirthMapForLovedOne({
+    required String lovedOneId,
+    required String sunSign,
+    required String moonSign,
+    required String risingSign,
+    required String mcSign,
+    required String birthDate,
+    required String birthCity,
+    String language = 'en',
+  }) async {
+    try {
+      final response = await _client.functions.invoke(
+        'generate-birth-map',
+        body: {
+          'loved_one_id': lovedOneId,
           'sun_sign': sunSign,
           'moon_sign': moonSign,
           'rising_sign': risingSign,

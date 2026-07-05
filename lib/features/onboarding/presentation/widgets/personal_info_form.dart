@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../auth/domain/entities/user_profile.dart';
+import '../../../../core/widgets/gender_selector.dart';
 
 class PersonalInfoForm extends StatefulWidget {
   final void Function(String firstName, String lastName, String? gender) onDataChanged;
@@ -73,7 +73,7 @@ class _PersonalInfoFormState extends State<PersonalInfoForm> {
         const SizedBox(height: 24),
         _FieldLabel('form_gender'.tr()),
         const SizedBox(height: 8),
-        _GenderSelector(
+        GenderSelector(
           value: _gender,
           onChanged: (g) {
             setState(() => _gender = g);
@@ -81,44 +81,6 @@ class _PersonalInfoFormState extends State<PersonalInfoForm> {
           },
         ),
       ],
-    );
-  }
-}
-
-class _GenderSelector extends StatelessWidget {
-  final String? value;
-  final ValueChanged<String> onChanged;
-
-  const _GenderSelector({required this.value, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: Gender.values.map((g) {
-        final selected = value == g;
-        return GestureDetector(
-          onTap: () => onChanged(g),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              gradient: selected ? AppColors.accentGradient : null,
-              color: selected ? null : AppColors.surface.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: selected ? Colors.transparent : AppColors.cardBorder,
-              ),
-            ),
-            child: Text(
-              'gender_$g'.tr(),
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: selected ? Colors.white : AppColors.textSecondary,
-              ),
-            ),
-          ),
-        );
-      }).toList(),
     );
   }
 }
