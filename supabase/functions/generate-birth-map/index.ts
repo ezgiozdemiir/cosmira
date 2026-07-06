@@ -25,6 +25,97 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+// Mirrors the JSON structure requested in the prompt below. Passed as
+// generationConfig.responseSchema so Gemini is constrained to this exact
+// shape instead of just "some valid JSON" — without it, the model has
+// occasionally nested sections under the wrong key (e.g. everything under
+// `personality`), which silently drops content on the client since
+// BirthMap.fromJson reads each section from a fixed top-level key.
+const BIRTH_MAP_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    cosmic_fingerprint: { type: "STRING" },
+    personality: {
+      type: "OBJECT",
+      properties: {
+        core_essence: { type: "STRING" },
+        light_side: { type: "ARRAY", items: { type: "STRING" } },
+        shadow_side: { type: "ARRAY", items: { type: "STRING" } },
+        unique_gifts: { type: "STRING" },
+      },
+      required: ["core_essence", "light_side", "shadow_side", "unique_gifts"],
+    },
+    life_purpose: {
+      type: "OBJECT",
+      properties: {
+        soul_mission: { type: "STRING" },
+        north_node_path: { type: "STRING" },
+        karmic_lessons: { type: "ARRAY", items: { type: "STRING" } },
+      },
+      required: ["soul_mission", "north_node_path", "karmic_lessons"],
+    },
+    love_and_relationships: {
+      type: "OBJECT",
+      properties: {
+        love_style: { type: "STRING" },
+        what_they_seek: { type: "STRING" },
+        relationship_patterns: { type: "STRING" },
+        venus_wisdom: { type: "STRING" },
+      },
+      required: ["love_style", "what_they_seek", "relationship_patterns", "venus_wisdom"],
+    },
+    career_and_destiny: {
+      type: "OBJECT",
+      properties: {
+        purpose_and_calling: { type: "STRING" },
+        natural_talents: { type: "ARRAY", items: { type: "STRING" } },
+        ideal_paths: { type: "ARRAY", items: { type: "STRING" } },
+        success_formula: { type: "STRING" },
+      },
+      required: ["purpose_and_calling", "natural_talents", "ideal_paths", "success_formula"],
+    },
+    strengths_and_challenges: {
+      type: "OBJECT",
+      properties: {
+        superpowers: { type: "ARRAY", items: { type: "STRING" } },
+        growth_edges: { type: "ARRAY", items: { type: "STRING" } },
+        transformation_key: { type: "STRING" },
+      },
+      required: ["superpowers", "growth_edges", "transformation_key"],
+    },
+    cosmic_timing: {
+      type: "OBJECT",
+      properties: {
+        current_chapter: { type: "STRING" },
+        year_predictions: {
+          type: "ARRAY",
+          items: {
+            type: "OBJECT",
+            properties: {
+              year: { type: "INTEGER" },
+              theme: { type: "STRING" },
+              forecast: { type: "STRING" },
+            },
+            required: ["year", "theme", "forecast"],
+          },
+        },
+      },
+      required: ["current_chapter", "year_predictions"],
+    },
+    cosmic_wisdom: { type: "STRING" },
+  },
+  required: [
+    "cosmic_fingerprint",
+    "personality",
+    "life_purpose",
+    "love_and_relationships",
+    "career_and_destiny",
+    "strengths_and_challenges",
+    "cosmic_timing",
+    "cosmic_wisdom",
+  ],
+};
+
 async function generateContent(params: {
   sunSign: string;
   moonSign: string;
@@ -127,6 +218,7 @@ Return ONLY valid JSON. No markdown, no extra text.${langInstruction}`;
           temperature: 0.9,
           maxOutputTokens: 4096,
           responseMimeType: "application/json",
+          responseSchema: BIRTH_MAP_SCHEMA,
           thinkingConfig: { thinkingBudget: 0 },
         },
       }),

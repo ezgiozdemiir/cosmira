@@ -329,6 +329,19 @@ class NotificationService {
         'data': {'event_key': eventKey},
         'created_at': DateTime.now().toUtc().toIso8601String(),
       });
+    } catch (_) {
+      return;
+    }
+
+    // Best-effort — a push failure should never affect the in-app
+    // notification, which has already been saved above.
+    try {
+      await _client.functions.invoke('send-push', body: {
+        'user_id': userId,
+        'title': title,
+        'body': body,
+        'data': {'type': type, 'event_key': eventKey},
+      });
     } catch (_) {}
   }
 

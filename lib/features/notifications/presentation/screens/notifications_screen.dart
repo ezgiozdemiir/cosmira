@@ -8,12 +8,27 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/extensions/date_extensions.dart';
 import '../providers/notifications_provider.dart';
+import '../providers/unread_notifications_provider.dart';
 
-class NotificationsScreen extends ConsumerWidget {
+class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NotificationsScreen> createState() =>
+      _NotificationsScreenState();
+}
+
+class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Clears the bell badge — fire-and-forget, the badge (a separate
+    // realtime stream) updates itself once the rows flip to read.
+    ref.read(markNotificationsReadProvider)();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final notifications = ref.watch(notificationsProvider);
 
     return Scaffold(

@@ -37,7 +37,7 @@ import '../features/loved_ones/presentation/screens/loved_one_detail_screen.dart
 import '../features/loved_ones/presentation/screens/loved_ones_list_screen.dart';
 import '../core/widgets/shell_scaffold.dart';
 
-final _rootNavigatorKey = GlobalKey<NavigatorState>();
+final rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 /// Converts a [Stream] into a [Listenable] so GoRouter can refresh
@@ -81,7 +81,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       supabase.auth.currentUser != null ? '/' : '/login';
 
   return GoRouter(
-    navigatorKey: _rootNavigatorKey,
+    navigatorKey: rootNavigatorKey,
     initialLocation: initialLocation,
     refreshListenable: refreshListenable,
     redirect: (context, state) {
@@ -160,59 +160,59 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/paywall',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const PaywallScreen(),
       ),
       GoRoute(
         path: '/stardust',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const StardustStoreScreen(),
       ),
       GoRoute(
         path: '/notifications',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const NotificationsScreen(),
       ),
       GoRoute(
         path: '/settings',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
         path: '/profile/edit',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const EditProfileScreen(),
       ),
       GoRoute(
         path: '/birth-map',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const BirthMapScreen(),
       ),
       GoRoute(
         path: '/birth-map/history',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const BirthMapHistoryScreen(),
       ),
       GoRoute(
         path: '/birth-map/history/:version',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => BirthMapScreen(
           historicalVersion: int.tryParse(state.pathParameters['version'] ?? ''),
         ),
       ),
       GoRoute(
         path: '/astrocartography',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const AstrocartographyScreen(),
       ),
       GoRoute(
         path: '/astrocartography/history',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const AstrocartographyHistoryScreen(),
       ),
       GoRoute(
         path: '/astrocartography/history/entry',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final unlock = state.extra as AstrocartographyUnlock?;
           return AstrocartographyScreen(
@@ -223,34 +223,34 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/numerology',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const NumerologyScreen(),
       ),
       GoRoute(
         path: '/help',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const HelpScreen(),
       ),
       GoRoute(
         path: '/terms',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) =>
             const LegalScreen(docType: LegalDocType.terms),
       ),
       GoRoute(
         path: '/privacy',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) =>
             const LegalScreen(docType: LegalDocType.privacy),
       ),
       GoRoute(
         path: '/compatibility',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const CompatibilityScreen(),
       ),
       GoRoute(
         path: '/compatibility/partner',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final partner = state.extra as CompatibilityPartner?;
           if (partner == null) {
@@ -263,12 +263,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/loved-ones',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const LovedOnesScreen(),
       ),
       GoRoute(
         path: '/loved-ones/detail',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final lovedOne = state.extra as LovedOne?;
           if (lovedOne == null) {
@@ -281,7 +281,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/loved-ones/birth-map',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final lovedOne = state.extra as LovedOne?;
           if (lovedOne == null) {
@@ -294,7 +294,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/loved-ones/astrocartography',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final lovedOne = state.extra as LovedOne?;
           if (lovedOne == null) {

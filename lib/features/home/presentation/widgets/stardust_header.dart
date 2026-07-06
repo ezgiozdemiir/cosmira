@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../notifications/presentation/providers/unread_notifications_provider.dart';
 import '../providers/home_provider.dart';
 
 class StardustHeader extends ConsumerWidget {
@@ -13,6 +14,8 @@ class StardustHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final balance = ref.watch(stardustBalanceProvider).valueOrNull ?? 0;
     final streak = ref.watch(streakProvider).valueOrNull ?? 0;
+    final unreadCount =
+        ref.watch(unreadNotificationsCountProvider).valueOrNull ?? 0;
 
     return Row(
       children: [
@@ -64,10 +67,29 @@ class StardustHeader extends ConsumerWidget {
           ),
         ),
         const SizedBox(width: 8),
-        IconButton(
-          icon: const Icon(Icons.notifications_outlined,
-              color: AppColors.textSecondary),
-          onPressed: () => context.push('/notifications'),
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined,
+                  color: AppColors.textSecondary),
+              onPressed: () => context.push('/notifications'),
+            ),
+            if (unreadCount > 0)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.auraAmber,
+                    border: Border.all(color: AppColors.black, width: 1.5),
+                  ),
+                ),
+              ),
+          ],
         ),
       ],
     );

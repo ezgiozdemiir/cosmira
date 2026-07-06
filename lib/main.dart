@@ -9,6 +9,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'dart:ui' show PlatformDispatcher;
 import 'config/env.dart';
 import 'firebase_options.dart';
@@ -16,7 +17,17 @@ import 'core/providers/language_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/web_utils_stub.dart'
     if (dart.library.js_interop) 'core/utils/web_utils_html.dart';
+import 'features/notifications/domain/services/push_notification_service.dart';
+import 'features/notifications/presentation/providers/push_token_sync_provider.dart';
 import 'router/app_router.dart';
+
+// Runs in a separate isolate on Android when a push arrives while the app is
+// backgrounded/terminated — must be a top-level function, and must init
+// Firebase itself since it doesn't share the main isolate's setup.
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +39,9 @@ void main() async {
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     return true;
   };
+
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  await PushNotificationService.instance.initialize();
 
   if (kIsWeb) usePathUrlStrategy();
 
@@ -87,6 +101,7 @@ class CosmiraApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
+    ref.watch(pushTokenSyncProvider);
 
     return MaterialApp.router(
       title: 'Cosmira',

@@ -7,6 +7,7 @@ import '../../../../core/errors/failures.dart';
 import '../../../../core/utils/result.dart';
 import '../../../../core/utils/web_utils_stub.dart'
     if (dart.library.js_interop) '../../../../core/utils/web_utils_html.dart';
+import '../../../notifications/domain/services/push_notification_service.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../models/user_profile_model.dart';
@@ -137,6 +138,7 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Result<void>> signOut() async {
     try {
+      await PushNotificationService.instance.unregisterDeviceToken(_client);
       await _client.auth.signOut();
       return Result.success(null);
     } catch (e) {
