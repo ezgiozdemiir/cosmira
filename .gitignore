@@ -44,5 +44,8 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# CocoaPods
+**/ios/Pods/
+
 # Local build script with secrets
 build.ps1
