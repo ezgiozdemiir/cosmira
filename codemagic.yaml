@@ -16,6 +16,7 @@ workflows:
       vars:
         XCODE_WORKSPACE: "Runner.xcworkspace"
         XCODE_SCHEME: "Runner"
+        FLUTTER_XCODE_CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES: "YES"
       flutter: stable
       xcode: latest
       cocoapods: default
