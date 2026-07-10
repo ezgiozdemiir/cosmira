@@ -28,7 +28,9 @@ workflows:
         script: flutter build ios --release --config-only --no-codesign
       - name: Install CocoaPods dependencies
         script: |
-          cd ios && pod install
+          cd ios
+          rm -rf Pods Podfile.lock
+          pod install
       - name: Flutter build ipa
         script: |
           flutter build ipa --release \
