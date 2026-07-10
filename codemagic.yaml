@@ -9,8 +9,10 @@ workflows:
       groups:
         - cosmira_env
       ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.example.cosmira
+        provisioning_profiles:
+          - cosmira_app_store_profile
+        certificates:
+          - cosmira_distribution_cert
       vars:
         XCODE_WORKSPACE: "Runner.xcworkspace"
         XCODE_SCHEME: "Runner"
