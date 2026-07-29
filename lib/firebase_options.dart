@@ -60,11 +60,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyBzIjLeWIvXMs1ILHmJx6dEf_K-iT93q2U',
-    appId: '1:746202682120:ios:fa6c4b4045089ed29d52bd',
+    appId: '1:746202682120:ios:c95e05120eab76819d52bd',
     messagingSenderId: '746202682120',
     projectId: 'cosmira-5b2b4',
     storageBucket: 'cosmira-5b2b4.firebasestorage.app',
-    iosBundleId: 'com.example.cosmira',
+    iosBundleId: 'com.ezgiozdemir.cosmira',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
