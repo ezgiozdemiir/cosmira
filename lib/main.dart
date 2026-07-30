@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -41,7 +43,6 @@ void main() async {
   };
 
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  await PushNotificationService.instance.initialize();
 
   if (kIsWeb) usePathUrlStrategy();
 
@@ -93,6 +94,11 @@ void main() async {
       ),
     ),
   );
+
+  // Runs after the UI is up so a stuck native plugin call (e.g. a permission
+  // dialog or channel handshake that never returns) can't hold the whole app
+  // hostage on a white screen — see the build 9 white-screen investigation.
+  unawaited(PushNotificationService.instance.initialize());
 }
 
 class CosmiraApp extends ConsumerWidget {
