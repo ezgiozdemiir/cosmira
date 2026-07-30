@@ -29,7 +29,7 @@ class AuthRepositoryImpl implements AuthRepository {
       );
       return Result.success(null);
     } catch (e) {
-      return Result.failure(AuthFailure(e.toString()));
+      return Result.failure(AuthFailure(_mapAuthError(e)));
     }
   }
 
@@ -57,7 +57,7 @@ class AuthRepositoryImpl implements AuthRepository {
       );
       return Result.success(null);
     } catch (e) {
-      return Result.failure(AuthFailure(e.toString()));
+      return Result.failure(AuthFailure(_mapAuthError(e)));
     }
   }
 
@@ -67,7 +67,7 @@ class AuthRepositoryImpl implements AuthRepository {
       await _client.auth.signInWithPassword(email: email, password: password);
       return Result.success(null);
     } catch (e) {
-      return Result.failure(AuthFailure(e.toString()));
+      return Result.failure(AuthFailure(_mapAuthError(e)));
     }
   }
 
@@ -117,6 +117,9 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   static String _mapAuthError(Object e) {
+    if (e is AuthRetryableFetchException) {
+      return 'auth_err_network';
+    }
     if (e is AuthApiException) {
       switch (e.code) {
         case 'over_email_send_rate_limit':
@@ -132,7 +135,7 @@ class AuthRepositoryImpl implements AuthRepository {
           return e.message;
       }
     }
-    return e.toString();
+    return 'auth_err_generic';
   }
 
   @override

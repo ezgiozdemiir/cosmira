@@ -322,6 +322,8 @@ class _EmailAuthSheetState extends ConsumerState<_EmailAuthSheet> {
       'auth_err_email_exists',
       'auth_err_invalid_credentials',
       'auth_err_weak_password',
+      'auth_err_network',
+      'auth_err_generic',
     };
     return keys.contains(key) ? context.tr(key) : key;
   }

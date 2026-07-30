@@ -861,6 +861,8 @@
   "auth_err_email_exists": "Bu e-posta ile zaten bir hesap mevcut. Lütfen giriş yapın.",
   "auth_err_invalid_credentials": "E-posta veya şifre hatalı.",
   "auth_err_weak_password": "Şifre çok zayıf. Lütfen daha güçlü bir şifre seçin.",
+  "auth_err_network": "Bağlanılamadı. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.",
+  "auth_err_generic": "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
 
   "confirm_email_title": "Gelen Kutunuzu Kontrol Edin",
   "confirm_email_subtitle": "Aşağıdaki adrese bir onay bağlantısı gönderdik:",

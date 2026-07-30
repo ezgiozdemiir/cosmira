@@ -861,6 +861,8 @@
   "auth_err_email_exists": "An account with this email already exists. Please sign in instead.",
   "auth_err_invalid_credentials": "Incorrect email or password.",
   "auth_err_weak_password": "Password is too weak. Please choose a stronger one.",
+  "auth_err_network": "Couldn't connect. Please check your internet connection and try again.",
+  "auth_err_generic": "Something went wrong. Please try again.",
 
   "confirm_email_title": "Check Your Inbox",
   "confirm_email_subtitle": "We sent a confirmation link to",
