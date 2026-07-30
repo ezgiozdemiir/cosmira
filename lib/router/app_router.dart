@@ -134,27 +134,38 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/',
-            builder: (context, state) => const HomeScreen(),
+            // Shell tab screens have no opaque background of their own (they
+            // rely on ShellScaffold's shared gradient) — an animated page
+            // transition briefly mounts two of them at once with nothing
+            // opaque between them, so their content visually overlaps.
+            // NoTransitionPage makes tab switches an instant swap instead.
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: HomeScreen()),
           ),
           GoRoute(
             path: '/astrology',
-            builder: (context, state) => const NatalChartScreen(),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: NatalChartScreen()),
           ),
           GoRoute(
             path: '/horoscope',
-            builder: (context, state) => const DailyHoroscopeScreen(),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: DailyHoroscopeScreen()),
           ),
           GoRoute(
             path: '/breathwork',
-            builder: (context, state) => const BreathworkScreen(),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: BreathworkScreen()),
           ),
           GoRoute(
             path: '/moon',
-            builder: (context, state) => const MoonCalendarScreen(),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: MoonCalendarScreen()),
           ),
           GoRoute(
             path: '/profile',
-            builder: (context, state) => const ProfileScreen(),
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: ProfileScreen()),
           ),
         ],
       ),
