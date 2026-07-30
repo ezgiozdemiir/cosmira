@@ -26,6 +26,12 @@ class AuthRepositoryImpl implements AuthRepository {
       await _client.auth.signInWithOAuth(
         OAuthProvider.apple,
         redirectTo: _redirectTo,
+        // The default in-app browser sheet (SFSafariViewController) doesn't
+        // reliably hand the io.cosmira.app:// redirect back to the app on
+        // iOS — it dead-ends on a blank page. Opening in full Safari lets
+        // the OS complete the custom-scheme handoff correctly.
+        authScreenLaunchMode:
+            kIsWeb ? LaunchMode.platformDefault : LaunchMode.externalApplication,
       );
       return Result.success(null);
     } catch (e) {
@@ -54,6 +60,8 @@ class AuthRepositoryImpl implements AuthRepository {
       await _client.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: _redirectTo,
+        // See signInWithApple for why this isn't the platform default.
+        authScreenLaunchMode: LaunchMode.externalApplication,
       );
       return Result.success(null);
     } catch (e) {
