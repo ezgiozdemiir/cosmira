@@ -1648,7 +1648,7 @@ class _FamilyProLockedCard extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               color: AppColors.midnight.withValues(alpha: 0.75),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
             ),
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Column(

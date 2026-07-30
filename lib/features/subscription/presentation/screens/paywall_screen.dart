@@ -169,22 +169,34 @@ class _PlanOption extends StatelessWidget {
         ),
         child: Column(
           children: [
-            if (badge != null) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.auraAmber.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  badge!,
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.auraAmber,
+            // Reserve the badge's space on every plan (even ones without a
+            // badge) so the label text lines up at the same vertical
+            // position across all plan cards.
+            Visibility(
+              visible: badge != null,
+              maintainSize: true,
+              maintainAnimation: true,
+              maintainState: true,
+              child: Column(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.auraAmber.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      badge ?? '',
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: AppColors.auraAmber,
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 8),
+                ],
               ),
-              const SizedBox(height: 8),
-            ],
+            ),
             Text(label, style: AppTextStyles.titleMedium),
             const SizedBox(height: 4),
             Text(

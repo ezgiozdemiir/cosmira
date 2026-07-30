@@ -483,7 +483,7 @@ class _LockedReportCard extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               color: AppColors.midnight.withValues(alpha: 0.75),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
