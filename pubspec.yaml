@@ -25,6 +25,7 @@ dependencies:
   # Auth
   google_sign_in: ^6.2.1
   sign_in_with_apple: ^6.1.0
+  crypto: ^3.0.7
 
   # AI
   google_generative_ai: ^0.4.3

@@ -1,6 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/errors/failures.dart';
@@ -20,20 +24,79 @@ class AuthRepositoryImpl implements AuthRepository {
   static String? get _redirectTo =>
       kIsWeb ? null : 'io.cosmira.app://login-callback';
 
+  static String _generateNonce([int length = 32]) {
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(length, (_) => charset[random.nextInt(charset.length)])
+        .join();
+  }
+
+  static String _sha256(String input) =>
+      sha256.convert(utf8.encode(input)).toString();
+
   @override
   Future<Result<void>> signInWithApple() async {
     try {
-      await _client.auth.signInWithOAuth(
-        OAuthProvider.apple,
-        redirectTo: _redirectTo,
-        // The default in-app browser sheet (SFSafariViewController) doesn't
-        // reliably hand the io.cosmira.app:// redirect back to the app on
-        // iOS — it dead-ends on a blank page. Opening in full Safari lets
-        // the OS complete the custom-scheme handoff correctly.
-        authScreenLaunchMode:
-            kIsWeb ? LaunchMode.platformDefault : LaunchMode.externalApplication,
+      // The web OAuth flow (signInWithOAuth) routes through a browser sheet
+      // that doesn't reliably hand the io.cosmira.app:// redirect back to
+      // the app on iOS — it dead-ends on a blank page (SFSafariViewController
+      // or, once forced into full Safari, iOS's "upgrade to native Apple ID
+      // sheet" behavior, both of which failed in testing). Apple's own
+      // recommended pattern for native apps sidesteps all of that: get the
+      // ID token directly from the OS via sign_in_with_apple, no browser at
+      // all, then hand it to Supabase's signInWithIdToken.
+      if (kIsWeb) {
+        await _client.auth.signInWithOAuth(
+          OAuthProvider.apple,
+          redirectTo: _redirectTo,
+        );
+        return Result.success(null);
+      }
+
+      final rawNonce = _generateNonce();
+      final hashedNonce = _sha256(rawNonce);
+
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: hashedNonce,
       );
+
+      final idToken = credential.identityToken;
+      if (idToken == null) {
+        return Result.failure(const AuthFailure('auth_err_generic'));
+      }
+
+      await _client.auth.signInWithIdToken(
+        provider: OAuthProvider.apple,
+        idToken: idToken,
+        nonce: rawNonce,
+      );
+
+      // Apple only ever sends the name on the very first authorization —
+      // persist it now since it's never sent again on subsequent sign-ins.
+      final fullName = [credential.givenName, credential.familyName]
+          .where((s) => s != null && s.isNotEmpty)
+          .join(' ');
+      if (fullName.isNotEmpty) {
+        await _client.auth.updateUser(
+          UserAttributes(
+            data: {'full_name': fullName, 'display_name': fullName},
+          ),
+        );
+      }
+
       return Result.success(null);
+    } on SignInWithAppleAuthorizationException catch (e) {
+      // The user backing out of the native Apple ID sheet isn't an error —
+      // don't surface a failure message for it.
+      if (e.code == AuthorizationErrorCode.canceled) {
+        return Result.success(null);
+      }
+      return Result.failure(AuthFailure(_mapAuthError(e)));
     } catch (e) {
       return Result.failure(AuthFailure(_mapAuthError(e)));
     }
