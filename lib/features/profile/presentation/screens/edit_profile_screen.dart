@@ -407,6 +407,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       ),
                       const SizedBox(height: 24),
                       BirthDataForm(
+                        key: ValueKey(profile?.id),
                         initialDate: profile?.birthDate,
                         initialTime: initialTime,
                         initialCity: profile?.birthCity,

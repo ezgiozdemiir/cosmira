@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/extensions/date_extensions.dart';
+import '../../../../core/providers/language_provider.dart';
+import '../../domain/notification_catalog.dart';
 import '../providers/notifications_provider.dart';
 import '../providers/unread_notifications_provider.dart';
 
@@ -30,6 +32,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     final notifications = ref.watch(notificationsProvider);
+    final lang = ref.watch(languageCodeProvider);
 
     return Scaffold(
       backgroundColor: AppColors.black,
@@ -77,6 +80,14 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                       itemCount: list.length,
                       itemBuilder: (context, index) {
                         final item = list[index];
+                        final rendered = NotificationCatalog.render(
+                          type: item.type,
+                          eventKey: item.eventKey,
+                          createdAt: item.createdAt,
+                          lang: lang,
+                        );
+                        final title = rendered?.title ?? item.title;
+                        final body = rendered?.body ?? item.body;
                         return Container(
                           margin: const EdgeInsets.only(bottom: 8),
                           padding: const EdgeInsets.all(16),
@@ -100,10 +111,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(item.title,
+                                    Text(title,
                                         style: AppTextStyles.titleMedium),
                                     const SizedBox(height: 4),
-                                    Text(item.body,
+                                    Text(body,
                                         style: AppTextStyles.bodySmall),
                                     const SizedBox(height: 4),
                                     Text(

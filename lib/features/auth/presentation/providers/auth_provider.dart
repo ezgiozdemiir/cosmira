@@ -15,8 +15,12 @@ final authStateProvider = StreamProvider<AuthState>((ref) {
 });
 
 final userProfileProvider = StreamProvider<UserProfile?>((ref) {
-  // Re-run whenever auth state changes so we always stream the current user's profile.
-  ref.watch(authStateProvider);
+  // Only resubscribe when the signed-in user actually changes — not on every
+  // onAuthStateChange event (e.g. TOKEN_REFRESHED fires routinely and on app
+  // resume). Re-subscribing the profile stream on those no-op events raced
+  // with the previous subscription's teardown and could surface a transient
+  // "no profile" state (see watchProfile()).
+  ref.watch(authStateProvider.select((async) => async.valueOrNull?.session?.user.id));
   return ref.watch(authRepositoryProvider).watchProfile();
 });
 

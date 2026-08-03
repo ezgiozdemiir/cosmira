@@ -21,6 +21,8 @@ class NotificationItem extends Equatable {
     required this.createdAt,
   });
 
+  String? get eventKey => data?['event_key'] as String?;
+
   @override
   List<Object?> get props => [id];
 }

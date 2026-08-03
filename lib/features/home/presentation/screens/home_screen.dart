@@ -43,19 +43,18 @@ class HomeScreen extends ConsumerWidget {
                 children: [
                   const StardustHeader().animate().fadeIn(duration: 400.ms),
                   const SizedBox(height: 24),
-                  profileAsync.when(
-                    loading: () => const ShimmerLoading(height: 28, width: 180),
-                    error: (_, __) => Text(
-                      'home_hello'.tr(namedArgs: {'name': 'Stargazer'}),
-                      style: AppTextStyles.headlineLarge,
-                    ),
-                    data: (p) => Text(
-                      'home_hello'.tr(namedArgs: {
-                        'name': p?.firstName ?? p?.displayName ?? 'Stargazer',
-                      }),
-                      style: AppTextStyles.headlineLarge,
-                    ),
-                  ).animate().fadeIn(delay: 200.ms),
+                  (profile == null && profileAsync.isLoading
+                          ? const ShimmerLoading(height: 28, width: 180)
+                          : Text(
+                              'home_hello'.tr(namedArgs: {
+                                'name': profile?.firstName ??
+                                    profile?.displayName ??
+                                    'Stargazer',
+                              }),
+                              style: AppTextStyles.headlineLarge,
+                            ))
+                      .animate()
+                      .fadeIn(delay: 200.ms),
                   if (profile?.sunSign != null) ...[
                     const SizedBox(height: 4),
                     Text(

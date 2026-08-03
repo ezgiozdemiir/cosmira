@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -345,10 +344,10 @@ class AuthRepositoryImpl implements AuthRepository {
           if (data.isEmpty) return null;
           return UserProfileModel.fromJson(data.first);
         })
-        .transform(StreamTransformer<UserProfile?, UserProfile?>.fromHandlers(
-          // Realtime bağlantı hatalarını null'a çevir; UI error state'e girmesin
-          handleError: (_, __, sink) => sink.add(null),
-        ))
+        // Note: transient realtime errors are allowed to propagate as stream
+        // errors rather than being swallowed into `null` — Riverpod keeps the
+        // last good AsyncValue around a stream error, so the UI can fall back
+        // to the previously loaded profile instead of looking "empty".
         // Suppress redundant re-emits so in-progress async providers
         // (e.g. Gemini calls in natal chart) are not cancelled unnecessarily.
         .distinct((a, b) {
