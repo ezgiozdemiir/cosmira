@@ -64,7 +64,7 @@ class PaywallScreen extends ConsumerWidget {
                                   color: AppColors.success, size: 20),
                               const SizedBox(width: 12),
                               Expanded(
-                                child: Text(feature,
+                                child: Text(feature.tr(),
                                     style: AppTextStyles.bodyMedium
                                         .copyWith(color: AppColors.textPrimary)),
                               ),

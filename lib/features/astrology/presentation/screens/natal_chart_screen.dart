@@ -10,6 +10,7 @@ import '../../../../core/widgets/cosmic_card.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/extensions/string_extensions.dart';
 import '../../../../core/utils/zodiac_utils.dart';
+import '../../../auth/domain/entities/user_profile.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../home/presentation/providers/home_provider.dart';
 import '../../domain/entities/big_three_insight.dart';
@@ -24,210 +25,211 @@ class NatalChartScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(userProfileProvider);
 
-    return SafeArea(
-      child: profileAsync.when(
-        data: (profile) {
-          if (profile == null || profile.birthDate == null) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: CosmicCard(
-                  onTap: () => context.push('/onboarding'),
+    // A transient realtime stream error (token refresh, brief reconnect)
+    // shouldn't blank out a screen that already has a cached profile —
+    // only show the error state when we've never successfully loaded one.
+    if (!profileAsync.hasValue) {
+      return SafeArea(
+        child: profileAsync.hasError
+            ? Center(child: Text('natal_error_profile'.tr()))
+            : const Center(child: ShimmerCardLoading()),
+      );
+    }
+
+    return SafeArea(child: _buildBody(context, profileAsync.value));
+  }
+
+  Widget _buildBody(BuildContext context, UserProfile? profile) {
+    if (profile == null || profile.birthDate == null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: CosmicCard(
+            onTap: () => context.push('/onboarding'),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.stars, size: 48, color: AppColors.auraViolet),
+                const SizedBox(height: 16),
+                Text('natal_not_calculated'.tr(),
+                    style: AppTextStyles.titleMedium),
+                const SizedBox(height: 8),
+                Text(
+                  'natal_complete_details'.tr(),
+                  style: AppTextStyles.bodySmall,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final bd = profile.birthDate!;
+    final birthDateStr = '${bd.day} ${'month_${bd.month}'.tr()} ${bd.year}';
+    final sunSign = profile.sunSign ?? '';
+
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(4, 8, 20, 0),
+            child: Row(
+              children: [
+                IconButton(
+                  onPressed: () => context.go('/'),
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                      color: Colors.white70, size: 20),
+                ),
+              ],
+            ),
+          ),
+        ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('natal_title'.tr(), style: AppTextStyles.headlineLarge)
+                    .animate()
+                    .fadeIn(),
+                const SizedBox(height: 4),
+                Text(
+                  'natal_subtitle'.tr(),
+                  style: AppTextStyles.bodySmall
+                      .copyWith(color: AppColors.textSecondary),
+                ).animate().fadeIn(delay: 100.ms),
+                const SizedBox(height: 24),
+                CosmicCard(
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.stars,
-                          size: 48, color: AppColors.auraViolet),
+                      Row(
+                        children: [
+                          const Icon(Icons.calendar_today,
+                              size: 16, color: AppColors.accentGlow),
+                          const SizedBox(width: 8),
+                          Text(
+                            'natal_birth_details'.tr(),
+                            style: AppTextStyles.labelLarge
+                                .copyWith(color: AppColors.accentGlow),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 16),
-                      Text('natal_not_calculated'.tr(),
-                          style: AppTextStyles.titleMedium),
-                      const SizedBox(height: 8),
+                      _DetailRow(label: 'natal_date'.tr(), value: birthDateStr),
+                      if (profile.birthTime != null) ...[
+                        const SizedBox(height: 10),
+                        _DetailRow(
+                            label: 'natal_time'.tr(),
+                            value: profile.birthTime!),
+                      ],
+                      if (profile.birthCity != null) ...[
+                        const SizedBox(height: 10),
+                        _DetailRow(
+                            label: 'natal_city'.tr(),
+                            value: profile.birthCity!),
+                      ],
+                    ],
+                  ),
+                ).animate().fadeIn(delay: 200.ms),
+                const SizedBox(height: 16),
+                CosmicCard(
+                  gradient: AppColors.premiumGradient,
+                  child: Column(
+                    children: [
                       Text(
-                        'natal_complete_details'.tr(),
-                        style: AppTextStyles.bodySmall,
-                        textAlign: TextAlign.center,
+                        'natal_big_three'.tr(),
+                        style: AppTextStyles.labelLarge
+                            .copyWith(color: Colors.white70),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _BigThree(
+                            label: 'natal_sun'.tr(),
+                            sign: sunSign,
+                            isCalculated: sunSign.isNotEmpty,
+                          ),
+                          _BigThree(
+                            label: 'natal_moon'.tr(),
+                            sign: profile.moonSign ?? '',
+                            isCalculated: profile.moonSign != null,
+                          ),
+                          _BigThree(
+                            label: 'natal_rising'.tr(),
+                            sign: profile.risingSign ?? '',
+                            isCalculated: profile.risingSign != null,
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ),
-              ),
-            );
-          }
-
-          final bd = profile.birthDate!;
-          final birthDateStr =
-              '${bd.day} ${'month_${bd.month}'.tr()} ${bd.year}';
-          final sunSign = profile.sunSign ?? '';
-
-          return CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(4, 8, 20, 0),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => context.go('/'),
-                        icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                            color: Colors.white70, size: 20),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text('natal_title'.tr(),
-                              style: AppTextStyles.headlineLarge)
-                          .animate()
-                          .fadeIn(),
-                      const SizedBox(height: 4),
-                      Text(
-                        'natal_subtitle'.tr(),
-                        style: AppTextStyles.bodySmall
-                            .copyWith(color: AppColors.textSecondary),
-                      ).animate().fadeIn(delay: 100.ms),
-                      const SizedBox(height: 24),
-                      CosmicCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.calendar_today,
-                                    size: 16, color: AppColors.accentGlow),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'natal_birth_details'.tr(),
-                                  style: AppTextStyles.labelLarge
-                                      .copyWith(color: AppColors.accentGlow),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            _DetailRow(
-                                label: 'natal_date'.tr(), value: birthDateStr),
-                            if (profile.birthTime != null) ...[
-                              const SizedBox(height: 10),
-                              _DetailRow(
-                                  label: 'natal_time'.tr(),
-                                  value: profile.birthTime!),
-                            ],
-                            if (profile.birthCity != null) ...[
-                              const SizedBox(height: 10),
-                              _DetailRow(
-                                  label: 'natal_city'.tr(),
-                                  value: profile.birthCity!),
-                            ],
-                          ],
+                ).animate().fadeIn(delay: 400.ms),
+                if (profile.risingSign != null) ...[
+                  const SizedBox(height: 16),
+                  CosmicCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'natal_houses'.tr(),
+                          style: AppTextStyles.labelLarge
+                              .copyWith(color: AppColors.accentGlow),
                         ),
-                      ).animate().fadeIn(delay: 200.ms),
-                      const SizedBox(height: 16),
-                      CosmicCard(
-                        gradient: AppColors.premiumGradient,
-                        child: Column(
-                          children: [
-                            Text(
-                              'natal_big_three'.tr(),
-                              style: AppTextStyles.labelLarge
-                                  .copyWith(color: Colors.white70),
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                _BigThree(
-                                  label: 'natal_sun'.tr(),
-                                  sign: sunSign,
-                                  isCalculated: sunSign.isNotEmpty,
-                                ),
-                                _BigThree(
-                                  label: 'natal_moon'.tr(),
-                                  sign: profile.moonSign ?? '',
-                                  isCalculated: profile.moonSign != null,
-                                ),
-                                _BigThree(
-                                  label: 'natal_rising'.tr(),
-                                  sign: profile.risingSign ?? '',
-                                  isCalculated: profile.risingSign != null,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ).animate().fadeIn(delay: 400.ms),
-                      if (profile.risingSign != null) ...[
                         const SizedBox(height: 16),
-                        CosmicCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                        SizedBox(
+                          width: double.infinity,
+                          child: Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            alignment: WrapAlignment.center,
                             children: [
-                              Text(
-                                'natal_houses'.tr(),
-                                style: AppTextStyles.labelLarge
-                                    .copyWith(color: AppColors.accentGlow),
-                              ),
-                              const SizedBox(height: 16),
-                              SizedBox(
-                                width: double.infinity,
-                                child: Wrap(
-                                  spacing: 12,
-                                  runSpacing: 12,
-                                  alignment: WrapAlignment.center,
-                                  children: [
-                                    for (final entry
-                                        in wholeSignHouses(profile.risingSign!)
-                                            .asMap()
-                                            .entries)
-                                      _HouseTile(
-                                          houseNumber: entry.key + 1,
-                                          sign: entry.value),
-                                  ],
-                                ),
-                              ),
+                              for (final entry
+                                  in wholeSignHouses(profile.risingSign!)
+                                      .asMap()
+                                      .entries)
+                                _HouseTile(
+                                    houseNumber: entry.key + 1,
+                                    sign: entry.value),
                             ],
                           ),
-                        ).animate().fadeIn(delay: 470.ms),
+                        ),
                       ],
-                      if (profile.isPremium)
-                        _HouseInsightsSection(delay: 520.ms)
-                      else
-                        const _HouseInsightsLockedCard()
-                            .animate()
-                            .fadeIn(delay: 520.ms),
-                      _InsightSection(
-                        title: 'natal_today'.tr(),
-                        provider: dailyInsightProvider,
-                        delay: 570.ms,
-                      ),
-                      _InsightSection(
-                        title: 'natal_this_month'.tr(),
-                        provider: monthlyInsightProvider,
-                        delay: 620.ms,
-                      ),
-                      _InsightSection(
-                        title: 'natal_this_year'.tr(),
-                        provider: yearlyInsightProvider,
-                        delay: 670.ms,
-                      ),
-                      const _BirthMapEntryCard()
-                          .animate()
-                          .fadeIn(delay: 720.ms),
-                    ],
-                  ),
+                    ),
+                  ).animate().fadeIn(delay: 470.ms),
+                ],
+                if (profile.isPremium)
+                  _HouseInsightsSection(delay: 520.ms)
+                else
+                  const _HouseInsightsLockedCard()
+                      .animate()
+                      .fadeIn(delay: 520.ms),
+                _InsightSection(
+                  title: 'natal_today'.tr(),
+                  provider: dailyInsightProvider,
+                  delay: 570.ms,
                 ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 100)),
-            ],
-          );
-        },
-        loading: () => const Center(child: ShimmerCardLoading()),
-        error: (_, __) => Center(child: Text('natal_error_profile'.tr())),
-      ),
+                _InsightSection(
+                  title: 'natal_this_month'.tr(),
+                  provider: monthlyInsightProvider,
+                  delay: 620.ms,
+                ),
+                _InsightSection(
+                  title: 'natal_this_year'.tr(),
+                  provider: yearlyInsightProvider,
+                  delay: 670.ms,
+                ),
+                const _BirthMapEntryCard().animate().fadeIn(delay: 720.ms),
+              ],
+            ),
+          ),
+        ),
+        const SliverToBoxAdapter(child: SizedBox(height: 100)),
+      ],
     );
   }
 }
@@ -819,11 +821,14 @@ class _HouseInsightsLockedCard extends StatelessWidget {
               // Blurred preview of two fake house cards
               Column(
                 children: [
-                  _fakehouseCard('♐', '1. Ev', 'Kimlik & Dış Görünüş'),
+                  _fakehouseCard('♐', 'natal_house_n'.tr(namedArgs: {'n': '1'}),
+                      'natal_house_1_theme'.tr()),
                   const SizedBox(height: 10),
-                  _fakehouseCard('♑', '2. Ev', 'Değerler & Maddi Güç'),
+                  _fakehouseCard('♑', 'natal_house_n'.tr(namedArgs: {'n': '2'}),
+                      'natal_house_2_theme'.tr()),
                   const SizedBox(height: 10),
-                  _fakehouseCard('♒', '3. Ev', 'İletişim & Zihin'),
+                  _fakehouseCard('♒', 'natal_house_n'.tr(namedArgs: {'n': '3'}),
+                      'natal_house_3_theme'.tr()),
                 ],
               ),
               // Frosted overlay + lock

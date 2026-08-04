@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -58,7 +59,7 @@ class AddLovedOneNotifier extends StateNotifier<AsyncValue<void>> {
 
     final user = _ref.read(currentUserProvider);
     if (user == null) {
-      state = AsyncValue.error('Not logged in', StackTrace.current);
+      state = AsyncValue.error('astro_not_logged_in'.tr(), StackTrace.current);
       return false;
     }
 

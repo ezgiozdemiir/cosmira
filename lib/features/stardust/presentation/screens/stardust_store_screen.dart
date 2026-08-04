@@ -314,10 +314,10 @@ class _BundleGrid extends StatelessWidget {
   const _BundleGrid();
 
   static const _bundles = [
-    (amount: 100, price: '₺79',  label: 'Starter'),
-    (amount: 200, price: '₺149', label: 'Explorer'),
-    (amount: 300, price: '₺199', label: 'Seeker'),
-    (amount: 600, price: '₺349', label: 'Cosmic'),
+    (amount: 100, price: '₺79',  labelKey: 'stardust_bundle_starter'),
+    (amount: 200, price: '₺149', labelKey: 'stardust_bundle_explorer'),
+    (amount: 300, price: '₺199', labelKey: 'stardust_bundle_seeker'),
+    (amount: 600, price: '₺349', labelKey: 'stardust_bundle_cosmic'),
   ];
 
   @override
@@ -330,7 +330,7 @@ class _BundleGrid extends StatelessWidget {
       mainAxisSpacing: 12,
       childAspectRatio: 1.4,
       children: _bundles
-          .map((b) => _BundleTile(amount: b.amount, price: b.price, label: b.label))
+          .map((b) => _BundleTile(amount: b.amount, price: b.price, labelKey: b.labelKey))
           .toList(),
     );
   }
@@ -339,9 +339,9 @@ class _BundleGrid extends StatelessWidget {
 class _BundleTile extends StatelessWidget {
   final int amount;
   final String price;
-  final String label;
+  final String labelKey;
 
-  const _BundleTile({required this.amount, required this.price, required this.label});
+  const _BundleTile({required this.amount, required this.price, required this.labelKey});
 
   @override
   Widget build(BuildContext context) {
@@ -361,7 +361,7 @@ class _BundleTile extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text('OK',
+              child: Text('stardust_bundle_soon_ok'.tr(),
                   style: AppTextStyles.labelLarge
                       .copyWith(color: AppColors.accentGlow)),
             ),
@@ -387,7 +387,7 @@ class _BundleTile extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 4),
-            Text(label,
+            Text(labelKey.tr(),
                 style: AppTextStyles.labelSmall
                     .copyWith(color: AppColors.textSecondary)),
             const SizedBox(height: 8),

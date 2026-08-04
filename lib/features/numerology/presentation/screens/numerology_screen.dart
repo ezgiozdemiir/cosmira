@@ -1612,36 +1612,38 @@ class _FamilyProLockedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 260),
+    return SizedBox(
+      height: 260,
       child: Stack(
       children: [
-        CosmicCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('num_family_title'.tr(), style: AppTextStyles.titleMedium),
-              const SizedBox(height: 8),
-              Text('num_family_subtitle'.tr(),
-                  style: AppTextStyles.bodySmall
-                      .copyWith(color: AppColors.textSecondary)),
-              const SizedBox(height: 16),
-              Container(
-                height: 48,
-                decoration: BoxDecoration(
-                  color: AppColors.textTertiary.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
+        Positioned.fill(
+          child: CosmicCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('num_family_title'.tr(), style: AppTextStyles.titleMedium),
+                const SizedBox(height: 8),
+                Text('num_family_subtitle'.tr(),
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: AppColors.textSecondary)),
+                const SizedBox(height: 16),
+                Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppColors.textTertiary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                height: 48,
-                decoration: BoxDecoration(
-                  color: AppColors.textTertiary.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 10),
+                Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppColors.textTertiary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         Positioned.fill(

@@ -185,7 +185,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         if (mounted) context.go('/');
       },
       failure: (f) => ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not save: ${f.message}')),
+        SnackBar(
+          content: Text('onboarding_save_error'
+              .tr(namedArgs: {'error': f.message})),
+        ),
       ),
     );
   }
@@ -209,11 +212,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 40),
-                        Text('Your Details', style: AppTextStyles.headlineLarge),
+                        Text('onboarding_details_title'.tr(),
+                            style: AppTextStyles.headlineLarge),
                         const SizedBox(height: 8),
                         Text(
-                          'This information is used to personalize your experience '
-                          'and calculate your unique natal chart.',
+                          'onboarding_details_subtitle'.tr(),
                           style: AppTextStyles.bodyMedium,
                         ),
                         const SizedBox(height: 32),
@@ -261,7 +264,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
                   const Spacer(),
                   CosmicButton(
-                    label: _currentPage == 2 ? 'Begin' : 'Next',
+                    label: _currentPage == 2
+                        ? 'onboarding_begin'.tr()
+                        : 'onboarding_next'.tr(),
                     isLoading: _isSaving,
                     onPressed: () {
                       if (_currentPage < 2) {
@@ -299,13 +304,13 @@ class _WelcomePage extends StatelessWidget {
           ).animate().fadeIn(duration: 600.ms).scale(begin: const Offset(0.5, 0.5)),
           const SizedBox(height: 32),
           Text(
-            'Welcome to\nCosmira',
+            'onboarding_welcome_title'.tr(),
             textAlign: TextAlign.center,
             style: AppTextStyles.displayLarge,
           ).animate().fadeIn(delay: 300.ms),
           const SizedBox(height: 16),
           Text(
-            'Your personal cosmic companion for\nself-discovery, growth & inner peace.',
+            'onboarding_welcome_subtitle'.tr(),
             textAlign: TextAlign.center,
             style: AppTextStyles.bodyMedium,
           ).animate().fadeIn(delay: 600.ms),
@@ -330,13 +335,13 @@ class _CosmicProfilePage extends StatelessWidget {
           ).animate().fadeIn(duration: 600.ms),
           const SizedBox(height: 32),
           Text(
-            'Your Cosmic\nProfile',
+            'onboarding_profile_title'.tr(),
             textAlign: TextAlign.center,
             style: AppTextStyles.displayMedium,
           ).animate().fadeIn(delay: 300.ms),
           const SizedBox(height: 16),
           Text(
-            'We need your birth details to calculate\nyour natal chart and unlock personalized insights.',
+            'onboarding_profile_subtitle'.tr(),
             textAlign: TextAlign.center,
             style: AppTextStyles.bodyMedium,
           ).animate().fadeIn(delay: 600.ms),

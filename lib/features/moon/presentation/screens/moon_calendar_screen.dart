@@ -642,66 +642,68 @@ class _MoonImpactProCard extends StatelessWidget {
         ? '${_aspectLabel(t!.aspect!.type)} · ${_natalPointLabel(t.aspect!.natalPoint)}'
         : '🌙  ${t != null ? t.moonSign.zodiacName : '—'}';
 
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 270),
+    return SizedBox(
+      height: 270,
       child: Stack(
       children: [
         // Blurred preview of the pro content — now built from the user's
         // own real house/zone/aspect, just obscured behind the paywall.
-        CosmicCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('moon_pro_title'.tr(), style: AppTextStyles.titleMedium),
-              const SizedBox(height: 12),
-              Container(
-                height: 12,
-                decoration: BoxDecoration(
-                  color: AppColors.textTertiary.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(6),
+        Positioned.fill(
+          child: CosmicCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('moon_pro_title'.tr(), style: AppTextStyles.titleMedium),
+                const SizedBox(height: 12),
+                Container(
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: AppColors.textTertiary.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                height: 12,
-                width: 220,
-                decoration: BoxDecoration(
-                  color: AppColors.textTertiary.withValues(alpha: 0.07),
-                  borderRadius: BorderRadius.circular(6),
+                const SizedBox(height: 8),
+                Container(
+                  height: 12,
+                  width: 220,
+                  decoration: BoxDecoration(
+                    color: AppColors.textTertiary.withValues(alpha: 0.07),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                height: 12,
-                decoration: BoxDecoration(
-                  color: AppColors.textTertiary.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(6),
+                const SizedBox(height: 8),
+                Container(
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: AppColors.textTertiary.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                height: 12,
-                width: 180,
-                decoration: BoxDecoration(
-                  color: AppColors.textTertiary.withValues(alpha: 0.07),
-                  borderRadius: BorderRadius.circular(6),
+                const SizedBox(height: 8),
+                Container(
+                  height: 12,
+                  width: 180,
+                  decoration: BoxDecoration(
+                    color: AppColors.textTertiary.withValues(alpha: 0.07),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  _fakeChip(houseChip),
-                  const SizedBox(width: 8),
-                  _fakeChip(aspectChip),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  _fakeChip(zoneChip),
-                ],
-              ),
-            ],
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    _fakeChip(houseChip),
+                    const SizedBox(width: 8),
+                    _fakeChip(aspectChip),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    _fakeChip(zoneChip),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
         // Frosted overlay + lock

@@ -44,18 +44,20 @@ class SubscriptionPlan {
     required this.features,
   });
 
+  // `features` holds translation keys (rendered via .tr() at the paywall),
+  // not display text.
   static const free = SubscriptionPlan(
     id: 'free',
     name: 'Celestial',
     description: 'Start your cosmic journey',
     monthlyPrice: 0,
     features: [
-      'Daily horoscope',
-      '1 breathwork session/day',
-      'Moon calendar',
-      '2 compatibility partners',
-      'Basic natal chart',
-      '2 birth info changes',
+      'paywall_feature_daily_horoscope',
+      'paywall_feature_breathwork_daily',
+      'paywall_feature_moon_calendar',
+      'paywall_feature_compat_partners_2',
+      'paywall_feature_natal_basic',
+      'paywall_feature_birth_changes_2',
     ],
   );
 
@@ -66,14 +68,14 @@ class SubscriptionPlan {
     monthlyPrice: 120,
     yearlyPrice: 999,
     features: [
-      'Everything in Celestial',
-      'Unlimited breathwork',
-      '10 compatibility partners',
-      'Deep compatibility reports',
-      'Yearly destiny report',
-      'Astrocartography',
-      'Priority AI insights',
-      '5 birth info changes',
+      'paywall_feature_everything_celestial',
+      'paywall_feature_breathwork_unlimited',
+      'paywall_feature_compat_partners_10',
+      'paywall_feature_compat_deep',
+      'paywall_feature_yearly_destiny',
+      'paywall_feature_astrocartography',
+      'paywall_feature_priority_ai',
+      'paywall_feature_birth_changes_5',
     ],
   );
 }

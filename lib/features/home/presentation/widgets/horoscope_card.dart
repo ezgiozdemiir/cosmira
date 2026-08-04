@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -51,13 +52,13 @@ class HoroscopeCard extends StatelessWidget {
             children: [
               _StatChip(
                 icon: Icons.bolt,
-                label: 'Energy',
+                label: 'horoscope_energy'.tr(),
                 value: '${horoscope.energyScore}%',
               ),
               const SizedBox(width: 12),
               _StatChip(
                 icon: Icons.favorite,
-                label: 'Lucky',
+                label: 'horoscope_lucky'.tr(),
                 value: '#${horoscope.luckyNumber}',
               ),
             ],
